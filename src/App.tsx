@@ -1,6 +1,8 @@
 import "./styles.css";
 import { useState } from "react";
 import HearingModule from "./hearing/HearingModule";
+import ComparisonModule from "./comparison/ComparisonModule";
+import { getComparisonByCustomerId } from "./comparison/comparison.sampleData";
 
 interface CustomerRecord {
   id: string;
@@ -578,6 +580,7 @@ function HearingAidSelector({
 function App() {
   const [selectedRecord, setSelectedRecord] = useState<CustomerRecord | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [comparisonCustomerId, setComparisonCustomerId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>(
     () => Object.fromEntries(project.fields.map((f: string) => [f, ""]))
   );
@@ -607,6 +610,15 @@ function App() {
 
   const handleFieldChange = (field: string, value: string) => {
     setFormValues(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCompareClick = (customerId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setComparisonCustomerId(customerId);
+  };
+
+  const handleBackFromComparison = () => {
+    setComparisonCustomerId(null);
   };
 
   return (
@@ -671,6 +683,11 @@ function App() {
 
       <HearingModule />
 
+      <ComparisonModule
+        customerId={comparisonCustomerId || undefined}
+        onBack={comparisonCustomerId ? handleBackFromComparison : undefined}
+      />
+
       <section className="records panel">
         <div className="section-heading">
           <div>
@@ -680,20 +697,33 @@ function App() {
           <button>导出摘要</button>
         </div>
         <div className="record-list">
-          {project.records.map((record: CustomerRecord, index: number) => (
-            <article
-              key={record.id}
-              className="record-card"
-              onClick={() => handleRecordClick(record)}
-            >
-              <div className="record-index">{String(index + 1).padStart(2, "0")}</div>
-              <div>
-                <h3>{record.customerId}</h3>
-                <p>{record.hearingLossType} · {record.fittingStage} · {record.hearingAidModel}</p>
-              </div>
-              <div className="record-arrow">→</div>
-            </article>
-          ))}
+          {project.records.map((record: CustomerRecord, index: number) => {
+            const hasComparison = !!getComparisonByCustomerId(record.customerId);
+            return (
+              <article
+                key={record.id}
+                className="record-card"
+                onClick={() => handleRecordClick(record)}
+              >
+                <div className="record-index">{String(index + 1).padStart(2, "0")}</div>
+                <div>
+                  <h3>{record.customerId}</h3>
+                  <p>{record.hearingLossType} · {record.fittingStage} · {record.hearingAidModel}</p>
+                </div>
+                {hasComparison && (
+                  <div className="record-card-actions">
+                    <button
+                      className="record-card-action-btn"
+                      onClick={(e) => handleCompareClick(record.customerId, e)}
+                    >
+                      验配对比
+                    </button>
+                  </div>
+                )}
+                <div className="record-arrow">→</div>
+              </article>
+            );
+          })}
         </div>
       </section>
 
