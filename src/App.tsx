@@ -11,6 +11,23 @@ interface CustomerRecord {
   userFeedback: string;
 }
 
+type FollowUpPriority = "high" | "medium" | "low";
+type ContactStatus = "pending" | "contacted" | "unreachable";
+type FollowUpFilter = "all" | "today" | "week" | "overdue";
+
+interface FollowUpRecord {
+  id: string;
+  customerId: string;
+  customerName: string;
+  daysToNext: number;
+  priority: FollowUpPriority;
+  contactStatus: ContactStatus;
+  lastFollowUpDate: string;
+  nextFollowUpDate: string;
+  hearingAidModel: string;
+  notes: string;
+}
+
 const project = {
   "id": "hxwl-01",
   "port": 5101,
@@ -78,6 +95,117 @@ const project = {
     }
   ] as CustomerRecord[]
 };
+
+const followUpRecords: FollowUpRecord[] = [
+  {
+    id: "fu-001",
+    customerId: "Liu-024",
+    customerName: "刘先生",
+    daysToNext: -5,
+    priority: "high",
+    contactStatus: "pending",
+    lastFollowUpDate: "2026-05-20",
+    nextFollowUpDate: "2026-06-12",
+    hearingAidModel: "Phonak Audeo Paradise P90",
+    notes: "初配后首次复诊，需确认佩戴适应情况"
+  },
+  {
+    id: "fu-002",
+    customerId: "Chen-118",
+    customerName: "陈女士",
+    daysToNext: -2,
+    priority: "high",
+    contactStatus: "unreachable",
+    lastFollowUpDate: "2026-05-28",
+    nextFollowUpDate: "2026-06-15",
+    hearingAidModel: "Signia Pure Charge&Go 7X",
+    notes: "反馈啸叫问题已解决，需确认近期使用情况"
+  },
+  {
+    id: "fu-003",
+    customerId: "Wang-056",
+    customerName: "王阿姨",
+    daysToNext: 0,
+    priority: "high",
+    contactStatus: "pending",
+    lastFollowUpDate: "2026-05-17",
+    nextFollowUpDate: "2026-06-17",
+    hearingAidModel: "Oticon Ruby 2",
+    notes: "月度常规复诊，需做言语识别率测试"
+  },
+  {
+    id: "fu-004",
+    customerId: "Zhang-091",
+    customerName: "张大爷",
+    daysToNext: 0,
+    priority: "medium",
+    contactStatus: "contacted",
+    lastFollowUpDate: "2026-05-20",
+    nextFollowUpDate: "2026-06-17",
+    hearingAidModel: "Widex Moment 440",
+    notes: "已电话确认今日下午到店"
+  },
+  {
+    id: "fu-005",
+    customerId: "Li-132",
+    customerName: "李先生",
+    daysToNext: 2,
+    priority: "medium",
+    contactStatus: "pending",
+    lastFollowUpDate: "2026-06-01",
+    nextFollowUpDate: "2026-06-19",
+    hearingAidModel: "ReSound One 9",
+    notes: "复调后两周复查"
+  },
+  {
+    id: "fu-006",
+    customerId: "Zhao-077",
+    customerName: "赵奶奶",
+    daysToNext: 4,
+    priority: "medium",
+    contactStatus: "pending",
+    lastFollowUpDate: "2026-05-24",
+    nextFollowUpDate: "2026-06-21",
+    hearingAidModel: "Oticon More 3 miniRITE R",
+    notes: "儿童患者需确认适应情况"
+  },
+  {
+    id: "fu-007",
+    customerId: "Sun-045",
+    customerName: "孙先生",
+    daysToNext: 5,
+    priority: "low",
+    contactStatus: "contacted",
+    lastFollowUpDate: "2026-06-05",
+    nextFollowUpDate: "2026-06-22",
+    hearingAidModel: "Starkey Evolv AI 2400",
+    notes: "已预约，患者表示目前使用良好"
+  },
+  {
+    id: "fu-008",
+    customerId: "Zhou-088",
+    customerName: "周女士",
+    daysToNext: 7,
+    priority: "low",
+    contactStatus: "pending",
+    lastFollowUpDate: "2026-05-10",
+    nextFollowUpDate: "2026-06-24",
+    hearingAidModel: "Phonak Naida P90-UP",
+    notes: "季度常规检查"
+  },
+  {
+    id: "fu-009",
+    customerId: "Wu-023",
+    customerName: "吴先生",
+    daysToNext: 15,
+    priority: "low",
+    contactStatus: "pending",
+    lastFollowUpDate: "2026-06-02",
+    nextFollowUpDate: "2026-07-02",
+    hearingAidModel: "Signia Silk 7X",
+    notes: "深耳道式机型适配检查"
+  }
+];
 
 const statusColors = ["status-ok", "status-watch", "status-danger"];
 
@@ -162,6 +290,132 @@ function CustomerDrawer({
         )}
       </aside>
     </>
+  );
+}
+
+const priorityLabel: Record<FollowUpPriority, string> = {
+  high: "高优先级",
+  medium: "中优先级",
+  low: "低优先级"
+};
+
+const contactStatusLabel: Record<ContactStatus, string> = {
+  pending: "待联系",
+  contacted: "已联系",
+  unreachable: "无法联系"
+};
+
+const filterOptions: { key: FollowUpFilter; label: string }[] = [
+  { key: "all", label: "全部" },
+  { key: "today", label: "今日到期" },
+  { key: "week", label: "本周到期" },
+  { key: "overdue", label: "已逾期" }
+];
+
+function getDaysText(days: number): string {
+  if (days < 0) return `逾期 ${Math.abs(days)} 天`;
+  if (days === 0) return "今日到期";
+  return `${days} 天后`;
+}
+
+function filterFollowUps(records: FollowUpRecord[], filter: FollowUpFilter): FollowUpRecord[] {
+  switch (filter) {
+    case "today":
+      return records.filter(r => r.daysToNext === 0);
+    case "week":
+      return records.filter(r => r.daysToNext > 0 && r.daysToNext <= 7);
+    case "overdue":
+      return records.filter(r => r.daysToNext < 0);
+    default:
+      return records;
+  }
+}
+
+function FollowUpReminder() {
+  const [activeFilter, setActiveFilter] = useState<FollowUpFilter>("all");
+
+  const filtered = filterFollowUps(followUpRecords, activeFilter);
+  const sorted = [...filtered].sort((a, b) => a.daysToNext - b.daysToNext);
+
+  const counts = {
+    all: followUpRecords.length,
+    today: followUpRecords.filter(r => r.daysToNext === 0).length,
+    week: followUpRecords.filter(r => r.daysToNext > 0 && r.daysToNext <= 7).length,
+    overdue: followUpRecords.filter(r => r.daysToNext < 0).length
+  };
+
+  return (
+    <section className="followup panel">
+      <div className="section-heading">
+        <div>
+          <p>复诊助理工作台</p>
+          <h2>复诊提醒</h2>
+        </div>
+        <button className="primary-action">批量联系</button>
+      </div>
+
+      <div className="followup-filters">
+        {filterOptions.map(opt => (
+          <button
+            key={opt.key}
+            className={`filter-chip ${activeFilter === opt.key ? "filter-active" : ""}`}
+            onClick={() => setActiveFilter(opt.key)}
+          >
+            {opt.label}
+            <span className="filter-count">{counts[opt.key]}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="followup-list">
+        {sorted.length === 0 ? (
+          <div className="followup-empty">
+            <div className="empty-icon">✅</div>
+            <h3>暂无{filterOptions.find(f => f.key === activeFilter)?.label}的复诊记录</h3>
+          </div>
+        ) : (
+          sorted.map(record => {
+            const isOverdue = record.daysToNext < 0;
+            return (
+              <article
+                key={record.id}
+                className={`followup-card ${isOverdue ? "followup-overdue" : ""} priority-${record.priority}`}
+              >
+                <div className="followup-days">
+                  <span className={`days-badge ${isOverdue ? "days-overdue" : record.daysToNext === 0 ? "days-today" : ""}`}>
+                    {getDaysText(record.daysToNext)}
+                  </span>
+                  <span className="followup-date">下次复诊：{record.nextFollowUpDate}</span>
+                </div>
+
+                <div className="followup-main">
+                  <div className="followup-header">
+                    <h3>{record.customerName}</h3>
+                    <span className="customer-id">{record.customerId}</span>
+                  </div>
+                  <p className="followup-model">{record.hearingAidModel}</p>
+                  <p className="followup-notes">{record.notes}</p>
+                </div>
+
+                <div className="followup-tags">
+                  <span className={`priority-tag priority-${record.priority}`}>
+                    {priorityLabel[record.priority]}
+                  </span>
+                  <span className={`status-tag status-${record.contactStatus}`}>
+                    {contactStatusLabel[record.contactStatus]}
+                  </span>
+                </div>
+
+                <div className="followup-actions">
+                  <button className="followup-btn">拨打电话</button>
+                  <button className="followup-btn secondary">发送短信</button>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -263,6 +517,8 @@ function App() {
           ))}
         </div>
       </section>
+
+      <FollowUpReminder />
 
       <CustomerDrawer
         record={selectedRecord}
