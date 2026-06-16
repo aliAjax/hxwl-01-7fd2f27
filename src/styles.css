@@ -763,6 +763,223 @@ input {
   background: color-mix(in srgb, var(--primary) 6%, #ffffff);
 }
 
+.ha-selector {
+  margin-bottom: 18px;
+  padding: 18px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.ha-selector-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ha-selector-heading h3 {
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 0;
+}
+
+.ha-selector-hint {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.ha-type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ha-type-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 90px;
+}
+
+.ha-type-chip strong {
+  font-size: 16px;
+  color: var(--primary);
+  letter-spacing: 0.04em;
+}
+
+.ha-type-chip span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.ha-type-chip:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 2px 8px rgba(21, 94, 117, 0.1);
+}
+
+.ha-type-chip.ha-type-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(21, 94, 117, 0.25);
+}
+
+.ha-type-active strong {
+  color: #ffffff;
+}
+
+.ha-type-active span {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ha-detail {
+  margin-top: 16px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  animation: ha-fade-in 0.25s ease;
+}
+
+@keyframes ha-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ha-detail-header {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ha-detail-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ha-detail-info h4 {
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.ha-detail-info p {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 0;
+  line-height: 1.6;
+}
+
+.ha-scenarios {
+  flex-shrink: 0;
+  min-width: 200px;
+}
+
+.ha-scenarios-label,
+.ha-models-label,
+.ha-gain-label {
+  display: block;
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ha-scenarios-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ha-scenario-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--accent) 12%, #ffffff);
+  color: #15803d;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, #ffffff);
+}
+
+.ha-models {
+  margin-bottom: 14px;
+}
+
+.ha-model-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.ha-model-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.ha-model-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 4px 12px rgba(21, 94, 117, 0.1);
+  transform: translateY(-1px);
+}
+
+.ha-model-card.ha-model-selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, #ffffff);
+  box-shadow: 0 4px 16px rgba(21, 94, 117, 0.15);
+}
+
+.ha-model-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #172033;
+}
+
+.ha-model-template {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.ha-gain-preview {
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--warn) 6%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--warn) 20%, #dbe3ef);
+  border-radius: 8px;
+}
+
+.ha-gain-text {
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
 @media (max-width: 860px) {
   .hero,
   .workspace,
@@ -808,5 +1025,18 @@ input {
 
   .followup-actions {
     flex-direction: row;
+  }
+
+  .ha-detail-header {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .ha-scenarios {
+    min-width: 0;
+  }
+
+  .ha-model-list {
+    grid-template-columns: 1fr;
   }
 }
