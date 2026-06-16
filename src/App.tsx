@@ -1,5 +1,6 @@
 import "./styles.css";
 import { useState } from "react";
+import HearingModule from "./hearing/HearingModule";
 
 interface CustomerRecord {
   id: string;
@@ -667,6 +668,8 @@ function App() {
           </div>
         </section>
       </section>
+
+      <HearingModule />
 
       <section className="records panel">
         <div className="section-heading">

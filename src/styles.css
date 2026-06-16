@@ -1040,3 +1040,477 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+.hearing-module {
+  margin-bottom: 20px;
+}
+
+.sample-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.sample-picker-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sample-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.sample-chip {
+  min-height: 32px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sample-chip:hover {
+  border-color: #93c5fd;
+  background: #f0f9ff;
+}
+
+.sample-chip.sample-active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 10px rgba(21, 94, 117, 0.25);
+}
+
+.sample-case-note {
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ecfeff 0%, #f0f9ff 100%);
+  border: 1px solid #a5f3fc;
+  color: #0e7490;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.sample-case-note strong {
+  color: var(--primary);
+}
+
+.hearing-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.2fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.hearing-form-col,
+.hearing-chart-col {
+  min-width: 0;
+}
+
+.hearing-form {
+  background: #fbfdff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.hearing-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.hearing-form-title {
+  font-size: 16px;
+  margin-bottom: 4px;
+  color: var(--primary);
+}
+
+.hearing-form-sub {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 0;
+}
+
+.btn {
+  min-height: 34px;
+  border-radius: 6px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: #475569;
+}
+
+.btn-ghost:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.hearing-pta-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pta-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-left-width: 4px;
+}
+
+.pta-label {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pta-value {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pta-severity {
+  font-size: 12px;
+  color: #475569;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  white-space: nowrap;
+  justify-self: end;
+}
+
+.hearing-warnings {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  margin-bottom: 14px;
+}
+
+.hearing-warnings-title {
+  color: #92400e;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.hearing-warnings ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.hearing-warnings li {
+  color: #78350f;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.ear-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ear-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.ear-card.ear-left {
+  border-top: 3px solid #2563eb;
+}
+
+.ear-card.ear-right {
+  border-top: 3px solid #dc2626;
+}
+
+.ear-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #172033;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ear-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.cond-block {
+  margin-bottom: 12px;
+}
+
+.cond-block:last-child {
+  margin-bottom: 0;
+}
+
+.cond-header {
+  margin-bottom: 8px;
+}
+
+.cond-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.freq-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.freq-cell {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.15s ease;
+}
+
+.freq-cell:hover {
+  border-color: #93c5fd;
+  background: #f0f9ff;
+}
+
+.freq-cell.freq-invalid {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.freq-cell.freq-invalid input {
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.freq-label {
+  font-size: 10.5px;
+  color: #64748b;
+  font-weight: 600;
+  text-align: center;
+}
+
+.freq-cell input {
+  min-height: 32px;
+  height: 32px;
+  padding: 0 6px;
+  font-size: 13px;
+  text-align: center;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.freq-cell input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(21, 94, 117, 0.15);
+}
+
+.freq-warn {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 11px;
+  cursor: help;
+}
+
+.hearing-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.legend-sym {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.legend-left-air {
+  color: #2563eb;
+}
+
+.legend-right-air {
+  color: #dc2626;
+}
+
+.legend-left-bone {
+  color: #2563eb;
+}
+
+.legend-right-bone {
+  color: #dc2626;
+}
+
+.legend-gray {
+  color: #64748b;
+}
+
+.audiogram-panel {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.audiogram-panel-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.audiogram-panel-head h3 {
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.audiogram-panel-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.audiogram-wrap {
+  padding: 12px 16px 10px;
+}
+
+.audiogram-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 6px;
+  padding-bottom: 4px;
+}
+
+.audiogram-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.audiogram-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.audiogram-scroll::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 3px;
+}
+
+.audiogram-svg {
+  display: block;
+  width: 100%;
+  min-width: 640px;
+  height: auto;
+}
+
+.audiogram-tip {
+  padding-top: 6px;
+  text-align: center;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+@media (max-width: 1060px) {
+  .hearing-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .sample-picker {
+    align-items: flex-start;
+  }
+  .sample-chips {
+    justify-content: flex-start;
+  }
+  .hearing-pta-bar,
+  .ear-grid {
+    grid-template-columns: 1fr;
+  }
+  .audiogram-panel-head {
+    padding: 12px 14px;
+  }
+  .audiogram-wrap {
+    padding: 10px 10px 8px;
+  }
+  .freq-row {
+    grid-template-columns: repeat(6, minmax(44px, 1fr));
+    gap: 4px;
+  }
+  .hearing-form {
+    padding: 14px;
+  }
+  .ear-card {
+    padding: 12px;
+  }
+  .freq-cell input {
+    font-size: 12px;
+  }
+  .hearing-legend {
+    gap: 10px;
+    padding: 10px;
+  }
+  .legend-item {
+    font-size: 11px;
+  }
+}
