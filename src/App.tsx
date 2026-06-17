@@ -2,6 +2,7 @@ import "./styles.css";
 import { useState, useRef } from "react";
 import HearingModule from "./hearing/HearingModule";
 import ComparisonModule, { ComparisonModuleHandle } from "./comparison/ComparisonModule";
+import QcModule from "./qc/QcModule";
 import { getComparisonByCustomerId } from "./comparison/comparison.sampleData";
 
 interface CustomerRecord {
@@ -737,6 +738,8 @@ function App() {
           })}
         </div>
       </section>
+
+      <QcModule />
 
       <FollowUpReminder />
 
