@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { HearingRecord } from "./hearing.types";
 import {
   createEmptyRecord,
@@ -38,6 +38,9 @@ export default function HearingModule({
   const draftKey = effectiveCustomerId
     ? `hearing_record_${effectiveCustomerId}`
     : "hearing_record";
+
+  const effectiveCustomerIdRef = useRef(effectiveCustomerId);
+  effectiveCustomerIdRef.current = effectiveCustomerId;
 
   const getInitialRecord = (): HearingRecord => {
     if (showSamples) {
@@ -81,6 +84,7 @@ export default function HearingModule({
 
   useEffect(() => {
     setEditingAudiogramId(null);
+    setActiveSample("");
   }, [effectiveCustomerId]);
 
   const handleSample = (id: string) => {
@@ -103,31 +107,49 @@ export default function HearingModule({
       return;
     }
 
+    const expectedCustomerId = effectiveCustomerIdRef.current;
+    if (!expectedCustomerId) {
+      alert("客户上下文丢失，请重新选择客户");
+      return;
+    }
+
     setSavingStatus("saving");
     try {
+      await saveNow();
+
+      if (effectiveCustomerIdRef.current !== expectedCustomerId) {
+        alert("检测到客户已切换，已取消保存。请确认客户后重试。");
+        setSavingStatus("idle");
+        return;
+      }
+
       let savedAudiogram: AudiogramRecord;
 
       if (editingAudiogramId && aggregate) {
         const existing = aggregate.audiograms.find((a) => a.id === editingAudiogramId);
-        if (existing) {
-          const updated = hearingRecordToAudiogram(record, effectiveCustomerId, existing);
+        if (existing && existing.customerId === expectedCustomerId) {
+          const updated = hearingRecordToAudiogram(record, expectedCustomerId, existing);
           savedAudiogram = await updateAudiogram(updated, "更新听力记录");
         } else {
-          const newAud = hearingRecordToAudiogram(record, effectiveCustomerId);
+          const newAud = hearingRecordToAudiogram(record, expectedCustomerId);
           savedAudiogram = await createAudiogram(newAud);
         }
       } else {
-        const newAud = hearingRecordToAudiogram(record, effectiveCustomerId);
+        const newAud = hearingRecordToAudiogram(record, expectedCustomerId);
         savedAudiogram = await createAudiogram(newAud);
       }
 
-      setSavingStatus("saved");
-      setEditingAudiogramId(savedAudiogram.id);
-      await clearDraft();
+      if (effectiveCustomerIdRef.current !== expectedCustomerId) {
+        alert("保存成功但检测到客户已切换，请刷新页面查看当前客户数据。");
+      } else {
+        setSavingStatus("saved");
+        setEditingAudiogramId(savedAudiogram.id);
+        await clearDraft();
+      }
 
       setTimeout(() => setSavingStatus("idle"), 2000);
 
-      if (onSaved) {
+      if (onSaved && effectiveCustomerIdRef.current === expectedCustomerId) {
         onSaved(savedAudiogram);
       }
     } catch (e) {
