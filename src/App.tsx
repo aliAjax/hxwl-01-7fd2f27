@@ -24,6 +24,7 @@ interface CustomerRecord {
 type FollowUpPriority = "high" | "medium" | "low";
 type ContactStatus = "pending" | "contacted" | "unreachable";
 type FollowUpFilter = "all" | "today" | "week" | "overdue";
+type ContactResult = "contacted" | "unreachable" | "retry";
 
 interface FollowUpRecord {
   id: string;
@@ -36,6 +37,9 @@ interface FollowUpRecord {
   nextFollowUpDate: string;
   hearingAidModel: string;
   notes: string;
+  contactResult?: ContactResult;
+  contactNote?: string;
+  contactedAt?: number;
 }
 
 const project = {
@@ -389,6 +393,12 @@ const contactStatusLabel: Record<ContactStatus, string> = {
   unreachable: "无法联系"
 };
 
+const contactResultLabel: Record<ContactResult, string> = {
+  contacted: "已联系",
+  unreachable: "无法联系",
+  retry: "需再次联系"
+};
+
 const filterOptions: { key: FollowUpFilter; label: string }[] = [
   { key: "all", label: "全部" },
   { key: "today", label: "今日到期" },
@@ -417,19 +427,56 @@ function filterFollowUps(records: FollowUpRecord[], filter: FollowUpFilter): Fol
 
 function FollowUpReminder() {
   const [activeFilter, setActiveFilter] = useState<FollowUpFilter>("all");
+  const [records, setRecords] = useState<FollowUpRecord[]>(followUpRecords);
+  const [contactModal, setContactModal] = useState<{
+    record: FollowUpRecord;
+    actionType: "call" | "sms";
+  } | null>(null);
+  const [tempResult, setTempResult] = useState<ContactResult>("contacted");
+  const [tempNote, setTempNote] = useState("");
 
-  const filtered = filterFollowUps(followUpRecords, activeFilter);
+  const filtered = filterFollowUps(records, activeFilter);
   const sorted = [...filtered].sort((a, b) => a.daysToNext - b.daysToNext);
 
   const counts = {
-    all: followUpRecords.length,
-    today: followUpRecords.filter(r => r.daysToNext === 0).length,
-    week: followUpRecords.filter(r => r.daysToNext > 0 && r.daysToNext <= 7).length,
-    overdue: followUpRecords.filter(r => r.daysToNext < 0).length
+    all: records.length,
+    today: records.filter(r => r.daysToNext === 0).length,
+    week: records.filter(r => r.daysToNext > 0 && r.daysToNext <= 7).length,
+    overdue: records.filter(r => r.daysToNext < 0).length
+  };
+
+  const handleOpenContact = (record: FollowUpRecord, actionType: "call" | "sms") => {
+    setContactModal({ record, actionType });
+    setTempResult(record.contactResult || "contacted");
+    setTempNote(record.contactNote || "");
+  };
+
+  const handleSaveContact = () => {
+    if (!contactModal) return;
+    const { record } = contactModal;
+    setRecords(prev =>
+      prev.map(r =>
+        r.id === record.id
+          ? {
+              ...r,
+              contactResult: tempResult,
+              contactNote: tempNote,
+              contactedAt: Date.now(),
+              contactStatus: tempResult === "contacted" ? "contacted" : tempResult === "unreachable" ? "unreachable" : r.contactStatus
+            }
+          : r
+      )
+    );
+    setContactModal(null);
+  };
+
+  const handleCloseModal = () => {
+    setContactModal(null);
   };
 
   return (
-    <section className="followup panel">
+    <>
+      <section className="followup panel">
       <div className="section-heading">
         <div>
           <p>复诊助理工作台</p>
@@ -479,6 +526,28 @@ function FollowUpReminder() {
                   </div>
                   <p className="followup-model">{record.hearingAidModel}</p>
                   <p className="followup-notes">{record.notes}</p>
+                  {record.contactResult && (
+                    <div className="contact-result-box">
+                      <div className="contact-result-head">
+                        <span className={`contact-result-tag result-${record.contactResult}`}>
+                          {contactResultLabel[record.contactResult]}
+                        </span>
+                        {record.contactedAt && (
+                          <span className="contact-time">
+                            {new Date(record.contactedAt).toLocaleString("zh-CN", {
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </span>
+                        )}
+                      </div>
+                      {record.contactNote && (
+                        <p className="contact-note-text">📝 {record.contactNote}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="followup-tags">
@@ -491,8 +560,26 @@ function FollowUpReminder() {
                 </div>
 
                 <div className="followup-actions">
-                  <button className="followup-btn">拨打电话</button>
-                  <button className="followup-btn secondary">发送短信</button>
+                  <button
+                    className="followup-btn"
+                    onClick={() => handleOpenContact(record, "call")}
+                  >
+                    📞 拨打电话
+                  </button>
+                  <button
+                    className="followup-btn secondary"
+                    onClick={() => handleOpenContact(record, "sms")}
+                  >
+                    💬 发送短信
+                  </button>
+                  {record.contactResult && (
+                    <button
+                      className="followup-btn tertiary"
+                      onClick={() => handleOpenContact(record, "call")}
+                    >
+                      ✏️ 修改记录
+                    </button>
+                  )}
                 </div>
               </article>
             );
@@ -500,6 +587,67 @@ function FollowUpReminder() {
         )}
       </div>
     </section>
+
+    {contactModal && (
+      <div className="modal-overlay" onClick={handleCloseModal}>
+        <div className="modal contact-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal-head">
+            <h2>
+              {contactModal.actionType === "call" ? "📞 电话联系记录" : "💬 短信联系记录"}
+            </h2>
+            <button className="modal-close" onClick={handleCloseModal} aria-label="关闭">
+              ×
+            </button>
+          </div>
+          <div className="modal-body">
+            <div className="contact-customer-info">
+              <div className="contact-customer-name">{contactModal.record.customerName}</div>
+              <div className="contact-customer-sub">
+                {contactModal.record.customerId} · {contactModal.record.hearingAidModel}
+              </div>
+            </div>
+
+            <div className="form-section">
+              <h4>联系结果</h4>
+              <div className="result-options">
+                {(["contacted", "unreachable", "retry"] as ContactResult[]).map(result => (
+                  <button
+                    key={result}
+                    className={`result-option ${tempResult === result ? "result-option-active" : ""} result-${result}`}
+                    onClick={() => setTempResult(result)}
+                  >
+                    <span className="result-icon">
+                      {result === "contacted" ? "✓" : result === "unreachable" ? "✗" : "↻"}
+                    </span>
+                    <span className="result-label">{contactResultLabel[result]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-section">
+              <h4>联系备注</h4>
+              <textarea
+                className="contact-note-input"
+                rows={4}
+                placeholder="请填写联系过程中的简要备注，如：患者反馈、预约情况等..."
+                value={tempNote}
+                onChange={e => setTempNote(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="modal-foot">
+            <button className="ghost-btn" onClick={handleCloseModal}>
+              取消
+            </button>
+            <button className="primary-action" onClick={handleSaveContact}>
+              💾 保存记录
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
