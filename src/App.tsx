@@ -8,6 +8,7 @@ import { getComparisonByCustomerId } from "./comparison/comparison.sampleData";
 import { getSummaryByCustomerId } from "./summary/summary.sampleData";
 import type { FittingSummaryData } from "./summary/summary.types";
 import { useDraft, DraftIndicator } from "./draft";
+import { ArchiveProvider, ArchiveModule } from "./archive";
 
 interface CustomerRecord {
   id: string;
@@ -582,7 +583,10 @@ function HearingAidSelector({
   );
 }
 
+type AppView = "workbench" | "archive";
+
 function App() {
+  const [activeView, setActiveView] = useState<AppView>("workbench");
   const [selectedRecord, setSelectedRecord] = useState<CustomerRecord | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [comparisonCustomerId, setComparisonCustomerId] = useState<string | null>(null);
@@ -674,8 +678,8 @@ function App() {
     }
   };
 
-  return (
-    <main className="app-shell">
+  const workbenchContent = (
+    <>
       <section className="hero">
         <div>
           <p className="eyebrow">{project.id} · port {project.port}</p>
@@ -821,7 +825,44 @@ function App() {
         open={summaryOpen}
         onClose={handleCloseSummary}
       />
-    </main>
+    </>
+  );
+
+  return (
+    <ArchiveProvider>
+      <main className="app-shell">
+        <nav className="app-nav">
+          <div className="app-nav-brand">
+            <span className="brand-mark">🦻</span>
+            <div>
+              <h1>{project.title}</h1>
+              <p className="brand-sub">{project.subtitle}</p>
+            </div>
+          </div>
+          <div className="app-nav-tabs">
+            <button
+              className={`nav-tab ${activeView === "workbench" ? "nav-tab-active" : ""}`}
+              onClick={() => setActiveView("workbench")}
+            >
+              <span className="nav-tab-icon">🎯</span>
+              <span>验配工作台</span>
+            </button>
+            <button
+              className={`nav-tab ${activeView === "archive" ? "nav-tab-active" : ""}`}
+              onClick={() => setActiveView("archive")}
+            >
+              <span className="nav-tab-icon">📚</span>
+              <span>档案库</span>
+            </button>
+          </div>
+          <div className="app-nav-actions">
+            <span className="nav-project-tag">{project.id}</span>
+          </div>
+        </nav>
+
+        {activeView === "workbench" ? workbenchContent : <ArchiveModule />}
+      </main>
+    </ArchiveProvider>
   );
 }
 
