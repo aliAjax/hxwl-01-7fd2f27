@@ -83,15 +83,19 @@ export default function ArchiveModule() {
   const handleSaveView = useCallback(() => {
     const name = savingViewName.trim();
     if (!name) return;
-    saveFilterView(name, filter);
+    const newView = saveFilterView(name, filter);
     setSavingViewName("");
     setShowSaveInput(false);
     refreshViews();
+    setActiveViewId(newView.id);
   }, [savingViewName, filter, refreshViews]);
 
   const handleDeleteView = useCallback((id: string) => {
     deleteFilterView(id);
-    if (activeViewId === id) setActiveViewId(null);
+    if (activeViewId === id) {
+      setActiveViewId(null);
+      setFilter({ keyword: "", hearingLossType: "all", gender: "all", syncStatus: "all" });
+    }
     setViewMenuOpenId(null);
     refreshViews();
   }, [activeViewId, refreshViews]);
