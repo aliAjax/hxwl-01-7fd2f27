@@ -3,7 +3,10 @@ import { useState, useRef } from "react";
 import HearingModule from "./hearing/HearingModule";
 import ComparisonModule, { ComparisonModuleHandle } from "./comparison/ComparisonModule";
 import QcModule from "./qc/QcModule";
+import FittingSummary from "./summary/FittingSummary";
 import { getComparisonByCustomerId } from "./comparison/comparison.sampleData";
+import { getSummaryByCustomerId } from "./summary/summary.sampleData";
+import type { FittingSummaryData } from "./summary/summary.types";
 
 interface CustomerRecord {
   id: string;
@@ -582,6 +585,8 @@ function App() {
   const [selectedRecord, setSelectedRecord] = useState<CustomerRecord | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [comparisonCustomerId, setComparisonCustomerId] = useState<string | null>(null);
+  const [summaryData, setSummaryData] = useState<FittingSummaryData | null>(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [formValues, setFormValues] = useState<Record<string, string>>(
     () => Object.fromEntries(project.fields.map((f: string) => [f, ""]))
   );
@@ -629,6 +634,25 @@ function App() {
     setTimeout(() => {
       recordsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
+  };
+
+  const handleExportSummary = (customerId: string) => {
+    const summary = getSummaryByCustomerId(customerId);
+    if (summary) {
+      setSummaryData(summary);
+      setSummaryOpen(true);
+    }
+  };
+
+  const handleCloseSummary = () => {
+    setSummaryOpen(false);
+  };
+
+  const handleExportAllSummary = () => {
+    const firstRecord = project.records[0];
+    if (firstRecord) {
+      handleExportSummary(firstRecord.customerId);
+    }
   };
 
   return (
@@ -705,11 +729,12 @@ function App() {
             <p>示例数据</p>
             <h2>近期记录</h2>
           </div>
-          <button>导出摘要</button>
+          <button className="primary-action" onClick={handleExportAllSummary}>导出摘要</button>
         </div>
         <div className="record-list">
           {project.records.map((record: CustomerRecord, index: number) => {
             const hasComparison = !!getComparisonByCustomerId(record.customerId);
+            const hasSummary = !!getSummaryByCustomerId(record.customerId);
             const isActive = comparisonCustomerId === record.customerId;
             return (
               <article
@@ -722,14 +747,27 @@ function App() {
                   <h3>{record.customerId}</h3>
                   <p>{record.hearingLossType} · {record.fittingStage} · {record.hearingAidModel}</p>
                 </div>
-                {hasComparison && (
+                {(hasComparison || hasSummary) && (
                   <div className="record-card-actions">
-                    <button
-                      className="record-card-action-btn"
-                      onClick={(e) => handleCompareClick(record.customerId, e)}
-                    >
-                      验配对比
-                    </button>
+                    {hasComparison && (
+                      <button
+                        className="record-card-action-btn"
+                        onClick={(e) => handleCompareClick(record.customerId, e)}
+                      >
+                        验配对比
+                      </button>
+                    )}
+                    {hasSummary && (
+                      <button
+                        className="record-card-action-btn record-card-btn-summary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleExportSummary(record.customerId);
+                        }}
+                      >
+                        导出摘要
+                      </button>
+                    )}
                   </div>
                 )}
                 <div className="record-arrow">→</div>
@@ -747,6 +785,12 @@ function App() {
         record={selectedRecord}
         open={drawerOpen}
         onClose={handleCloseDrawer}
+      />
+
+      <FittingSummary
+        data={summaryData}
+        open={summaryOpen}
+        onClose={handleCloseSummary}
       />
     </main>
   );
