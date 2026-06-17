@@ -598,6 +598,7 @@ function App() {
     status: draftStatus,
     lastSavedAt,
     isSupported,
+    storageType,
     hasDraft,
     saveNow,
     updateData,
@@ -721,6 +722,7 @@ function App() {
             status={draftStatus}
             lastSavedAt={lastSavedAt}
             isSupported={isSupported}
+            storageType={storageType}
             hasDraft={hasDraft}
             onClear={clearDraft}
             onSave={saveNow}

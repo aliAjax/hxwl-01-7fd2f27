@@ -1,9 +1,11 @@
 import { DraftStatus, formatLastSaved } from "./useDraft";
+import { StorageType } from "./draftStorage";
 
 interface DraftIndicatorProps {
   status: DraftStatus;
   lastSavedAt: number | null;
   isSupported: boolean;
+  storageType: StorageType;
   hasDraft: boolean;
   onClear?: () => void;
   onSave?: () => void;
@@ -30,6 +32,7 @@ export default function DraftIndicator({
   status,
   lastSavedAt,
   isSupported,
+  storageType,
   hasDraft,
   onClear,
   onSave,
@@ -49,6 +52,45 @@ export default function DraftIndicator({
           <span className="draft-hint">
             请使用现代浏览器（Chrome、Firefox、Safari）以启用自动保存
           </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (storageType === "localstorage") {
+    return (
+      <div className={`draft-indicator draft-localstorage ${className}`}>
+        <span className="draft-icon">ℹ</span>
+        <div className="draft-info">
+          <span className="draft-status draft-status-localstorage">
+            当前使用本地存储（降级模式）
+          </span>
+          <span className="draft-hint">
+            您的浏览器不支持 IndexedDB，已自动降级为 LocalStorage。草稿数据可能会在清理浏览器缓存时丢失。
+          </span>
+          {lastSavedAt && (
+            <span className="draft-time">{lastSavedText}</span>
+          )}
+        </div>
+        <div className="draft-actions">
+          {onSave && status !== "saving" && (
+            <button
+              className="draft-action-btn"
+              onClick={onSave}
+              title="立即保存"
+            >
+              保存
+            </button>
+          )}
+          {onClear && hasDraft && (
+            <button
+              className="draft-action-btn draft-clear-btn"
+              onClick={onClear}
+              title="清空草稿"
+            >
+              清空草稿
+            </button>
+          )}
         </div>
       </div>
     );

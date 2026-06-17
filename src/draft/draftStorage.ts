@@ -5,8 +5,11 @@ export interface DraftData {
   version: number;
 }
 
+export type StorageType = "indexeddb" | "localstorage" | "none";
+
 export interface DraftStorage {
   isSupported: boolean;
+  storageType: StorageType;
   save: (key: string, data: DraftData) => Promise<void>;
   load: (key: string) => Promise<DraftData | null>;
   remove: (key: string) => Promise<void>;
@@ -24,6 +27,7 @@ function isIndexedDBSupported(): boolean {
 
 class IndexedDBStorage implements DraftStorage {
   isSupported = true;
+  storageType: StorageType = "indexeddb";
   private dbPromise: Promise<IDBDatabase> | null = null;
 
   private openDB(): Promise<IDBDatabase> {
@@ -112,6 +116,7 @@ class IndexedDBStorage implements DraftStorage {
 
 class LocalStorageFallback implements DraftStorage {
   isSupported = true;
+  storageType: StorageType = "localstorage";
   private prefix = "hearing_draft_";
 
   async save(key: string, data: DraftData): Promise<void> {
@@ -146,6 +151,7 @@ class LocalStorageFallback implements DraftStorage {
 
 class NoopStorage implements DraftStorage {
   isSupported = false;
+  storageType: StorageType = "none";
 
   async save(): Promise<void> {
     throw new Error("当前浏览器不支持本地存储");

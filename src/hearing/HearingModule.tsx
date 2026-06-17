@@ -15,6 +15,7 @@ export default function HearingModule() {
     status: draftStatus,
     lastSavedAt,
     isSupported,
+    storageType,
     hasDraft,
     saveNow,
     updateRecord,
@@ -36,7 +37,7 @@ export default function HearingModule() {
   };
 
   const handleClear = async () => {
-    await clearDraft();
+    await clearDraft(createEmptyRecord());
     setActiveSample("");
   };
 
@@ -77,6 +78,7 @@ export default function HearingModule() {
         status={draftStatus}
         lastSavedAt={lastSavedAt}
         isSupported={isSupported}
+        storageType={storageType}
         hasDraft={hasDraft}
         onClear={handleClear}
         onSave={saveNow}

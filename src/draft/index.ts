@@ -3,7 +3,7 @@ export {
   createDraftData,
   STORAGE_VERSION
 } from "./draftStorage";
-export type { DraftData, DraftStorage } from "./draftStorage";
+export type { DraftData, DraftStorage, StorageType } from "./draftStorage";
 export { useDraft, useHearingDraft, formatLastSaved } from "./useDraft";
 export type {
   DraftStatus,

@@ -3965,6 +3965,11 @@ input {
   border-color: #fcd34d;
 }
 
+.draft-indicator.draft-localstorage {
+  background: #fffbeb;
+  border-color: #fbbf24;
+}
+
 .draft-icon {
   font-size: 18px;
   width: 24px;
@@ -4016,6 +4021,11 @@ input {
 
 .draft-unsupported .draft-status,
 .draft-status.draft-unsupported {
+  color: #92400e;
+}
+
+.draft-localstorage .draft-status,
+.draft-status.draft-status-localstorage {
   color: #92400e;
 }
 

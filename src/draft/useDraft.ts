@@ -3,7 +3,8 @@ import {
   getDraftStorage,
   createDraftData,
   DraftData,
-  DraftStorage
+  DraftStorage,
+  StorageType
 } from "./draftStorage";
 
 export type DraftStatus =
@@ -27,10 +28,11 @@ export interface UseDraftResult<T> {
   status: DraftStatus;
   lastSavedAt: number | null;
   isSupported: boolean;
+  storageType: StorageType;
   hasDraft: boolean;
   saveNow: () => Promise<void>;
   updateData: (updater: T | ((prev: T) => T)) => void;
-  clearDraft: () => Promise<void>;
+  clearDraft: (resetData?: T) => Promise<void>;
   loadDraft: () => Promise<void>;
 }
 
@@ -48,6 +50,7 @@ export function useDraft<T>(options: UseDraftOptions<T>): UseDraftResult<T> {
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [hasDraft, setHasDraft] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
+  const [storageType, setStorageType] = useState<StorageType>("indexeddb");
   const [storage, setStorage] = useState<DraftStorage | null>(null);
 
   const dataRef = useRef(data);
@@ -55,15 +58,6 @@ export function useDraft<T>(options: UseDraftOptions<T>): UseDraftResult<T> {
   const pendingSaveRef = useRef(false);
 
   dataRef.current = data;
-
-  useEffect(() => {
-    const s = getDraftStorage();
-    setStorage(s);
-    setIsSupported(s.isSupported);
-    if (!s.isSupported) {
-      setStatus("unsupported");
-    }
-  }, []);
 
   const saveDraft = useCallback(async () => {
     if (!storage || !storage.isSupported) return;
@@ -143,20 +137,31 @@ export function useDraft<T>(options: UseDraftOptions<T>): UseDraftResult<T> {
     }
   }, [storage, key, onLoaded, onError]);
 
-  const clearDraft = useCallback(async () => {
+  const clearDraft = useCallback(async (resetData?: T) => {
     if (!storage || !storage.isSupported) return;
 
     try {
       await storage.remove(key);
       setHasDraft(false);
       setLastSavedAt(null);
-      setData(initialData);
-      dataRef.current = initialData;
+      const newData = resetData !== undefined ? resetData : initialData;
+      setData(newData);
+      dataRef.current = newData;
     } catch (e) {
       setStatus("error");
       if (onError) onError(e as Error);
     }
   }, [storage, key, initialData, onError]);
+
+  useEffect(() => {
+    const s = getDraftStorage();
+    setStorage(s);
+    setIsSupported(s.isSupported);
+    setStorageType(s.storageType);
+    if (!s.isSupported) {
+      setStatus("unsupported");
+    }
+  }, []);
 
   useEffect(() => {
     if (storage && storage.isSupported) {
@@ -180,6 +185,7 @@ export function useDraft<T>(options: UseDraftOptions<T>): UseDraftResult<T> {
     status,
     lastSavedAt,
     isSupported,
+    storageType,
     hasDraft,
     saveNow,
     updateData,
@@ -215,10 +221,11 @@ export interface UseHearingDraftResult<T> {
   status: DraftStatus;
   lastSavedAt: number | null;
   isSupported: boolean;
+  storageType: StorageType;
   hasDraft: boolean;
   saveNow: () => Promise<void>;
   updateRecord: (updater: T | ((prev: T) => T)) => void;
-  clearDraft: () => Promise<void>;
+  clearDraft: (resetData?: T) => Promise<void>;
   loadDraft: () => Promise<void>;
 }
 
@@ -232,6 +239,7 @@ export function useHearingDraft<T>(
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [hasDraft, setHasDraft] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
+  const [storageType, setStorageType] = useState<StorageType>("indexeddb");
   const [storage, setStorage] = useState<DraftStorage | null>(null);
 
   const recordRef = useRef(record);
@@ -244,6 +252,7 @@ export function useHearingDraft<T>(
     const s = getDraftStorage();
     setStorage(s);
     setIsSupported(s.isSupported);
+    setStorageType(s.storageType);
     if (!s.isSupported) {
       setStatus("unsupported");
     }
@@ -324,15 +333,16 @@ export function useHearingDraft<T>(
     }
   }, [storage, key]);
 
-  const clearDraft = useCallback(async () => {
+  const clearDraft = useCallback(async (resetData?: T) => {
     if (!storage || !storage.isSupported) return;
 
     try {
       await storage.remove(key);
       setHasDraft(false);
       setLastSavedAt(null);
-      setRecord(initialRecord as T);
-      recordRef.current = initialRecord as T;
+      const newData = resetData !== undefined ? resetData : (initialRecord as T);
+      setRecord(newData);
+      recordRef.current = newData;
     } catch (e) {
       setStatus("error");
     }
@@ -360,6 +370,7 @@ export function useHearingDraft<T>(
     status,
     lastSavedAt,
     isSupported,
+    storageType,
     hasDraft,
     saveNow,
     updateRecord,
