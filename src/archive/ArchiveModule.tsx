@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useArchive } from "./ArchiveContext";
 import type { CustomerProfile, HearingLossType, Gender } from "./archive.types";
 import { createEmptyCustomer } from "./archive.types";
@@ -6,13 +6,14 @@ import CustomerDetail from "./CustomerDetail";
 import VersionHistoryModal from "./VersionHistoryModal";
 import ConflictResolver from "./ConflictResolver";
 import { useHearingDraft, DraftIndicator } from "../draft";
-
-type FilterState = {
-  keyword: string;
-  hearingLossType: string;
-  gender: string;
-  syncStatus: string;
-};
+import {
+  getFilterViews,
+  saveFilterView,
+  renameFilterView,
+  deleteFilterView,
+  type FilterView,
+  type FilterState,
+} from "./filterView.storage";
 
 export default function ArchiveModule() {
   const {
@@ -43,6 +44,73 @@ export default function ArchiveModule() {
   const [versionModalOpen, setVersionModalOpen] = useState(false);
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
   const [changeNote, setChangeNote] = useState("");
+
+  const [savedViews, setSavedViews] = useState<FilterView[]>([]);
+  const [activeViewId, setActiveViewId] = useState<string | null>(null);
+  const [savingViewName, setSavingViewName] = useState("");
+  const [showSaveInput, setShowSaveInput] = useState(false);
+  const [renamingViewId, setRenamingViewId] = useState<string | null>(null);
+  const [renamingViewName, setRenamingViewName] = useState("");
+  const [viewMenuOpenId, setViewMenuOpenId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSavedViews(getFilterViews());
+  }, []);
+
+  useEffect(() => {
+    if (!viewMenuOpenId) return;
+    const handleClick = () => setViewMenuOpenId(null);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [viewMenuOpenId]);
+
+  const refreshViews = useCallback(() => {
+    setSavedViews(getFilterViews());
+  }, []);
+
+  const handleApplyView = useCallback((view: FilterView) => {
+    setFilter(view.filter);
+    setActiveViewId(view.id);
+    setViewMenuOpenId(null);
+  }, []);
+
+  const handleClearView = useCallback(() => {
+    setFilter({ keyword: "", hearingLossType: "all", gender: "all", syncStatus: "all" });
+    setActiveViewId(null);
+    setViewMenuOpenId(null);
+  }, []);
+
+  const handleSaveView = useCallback(() => {
+    const name = savingViewName.trim();
+    if (!name) return;
+    saveFilterView(name, filter);
+    setSavingViewName("");
+    setShowSaveInput(false);
+    refreshViews();
+  }, [savingViewName, filter, refreshViews]);
+
+  const handleDeleteView = useCallback((id: string) => {
+    deleteFilterView(id);
+    if (activeViewId === id) setActiveViewId(null);
+    setViewMenuOpenId(null);
+    refreshViews();
+  }, [activeViewId, refreshViews]);
+
+  const handleStartRename = useCallback((view: FilterView) => {
+    setRenamingViewId(view.id);
+    setRenamingViewName(view.name);
+    setViewMenuOpenId(null);
+  }, []);
+
+  const handleConfirmRename = useCallback(() => {
+    if (!renamingViewId) return;
+    const name = renamingViewName.trim();
+    if (!name) return;
+    renameFilterView(renamingViewId, name);
+    setRenamingViewId(null);
+    setRenamingViewName("");
+    refreshViews();
+  }, [renamingViewId, renamingViewName, refreshViews]);
 
   const filteredCustomers = useMemo(() => {
     return customers.filter((c) => {
@@ -173,11 +241,11 @@ export default function ArchiveModule() {
             className="archive-search"
             placeholder="搜索客户姓名/编号/电话..."
             value={filter.keyword}
-            onChange={(e) => setFilter({ ...filter, keyword: e.target.value })}
+            onChange={(e) => { setFilter({ ...filter, keyword: e.target.value }); setActiveViewId(null); }}
           />
           <select
             value={filter.hearingLossType}
-            onChange={(e) => setFilter({ ...filter, hearingLossType: e.target.value })}
+            onChange={(e) => { setFilter({ ...filter, hearingLossType: e.target.value }); setActiveViewId(null); }}
           >
             <option value="all">全部听损类型</option>
             <option value="感音神经性">感音神经性</option>
@@ -188,7 +256,7 @@ export default function ArchiveModule() {
           </select>
           <select
             value={filter.gender}
-            onChange={(e) => setFilter({ ...filter, gender: e.target.value })}
+            onChange={(e) => { setFilter({ ...filter, gender: e.target.value }); setActiveViewId(null); }}
           >
             <option value="all">全部性别</option>
             <option value="male">男</option>
@@ -197,7 +265,7 @@ export default function ArchiveModule() {
           </select>
           <select
             value={filter.syncStatus}
-            onChange={(e) => setFilter({ ...filter, syncStatus: e.target.value })}
+            onChange={(e) => { setFilter({ ...filter, syncStatus: e.target.value }); setActiveViewId(null); }}
           >
             <option value="all">全部同步状态</option>
             <option value="local">仅本地</option>
@@ -221,6 +289,103 @@ export default function ArchiveModule() {
           <button className="primary-action" onClick={handleNew}>
             + 新增客户档案
           </button>
+        </div>
+      </div>
+
+      <div className="filter-view-bar">
+        <div className="filter-view-left">
+          <span className="filter-view-label">常用筛选</span>
+          <button
+            className={`filter-view-chip ${!activeViewId ? "fv-active" : ""}`}
+            onClick={handleClearView}
+          >
+            全部
+          </button>
+          {savedViews.map((v) => (
+            <div key={v.id} className="filter-view-chip-wrap">
+              {renamingViewId === v.id ? (
+                <div className="fv-rename-row">
+                  <input
+                    className="fv-rename-input"
+                    value={renamingViewName}
+                    onChange={(e) => setRenamingViewName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleConfirmRename();
+                      if (e.key === "Escape") setRenamingViewId(null);
+                    }}
+                    autoFocus
+                  />
+                  <button className="fv-rename-ok" onClick={handleConfirmRename}>✓</button>
+                  <button className="fv-rename-cancel" onClick={() => setRenamingViewId(null)}>✕</button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    className={`filter-view-chip ${activeViewId === v.id ? "fv-active" : ""}`}
+                    onClick={() => handleApplyView(v)}
+                  >
+                    {v.name}
+                  </button>
+                  <button
+                    className="fv-menu-toggle"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewMenuOpenId(viewMenuOpenId === v.id ? null : v.id);
+                    }}
+                  >
+                    ▾
+                  </button>
+                </>
+              )}
+              {viewMenuOpenId === v.id && renamingViewId !== v.id && (
+                <div className="fv-menu">
+                  <button
+                    className="fv-menu-item"
+                    onClick={() => handleStartRename(v)}
+                  >
+                    ✎ 重命名
+                  </button>
+                  <button
+                    className="fv-menu-item fv-menu-danger"
+                    onClick={() => handleDeleteView(v.id)}
+                  >
+                    🗑 删除视图
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="filter-view-right">
+          {showSaveInput ? (
+            <div className="fv-save-row">
+              <input
+                className="fv-save-input"
+                value={savingViewName}
+                onChange={(e) => setSavingViewName(e.target.value)}
+                placeholder="输入视图名称..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveView();
+                  if (e.key === "Escape") { setShowSaveInput(false); setSavingViewName(""); }
+                }}
+                autoFocus
+              />
+              <button className="fv-save-ok" onClick={handleSaveView}>保存</button>
+              <button
+                className="fv-save-cancel"
+                onClick={() => { setShowSaveInput(false); setSavingViewName(""); }}
+              >
+                取消
+              </button>
+            </div>
+          ) : (
+            <button
+              className="ghost-btn"
+              onClick={() => setShowSaveInput(true)}
+            >
+              💾 保存为视图
+            </button>
+          )}
         </div>
       </div>
 
