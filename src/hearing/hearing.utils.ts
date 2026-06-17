@@ -8,6 +8,12 @@ import {
   EarSide,
   ConductionType
 } from "./hearing.types";
+import type {
+  AudiogramRecord,
+  EarAudiogram,
+  CustomerProfile
+} from "../archive/archive.types";
+import { createEmptyAudiogram, calcPta as archiveCalcPta } from "../archive/archive.types";
 
 export function createEmptyThresholds(): ThresholdPoint[] {
   return FREQUENCIES.map((freq): ThresholdPoint => ({
@@ -128,4 +134,116 @@ export function findAnomalies(record: HearingRecord): string[] {
     });
   });
   return msgs;
+}
+
+export function audiogramToHearingRecord(audiogram: AudiogramRecord): HearingRecord {
+  const convertPoints = (points: { frequency: Frequency; value: number | null; valid?: boolean }[]): ThresholdPoint[] => {
+    return FREQUENCIES.map((freq) => {
+      const p = points.find((x) => x.frequency === freq);
+      return {
+        frequency: freq,
+        value: p?.value ?? null,
+        valid: p?.valid ?? true,
+        warning: undefined
+      };
+    });
+  };
+
+  return {
+    left: {
+      air: convertPoints(audiogram.left.air),
+      bone: convertPoints(audiogram.left.bone)
+    },
+    right: {
+      air: convertPoints(audiogram.right.air),
+      bone: convertPoints(audiogram.right.bone)
+    },
+    meta: {
+      patientName: undefined,
+      testDate: audiogram.testDate,
+      tester: audiogram.tester,
+      testEnvironment: audiogram.testEnvironment,
+      notes: audiogram.remark
+    },
+    speechRecognitionScore: audiogram.speechRecognitionScore
+      ? {
+          left: audiogram.speechRecognitionScore.left,
+          right: audiogram.speechRecognitionScore.right,
+          binaural: audiogram.speechRecognitionScore.binaural
+        }
+      : undefined
+  };
+}
+
+export function hearingRecordToAudiogram(
+  record: HearingRecord,
+  customerId: string,
+  existingAudiogram?: AudiogramRecord
+): AudiogramRecord {
+  const convertPoints = (points: ThresholdPoint[]): { frequency: Frequency; value: number | null; valid: boolean }[] => {
+    return points.map((p) => ({
+      frequency: p.frequency,
+      value: p.value,
+      valid: p.valid !== false
+    }));
+  };
+
+  if (existingAudiogram) {
+    return {
+      ...existingAudiogram,
+      testDate: record.meta?.testDate || existingAudiogram.testDate,
+      tester: record.meta?.tester || existingAudiogram.tester,
+      testEnvironment: record.meta?.testEnvironment || existingAudiogram.testEnvironment,
+      left: {
+        ...existingAudiogram.left,
+        air: convertPoints(record.left.air),
+        bone: convertPoints(record.left.bone)
+      },
+      right: {
+        ...existingAudiogram.right,
+        air: convertPoints(record.right.air),
+        bone: convertPoints(record.right.bone)
+      },
+      speechRecognitionScore: record.speechRecognitionScore
+        ? {
+            left: record.speechRecognitionScore.left,
+            right: record.speechRecognitionScore.right,
+            binaural: record.speechRecognitionScore.binaural
+          }
+        : existingAudiogram.speechRecognitionScore,
+      remark: record.meta?.notes || existingAudiogram.remark,
+      pta: {
+        left: archiveCalcPta(record.left.air),
+        right: archiveCalcPta(record.right.air)
+      }
+    };
+  }
+
+  const empty = createEmptyAudiogram(customerId);
+  return {
+    ...empty,
+    testDate: record.meta?.testDate || empty.testDate,
+    tester: record.meta?.tester,
+    testEnvironment: record.meta?.testEnvironment,
+    left: {
+      air: convertPoints(record.left.air),
+      bone: convertPoints(record.left.bone)
+    },
+    right: {
+      air: convertPoints(record.right.air),
+      bone: convertPoints(record.right.bone)
+    },
+    speechRecognitionScore: record.speechRecognitionScore
+      ? {
+          left: record.speechRecognitionScore.left,
+          right: record.speechRecognitionScore.right,
+          binaural: record.speechRecognitionScore.binaural
+        }
+      : undefined,
+    remark: record.meta?.notes,
+    pta: {
+      left: archiveCalcPta(record.left.air),
+      right: archiveCalcPta(record.right.air)
+    }
+  };
 }

@@ -16,6 +16,7 @@ interface Props {
   record: HearingRecord;
   onChange: (next: HearingRecord) => void;
   onClear: () => void;
+  showMetaFields?: boolean;
 }
 
 const SIDE_LABEL: Record<EarSide, string> = { left: "左耳", right: "右耳" };
@@ -23,7 +24,7 @@ const COND_LABEL: Record<ConductionType, string> = { air: "气导 AC", bone: "�
 const COND_UNIT: Record<ConductionType, string> = { air: "○×", bone: "[]" };
 const SIDE_COLOR: Record<EarSide, string> = { left: "#2563eb", right: "#dc2626" };
 
-export default function HearingForm({ record, onChange, onClear }: Props) {
+export default function HearingForm({ record, onChange, onClear, showMetaFields = false }: Props) {
   const anomalies = findAnomalies(record);
   const ptaLeft = computePTA(record.left);
   const ptaRight = computePTA(record.right);
@@ -36,6 +37,27 @@ export default function HearingForm({ record, onChange, onClear }: Props) {
   ) => {
     const raw = val.trim() === "" ? null : val;
     onChange(updateThreshold(record, side, cond, freq, raw));
+  };
+
+  const handleMetaChange = (field: "testDate" | "tester" | "testEnvironment" | "notes", value: string) => {
+    onChange({
+      ...record,
+      meta: {
+        ...record.meta,
+        [field]: value || undefined
+      }
+    });
+  };
+
+  const handleSpeechChange = (side: "left" | "right" | "binaural", value: string) => {
+    const numVal = value === "" ? undefined : Number(value);
+    onChange({
+      ...record,
+      speechRecognitionScore: {
+        ...record.speechRecognitionScore,
+        [side]: numVal
+      }
+    });
   };
 
   return (
@@ -149,6 +171,95 @@ export default function HearingForm({ record, onChange, onClear }: Props) {
           ┈ 虚线 = 有缺失频点
         </div>
       </div>
+
+      {showMetaFields && (
+        <div className="hearing-meta-section">
+          <h4 className="section-subtitle">测试信息</h4>
+          <div className="meta-grid">
+            <label className="meta-field">
+              <span>测试日期</span>
+              <input
+                type="date"
+                value={record.meta?.testDate || ""}
+                onChange={(e) => handleMetaChange("testDate", e.target.value)}
+              />
+            </label>
+            <label className="meta-field">
+              <span>测试者</span>
+              <input
+                type="text"
+                value={record.meta?.tester || ""}
+                onChange={(e) => handleMetaChange("tester", e.target.value)}
+                placeholder="如：李听力师"
+              />
+            </label>
+            <label className="meta-field span-2">
+              <span>测试环境</span>
+              <input
+                type="text"
+                value={record.meta?.testEnvironment || ""}
+                onChange={(e) => handleMetaChange("testEnvironment", e.target.value)}
+                placeholder="如：标准测听室 / 门店诊室"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      {showMetaFields && (
+        <div className="hearing-speech-section">
+          <h4 className="section-subtitle">言语识别率 (%)</h4>
+          <div className="speech-grid">
+            <label className="speech-field">
+              <span>左耳</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={record.speechRecognitionScore?.left ?? ""}
+                onChange={(e) => handleSpeechChange("left", e.target.value)}
+                placeholder="0-100"
+              />
+            </label>
+            <label className="speech-field">
+              <span>右耳</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={record.speechRecognitionScore?.right ?? ""}
+                onChange={(e) => handleSpeechChange("right", e.target.value)}
+                placeholder="0-100"
+              />
+            </label>
+            <label className="speech-field">
+              <span>双耳</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={record.speechRecognitionScore?.binaural ?? ""}
+                onChange={(e) => handleSpeechChange("binaural", e.target.value)}
+                placeholder="0-100"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      {showMetaFields && (
+        <div className="hearing-notes-section">
+          <label className="notes-field">
+            <span>备注</span>
+            <textarea
+              rows={3}
+              value={record.meta?.notes || ""}
+              onChange={(e) => handleMetaChange("notes", e.target.value)}
+              placeholder="测试中发现的特殊情况、患者主诉等"
+            />
+          </label>
+        </div>
+      )}
     </div>
   );
 }

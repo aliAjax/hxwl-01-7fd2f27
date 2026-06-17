@@ -8565,3 +8565,242 @@ input {
     width: 100%;
   }
 }
+
+.info-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.info-card-head h4 {
+  margin-bottom: 0;
+}
+
+.ghost-btn.small {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.latest-audiogram-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.latest-aud-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #475569;
+}
+
+.aud-date,
+.aud-tester,
+.aud-speech {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tab-section-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.ghost-btn {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: #475569;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.ghost-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #172033;
+}
+
+.empty-audiogram-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px 20px;
+}
+
+.empty-audiogram-state .primary-action.large {
+  min-height: 44px;
+  padding: 0 24px;
+  font-size: 15px;
+}
+
+.audiogram-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.audiogram-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.audiogram-card:hover {
+  border-color: #94a3b8;
+}
+
+.audiogram-card.expanded {
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(21, 94, 117, 0.1);
+}
+
+.audiogram-card .entity-head {
+  cursor: pointer;
+  user-select: none;
+}
+
+.entity-head-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entity-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expand-icon {
+  font-size: 10px;
+  color: #64748b;
+  transition: transform 0.2s ease;
+  width: 16px;
+  text-align: center;
+}
+
+.pta-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #f0fdf4;
+  color: #166534;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pta-tag.small {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.audiogram-expanded {
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aud-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 20px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.aud-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.meta-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.aud-chart-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.aud-remark {
+  padding: 12px 16px;
+  background: #fffbeb;
+  border-radius: 8px;
+  border-left: 3px solid #f59e0b;
+}
+
+.aud-remark .meta-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #92400e;
+  font-size: 12px;
+}
+
+.aud-remark p {
+  margin: 0;
+  color: #78350f;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.aud-detail-footer {
+  font-size: 12px;
+  color: #94a3b8;
+  padding-top: 4px;
+}
+
+.row-btn.primary {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.row-btn.primary:hover {
+  background: #0f4b5e;
+  border-color: #0f4b5e;
+}
+
+.workbench-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.workbench-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.workbench-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.workbench-header .muted.small {
+  font-size: 13px;
+  font-weight: 400;
+  color: #64748b;
+}

@@ -17,6 +17,10 @@ import {
   calcPta,
   FREQUENCIES
 } from "./archive.types";
+import HearingModule from "../hearing/HearingModule";
+import AudiogramChart from "../hearing/AudiogramChart";
+import { audiogramToHearingRecord } from "../hearing/hearing.utils";
+import type { HearingRecord } from "../hearing/hearing.types";
 
 interface Props {
   aggregate: CustomerAggregate;
@@ -55,8 +59,12 @@ export default function CustomerDetail({
   const [tab, setTab] = useState<"overview" | "audiogram" | "fitting" | "followup">("overview");
   const [modal, setModal] = useState<ModalState>(null);
   const [changeNote, setChangeNote] = useState("");
+  const [showWorkbench, setShowWorkbench] = useState(false);
+  const [workbenchAudiogramId, setWorkbenchAudiogramId] = useState<string | null>(null);
+  const [expandedAudiogramId, setExpandedAudiogramId] = useState<string | null>(null);
 
   const hasConflict = profile.conflict?.hasConflict || profile.syncStatus === "conflict";
+  const latestAudiogram = audiograms.length > 0 ? audiograms[0] : null;
 
   const addAudiogram = () => {
     const a = createEmptyAudiogram(profile.id);
@@ -104,6 +112,29 @@ export default function CustomerDetail({
   const handleDeleteFollowUp = async (id: string) => {
     if (!confirm("确定删除这条复诊记录？此操作可通过版本历史恢复。")) return;
     await deleteFollowUp(id);
+  };
+
+  const openWorkbenchNew = () => {
+    setWorkbenchAudiogramId(null);
+    setShowWorkbench(true);
+  };
+
+  const openWorkbenchEdit = (a: AudiogramRecord) => {
+    setWorkbenchAudiogramId(a.id);
+    setShowWorkbench(true);
+  };
+
+  const closeWorkbench = () => {
+    setShowWorkbench(false);
+    setWorkbenchAudiogramId(null);
+  };
+
+  const handleWorkbenchSaved = () => {
+    closeWorkbench();
+  };
+
+  const toggleExpandAudiogram = (id: string) => {
+    setExpandedAudiogramId(expandedAudiogramId === id ? null : id);
   };
 
   const handleSaveAudiogram = async (a: AudiogramRecord, note: string) => {
@@ -239,6 +270,27 @@ export default function CustomerDetail({
       </div>
 
       <div className="tab-body">
+        {showWorkbench ? (
+          <div className="workbench-view">
+            <div className="workbench-header">
+              <button className="ghost-btn" onClick={closeWorkbench}>
+                ← 返回客户详情
+              </button>
+              <h3>
+                {workbenchAudiogramId ? "编辑听力图" : "新增听力图"}
+                <span className="muted small"> · {profile.name}</span>
+              </h3>
+            </div>
+            <HearingModule
+              customerId={profile.id}
+              audiogramId={workbenchAudiogramId ?? undefined}
+              onSaved={handleWorkbenchSaved}
+              onCancel={closeWorkbench}
+              showHeader={false}
+            />
+          </div>
+        ) : (
+          <>
         {tab === "overview" && (
           <div className="overview-grid">
             <section className="info-card">
@@ -266,28 +318,32 @@ export default function CustomerDetail({
             </section>
 
             <section className="info-card wide">
-              <h4>最近的听力</h4>
-              {audiograms.length === 0 ? (
-                <EmptyHint text="暂无听力曲线" action="切换到听力曲线标签添加" />
-              ) : (
-                <div className="mini-audiogram">
-                  {audiograms.slice(0, 3).map((a) => {
-                    const lp = calcPta(a.left.air);
-                    const rp = calcPta(a.right.air);
-                    return (
-                      <article key={a.id} className="mini-aud-row">
-                        <div>
-                          <strong>{a.testDate}</strong>
-                          <span className="muted">{a.tester || "未指定测试者"}</span>
-                        </div>
-                        <div className="pta-group">
-                          <PtaBadge side="左耳" value={lp} />
-                          <PtaBadge side="右耳" value={rp} />
-                        </div>
-                      </article>
-                    );
-                  })}
+              <div className="info-card-head">
+                <h4>最近的听力</h4>
+                <button className="ghost-btn small" onClick={() => setTab("audiogram")}>
+                  查看全部 →
+                </button>
+              </div>
+              {latestAudiogram ? (
+                <div className="latest-audiogram-wrap">
+                  <div className="latest-aud-meta">
+                    <span className="aud-date">📅 {latestAudiogram.testDate}</span>
+                    {latestAudiogram.tester && (
+                      <span className="aud-tester">👤 {latestAudiogram.tester}</span>
+                    )}
+                    {latestAudiogram.speechRecognitionScore?.binaural !== undefined && (
+                      <span className="aud-speech">
+                        🗣️ 言语识别率 {latestAudiogram.speechRecognitionScore.binaural}%
+                      </span>
+                    )}
+                  </div>
+                  <AudiogramChart
+                    record={audiogramToHearingRecord(latestAudiogram)}
+                    width={560}
+                  />
                 </div>
+              ) : (
+                <EmptyHint text="暂无听力曲线" action="切换到听力曲线标签添加" />
               )}
             </section>
 
@@ -334,46 +390,142 @@ export default function CustomerDetail({
           <div className="tab-section">
             <div className="tab-section-head">
               <h3>听力曲线记录</h3>
-              <button className="primary-action" onClick={addAudiogram}>
-                + 新增听力记录
-              </button>
+              <div className="tab-section-actions">
+                <button className="ghost-btn" onClick={addAudiogram}>
+                  + 快速录入
+                </button>
+                <button className="primary-action" onClick={openWorkbenchNew}>
+                  🎯 听力曲线工作台
+                </button>
+              </div>
             </div>
+
             {audiograms.length === 0 ? (
-              <EmptyHint text="暂无听力曲线" action="点击右上角按钮新增第一条" />
+              <div className="empty-audiogram-state">
+                <EmptyHint
+                  text="暂无听力曲线"
+                  action="使用听力曲线工作台录入第一条完整的听力图"
+                />
+                <button className="primary-action large" onClick={openWorkbenchNew}>
+                  🎯 开始录入听力图
+                </button>
+              </div>
             ) : (
-              <div className="entity-list">
+              <div className="entity-list audiogram-list">
                 {audiograms.map((a) => {
                   const lp = calcPta(a.left.air);
                   const rp = calcPta(a.right.air);
+                  const isExpanded = expandedAudiogramId === a.id;
                   return (
-                    <article key={a.id} className="entity-card">
-                      <div className="entity-head">
-                        <strong>{a.testDate}</strong>
-                        <span className="meta-pill muted">v{a.version}</span>
+                    <article
+                      key={a.id}
+                      className={`entity-card audiogram-card ${isExpanded ? "expanded" : ""}`}
+                    >
+                      <div className="entity-head" onClick={() => toggleExpandAudiogram(a.id)}>
+                        <div className="entity-head-left">
+                          <span className="expand-icon">{isExpanded ? "▼" : "▶"}</span>
+                          <strong>{a.testDate}</strong>
+                          <span className="meta-pill muted">v{a.version}</span>
+                        </div>
+                        <div className="entity-head-right">
+                          {a.speechRecognitionScore?.binaural !== undefined && (
+                            <span className="pta-tag small">
+                              言语 {a.speechRecognitionScore.binaural}%
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="entity-sub">
-                        测试者: {a.tester || "未指定"} · 环境: {a.testEnvironment || "未指定"}
-                      </div>
-                      <div className="pta-row">
-                        <PtaBadge side="左耳 PTA" value={lp} />
-                        <PtaBadge side="右耳 PTA" value={rp} />
-                        {a.speechRecognitionScore?.binaural !== undefined && (
-                          <span className="pta-tag">
-                            言语识别率 {a.speechRecognitionScore.binaural}%
-                          </span>
-                        )}
-                      </div>
-                      <FrequencyGrid left={a.left.air} right={a.right.air} />
-                      {a.remark && <p className="muted small">📝 {a.remark}</p>}
-                      <div className="entity-foot">
-                        <span className="muted">{fmt(a.editedAt)} 由 {a.editedBy}</span>
-                        <div className="entity-actions" onClick={(e) => e.stopPropagation()}>
+
+                      {!isExpanded && (
+                        <>
+                          <div className="entity-sub">
+                            测试者: {a.tester || "未指定"} · 环境: {a.testEnvironment || "未指定"}
+                          </div>
+                          <div className="pta-row">
+                            <PtaBadge side="左耳 PTA" value={lp} />
+                            <PtaBadge side="右耳 PTA" value={rp} />
+                          </div>
+                        </>
+                      )}
+
+                      {isExpanded && (
+                        <div className="audiogram-expanded">
+                          <div className="aud-detail-meta">
+                            <div className="aud-meta-row">
+                              <span className="meta-label">测试日期</span>
+                              <span>{a.testDate}</span>
+                            </div>
+                            <div className="aud-meta-row">
+                              <span className="meta-label">测试者</span>
+                              <span>{a.tester || "未指定"}</span>
+                            </div>
+                            <div className="aud-meta-row">
+                              <span className="meta-label">测试环境</span>
+                              <span>{a.testEnvironment || "未指定"}</span>
+                            </div>
+                            {a.speechRecognitionScore && (
+                              <>
+                                <div className="aud-meta-row">
+                                  <span className="meta-label">左耳言语识别率</span>
+                                  <span>
+                                    {a.speechRecognitionScore.left !== undefined
+                                      ? `${a.speechRecognitionScore.left}%`
+                                      : "—"}
+                                  </span>
+                                </div>
+                                <div className="aud-meta-row">
+                                  <span className="meta-label">右耳言语识别率</span>
+                                  <span>
+                                    {a.speechRecognitionScore.right !== undefined
+                                      ? `${a.speechRecognitionScore.right}%`
+                                      : "—"}
+                                  </span>
+                                </div>
+                                <div className="aud-meta-row">
+                                  <span className="meta-label">双耳言语识别率</span>
+                                  <span>
+                                    {a.speechRecognitionScore.binaural !== undefined
+                                      ? `${a.speechRecognitionScore.binaural}%`
+                                      : "—"}
+                                  </span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                          <div className="aud-chart-wrap">
+                            <AudiogramChart
+                              record={audiogramToHearingRecord(a)}
+                              width={640}
+                            />
+                          </div>
+                          {a.remark && (
+                            <div className="aud-remark">
+                              <span className="meta-label">备注</span>
+                              <p>{a.remark}</p>
+                            </div>
+                          )}
+                          <div className="aud-detail-footer">
+                            <span className="muted">{fmt(a.editedAt)} 由 {a.editedBy}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="entity-foot" onClick={(e) => e.stopPropagation()}>
+                        <span className="muted">点击卡片展开查看听力图</span>
+                        <div className="entity-actions">
                           <button
                             className="row-btn"
-                            title="编辑"
+                            title="快速编辑"
                             onClick={() => handleEditAudiogram(a)}
                           >
-                            ✎
+                            ✎ 快速编辑
+                          </button>
+                          <button
+                            className="row-btn primary"
+                            title="工作台编辑"
+                            onClick={() => openWorkbenchEdit(a)}
+                          >
+                            🎯 工作台
                           </button>
                           <button
                             className="row-btn danger"
@@ -565,6 +717,8 @@ export default function CustomerDetail({
               </div>
             )}
           </div>
+        )}
+          </>
         )}
       </div>
 

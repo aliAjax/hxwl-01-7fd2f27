@@ -23,7 +23,13 @@ export interface HearingRecord {
     patientName?: string;
     testDate?: string;
     tester?: string;
+    testEnvironment?: string;
     notes?: string;
+  };
+  speechRecognitionScore?: {
+    left?: number;
+    right?: number;
+    binaural?: number;
   };
 }
 
