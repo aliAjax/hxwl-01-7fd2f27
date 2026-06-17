@@ -195,15 +195,16 @@ class ArchiveDatabase {
   }
 
   async getVersions(entityId: string): Promise<VersionSnapshot[]> {
+    const currentEntity = await this.getEntityById(entityId);
     return this.tx(STORE_VERSIONS, "readonly", (s) => {
       return new Promise<VersionSnapshot[]>((resolve, reject) => {
         const idx = s[STORE_VERSIONS].index("entityId");
         const req = idx.getAll(IDBKeyRange.only(entityId));
         req.onsuccess = () => {
           const list = req.result.sort((a, b) => b.version - a.version);
-          if (list.length > 0) {
-            list[0].isCurrent = true;
-          }
+          list.forEach((snap) => {
+            snap.isCurrent = currentEntity ? snap.versionId === currentEntity.versionId : false;
+          });
           resolve(list);
         };
         req.onerror = () => reject(req.error);
@@ -463,6 +464,18 @@ class ArchiveDatabase {
     });
   }
 
+  async getEntityById(entityId: string): Promise<ArchiveEntity | null> {
+    const c = await this.getCustomer(entityId);
+    if (c) return c;
+    const a = await this.getAudiogram(entityId);
+    if (a) return a;
+    const f = await this.getFitting(entityId);
+    if (f) return f;
+    const fu = await this.getFollowUp(entityId);
+    if (fu) return fu;
+    return null;
+  }
+
   async deleteCustomer(id: string): Promise<void> {
     await this.tx(STORE_CUSTOMERS, "readwrite", (s) => {
       return new Promise<void>((resolve, reject) => {
@@ -472,6 +485,93 @@ class ArchiveDatabase {
           if (r) {
             r.deletedAt = Date.now();
             s[STORE_CUSTOMERS].put(r);
+          }
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async updateAudiogram(a: AudiogramRecord, changeNote?: string): Promise<AudiogramRecord> {
+    const bumped: AudiogramRecord = {
+      ...a,
+      version: a.version + 1,
+      parentVersionId: a.versionId,
+      versionId: generateVersionId(),
+      editedBy: "当前用户",
+      editedAt: Date.now()
+    };
+    return this.saveAudiogram(bumped, changeNote || "更新听力记录");
+  }
+
+  async updateFitting(f: FittingRecord, changeNote?: string): Promise<FittingRecord> {
+    const bumped: FittingRecord = {
+      ...f,
+      version: f.version + 1,
+      parentVersionId: f.versionId,
+      versionId: generateVersionId(),
+      editedBy: "当前用户",
+      editedAt: Date.now()
+    };
+    return this.saveFitting(bumped, changeNote || "更新验配记录");
+  }
+
+  async updateFollowUp(f: FollowUpRecord, changeNote?: string): Promise<FollowUpRecord> {
+    const bumped: FollowUpRecord = {
+      ...f,
+      version: f.version + 1,
+      parentVersionId: f.versionId,
+      versionId: generateVersionId(),
+      editedBy: "当前用户",
+      editedAt: Date.now()
+    };
+    return this.saveFollowUp(bumped, changeNote || "更新复诊记录");
+  }
+
+  async deleteAudiogram(id: string): Promise<void> {
+    await this.tx(STORE_AUDIOGRAMS, "readwrite", (s) => {
+      return new Promise<void>((resolve, reject) => {
+        const req = s[STORE_AUDIOGRAMS].get(id);
+        req.onsuccess = () => {
+          const r = req.result as AudiogramRecord | undefined;
+          if (r) {
+            r.deletedAt = Date.now();
+            s[STORE_AUDIOGRAMS].put(r);
+          }
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async deleteFitting(id: string): Promise<void> {
+    await this.tx(STORE_FITTINGS, "readwrite", (s) => {
+      return new Promise<void>((resolve, reject) => {
+        const req = s[STORE_FITTINGS].get(id);
+        req.onsuccess = () => {
+          const r = req.result as FittingRecord | undefined;
+          if (r) {
+            r.deletedAt = Date.now();
+            s[STORE_FITTINGS].put(r);
+          }
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async deleteFollowUp(id: string): Promise<void> {
+    await this.tx(STORE_FOLLOWUPS, "readwrite", (s) => {
+      return new Promise<void>((resolve, reject) => {
+        const req = s[STORE_FOLLOWUPS].get(id);
+        req.onsuccess = () => {
+          const r = req.result as FollowUpRecord | undefined;
+          if (r) {
+            r.deletedAt = Date.now();
+            s[STORE_FOLLOWUPS].put(r);
           }
           resolve();
         };
@@ -527,10 +627,43 @@ class ArchiveDatabase {
   }
 
   async detectConflicts(): Promise<ArchiveEntity[]> {
-    const allCustomers = await this.listCustomers();
-    return allCustomers.filter(
-      (c) => c.syncStatus === "conflict" || c.conflict?.hasConflict
-    );
+    const hasConflict = (e: ArchiveEntity) =>
+      e.syncStatus === "conflict" || e.conflict?.hasConflict;
+
+    const [customers, audiograms, fittings, followups] = await Promise.all([
+      this.listCustomers(),
+      this.tx(STORE_AUDIOGRAMS, "readonly", (s) =>
+        new Promise<AudiogramRecord[]>((resolve, reject) => {
+          const req = s[STORE_AUDIOGRAMS].getAll();
+          req.onsuccess = () =>
+            resolve((req.result as AudiogramRecord[]).filter((e) => !e.deletedAt));
+          req.onerror = () => reject(req.error);
+        })
+      ),
+      this.tx(STORE_FITTINGS, "readonly", (s) =>
+        new Promise<FittingRecord[]>((resolve, reject) => {
+          const req = s[STORE_FITTINGS].getAll();
+          req.onsuccess = () =>
+            resolve((req.result as FittingRecord[]).filter((e) => !e.deletedAt));
+          req.onerror = () => reject(req.error);
+        })
+      ),
+      this.tx(STORE_FOLLOWUPS, "readonly", (s) =>
+        new Promise<FollowUpRecord[]>((resolve, reject) => {
+          const req = s[STORE_FOLLOWUPS].getAll();
+          req.onsuccess = () =>
+            resolve((req.result as FollowUpRecord[]).filter((e) => !e.deletedAt));
+          req.onerror = () => reject(req.error);
+        })
+      )
+    ]);
+
+    return [
+      ...customers.filter(hasConflict),
+      ...audiograms.filter(hasConflict),
+      ...fittings.filter(hasConflict),
+      ...followups.filter(hasConflict)
+    ];
   }
 
   computeDiff(local: unknown, remote: unknown, prefix = ""): ConflictDiff[] {

@@ -5911,3 +5911,147 @@ input {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+.modal-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #f97316;
+  font-weight: 500;
+}
+
+.entity-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-color);
+  gap: 8px;
+}
+
+.entity-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.form-section-title {
+  margin: 8px 0 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.form-section-title h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.threshold-section {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.threshold-label-row,
+.threshold-input-row {
+  display: grid;
+  grid-template-columns: 60px repeat(6, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.threshold-label-row {
+  margin-bottom: 4px;
+}
+
+.threshold-side-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.threshold-header {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.threshold-input {
+  width: 100%;
+  padding: 6px 4px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  transition: all 0.15s ease;
+}
+
+.threshold-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(21, 94, 117, 0.1);
+}
+
+.ha-form-section {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 8px;
+}
+
+.ha-form-section h5 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ha-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.ha-form-grid label span {
+  font-size: 11px;
+}
+
+.ha-form-grid label input {
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+@media (max-width: 960px) {
+  .ha-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .threshold-label-row,
+  .threshold-input-row {
+    grid-template-columns: 50px repeat(6, 1fr);
+  }
+  .threshold-side-label {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .ha-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .threshold-label-row,
+  .threshold-input-row {
+    grid-template-columns: 40px repeat(6, 1fr);
+  }
+  .threshold-header {
+    font-size: 10px;
+  }
+  .threshold-input {
+    font-size: 11px;
+    padding: 4px 2px;
+  }
+}

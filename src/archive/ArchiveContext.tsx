@@ -38,8 +38,14 @@ interface ArchiveContextValue {
   updateCustomer: (c: CustomerProfile, changeNote?: string) => Promise<CustomerProfile>;
   deleteCustomer: (id: string) => Promise<void>;
   createAudiogram: (a: Partial<AudiogramRecord>) => Promise<AudiogramRecord>;
+  updateAudiogram: (a: AudiogramRecord, changeNote?: string) => Promise<AudiogramRecord>;
+  deleteAudiogram: (id: string) => Promise<void>;
   createFitting: (f: Partial<FittingRecord>) => Promise<FittingRecord>;
+  updateFitting: (f: FittingRecord, changeNote?: string) => Promise<FittingRecord>;
+  deleteFitting: (id: string) => Promise<void>;
   createFollowUp: (f: Partial<FollowUpRecord>) => Promise<FollowUpRecord>;
+  updateFollowUp: (f: FollowUpRecord, changeNote?: string) => Promise<FollowUpRecord>;
+  deleteFollowUp: (id: string) => Promise<void>;
   loadVersions: (entityId: string) => Promise<void>;
   revertToVersion: (
     entityType: EntityType,
@@ -274,6 +280,78 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     [db, selectedCustomerId, selectCustomer, refreshStats]
   );
 
+  const updateAudiogram = useCallback(
+    async (a: AudiogramRecord, changeNote?: string): Promise<AudiogramRecord> => {
+      const saved = await db.updateAudiogram(a, changeNote);
+      if (selectedCustomerId === saved.customerId) {
+        await selectCustomer(saved.customerId);
+      }
+      await refreshStats();
+      return saved;
+    },
+    [db, selectedCustomerId, selectCustomer, refreshStats]
+  );
+
+  const updateFitting = useCallback(
+    async (f: FittingRecord, changeNote?: string): Promise<FittingRecord> => {
+      const saved = await db.updateFitting(f, changeNote);
+      if (selectedCustomerId === saved.customerId) {
+        await selectCustomer(saved.customerId);
+      }
+      await refreshStats();
+      return saved;
+    },
+    [db, selectedCustomerId, selectCustomer, refreshStats]
+  );
+
+  const updateFollowUp = useCallback(
+    async (f: FollowUpRecord, changeNote?: string): Promise<FollowUpRecord> => {
+      const saved = await db.updateFollowUp(f, changeNote);
+      if (selectedCustomerId === saved.customerId) {
+        await selectCustomer(saved.customerId);
+      }
+      await refreshStats();
+      return saved;
+    },
+    [db, selectedCustomerId, selectCustomer, refreshStats]
+  );
+
+  const deleteAudiogram = useCallback(
+    async (id: string) => {
+      const a = await db.getAudiogram(id);
+      await db.deleteAudiogram(id);
+      if (a && selectedCustomerId === a.customerId) {
+        await selectCustomer(a.customerId);
+      }
+      await refreshStats();
+    },
+    [db, selectedCustomerId, selectCustomer, refreshStats]
+  );
+
+  const deleteFitting = useCallback(
+    async (id: string) => {
+      const f = await db.getFitting(id);
+      await db.deleteFitting(id);
+      if (f && selectedCustomerId === f.customerId) {
+        await selectCustomer(f.customerId);
+      }
+      await refreshStats();
+    },
+    [db, selectedCustomerId, selectCustomer, refreshStats]
+  );
+
+  const deleteFollowUp = useCallback(
+    async (id: string) => {
+      const f = await db.getFollowUp(id);
+      await db.deleteFollowUp(id);
+      if (f && selectedCustomerId === f.customerId) {
+        await selectCustomer(f.customerId);
+      }
+      await refreshStats();
+    },
+    [db, selectedCustomerId, selectCustomer, refreshStats]
+  );
+
   const loadVersions = useCallback(
     async (entityId: string) => {
       const v = await db.getVersions(entityId);
@@ -383,8 +461,14 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     updateCustomer,
     deleteCustomer,
     createAudiogram,
+    updateAudiogram,
+    deleteAudiogram,
     createFitting,
+    updateFitting,
+    deleteFitting,
     createFollowUp,
+    updateFollowUp,
+    deleteFollowUp,
     loadVersions,
     revertToVersion,
     simulateConflict,
