@@ -7,6 +7,7 @@ import FittingSummary from "./summary/FittingSummary";
 import { getComparisonByCustomerId } from "./comparison/comparison.sampleData";
 import { getSummaryByCustomerId } from "./summary/summary.sampleData";
 import type { FittingSummaryData } from "./summary/summary.types";
+import { useDraft, DraftIndicator } from "./draft";
 
 interface CustomerRecord {
   id: string;
@@ -587,9 +588,26 @@ function App() {
   const [comparisonCustomerId, setComparisonCustomerId] = useState<string | null>(null);
   const [summaryData, setSummaryData] = useState<FittingSummaryData | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [formValues, setFormValues] = useState<Record<string, string>>(
-    () => Object.fromEntries(project.fields.map((f: string) => [f, ""]))
+
+  const initialFormValues = Object.fromEntries(
+    project.fields.map((f: string) => [f, ""])
   );
+
+  const {
+    data: formValues,
+    status: draftStatus,
+    lastSavedAt,
+    isSupported,
+    hasDraft,
+    saveNow,
+    updateData,
+    clearDraft
+  } = useDraft<Record<string, string>>({
+    key: "form_values",
+    initialData: initialFormValues,
+    debounceMs: 800
+  });
+
   const comparisonRef = useRef<ComparisonModuleHandle>(null);
   const recordsRef = useRef<HTMLElement>(null);
 
@@ -608,7 +626,7 @@ function App() {
   };
 
   const handleModelSelect = (model: HearingAidModel, type: HearingAidType) => {
-    setFormValues(prev => ({
+    updateData(prev => ({
       ...prev,
       "助听器型号": model.name,
       "增益调整": type.gainTemplate,
@@ -617,7 +635,7 @@ function App() {
   };
 
   const handleFieldChange = (field: string, value: string) => {
-    setFormValues(prev => ({ ...prev, [field]: value }));
+    updateData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleCompareClick = (customerId: string, e: React.MouseEvent) => {
@@ -699,6 +717,15 @@ function App() {
             </div>
             <button className="primary-action">新增记录</button>
           </div>
+          <DraftIndicator
+            status={draftStatus}
+            lastSavedAt={lastSavedAt}
+            isSupported={isSupported}
+            hasDraft={hasDraft}
+            onClear={clearDraft}
+            onSave={saveNow}
+            className="form-draft-indicator"
+          />
           <HearingAidSelector onSelectModel={handleModelSelect} />
           <div className="field-grid">
             {project.fields.map((field: string) => (

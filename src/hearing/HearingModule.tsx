@@ -4,23 +4,39 @@ import { createEmptyRecord } from "./hearing.utils";
 import { SAMPLE_CASES, loadSampleCase } from "./sampleData";
 import HearingForm from "./HearingForm";
 import AudiogramChart from "./AudiogramChart";
+import { useHearingDraft, DraftIndicator } from "../draft";
 
 export default function HearingModule() {
-  const [record, setRecord] = useState<HearingRecord>(() =>
-    loadSampleCase("high-frequency") || createEmptyRecord()
-  );
+  const initialRecord =
+    loadSampleCase("high-frequency") || createEmptyRecord();
+
+  const {
+    record,
+    status: draftStatus,
+    lastSavedAt,
+    isSupported,
+    hasDraft,
+    saveNow,
+    updateRecord,
+    clearDraft
+  } = useHearingDraft<HearingRecord>({
+    key: "hearing_record",
+    initialRecord,
+    debounceMs: 800
+  });
+
   const [activeSample, setActiveSample] = useState<string>("high-frequency");
 
   const handleSample = (id: string) => {
     const data = loadSampleCase(id);
     if (data) {
-      setRecord(data);
+      updateRecord(data);
       setActiveSample(id);
     }
   };
 
-  const handleClear = () => {
-    setRecord(createEmptyRecord());
+  const handleClear = async () => {
+    await clearDraft();
     setActiveSample("");
   };
 
@@ -57,11 +73,21 @@ export default function HearingModule() {
         </div>
       )}
 
+      <DraftIndicator
+        status={draftStatus}
+        lastSavedAt={lastSavedAt}
+        isSupported={isSupported}
+        hasDraft={hasDraft}
+        onClear={handleClear}
+        onSave={saveNow}
+        className="hearing-draft-indicator"
+      />
+
       <div className="hearing-layout">
         <div className="hearing-form-col">
           <HearingForm
             record={record}
-            onChange={setRecord}
+            onChange={updateRecord}
             onClear={handleClear}
           />
         </div>
