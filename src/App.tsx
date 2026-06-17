@@ -1,7 +1,7 @@
 import "./styles.css";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import HearingModule from "./hearing/HearingModule";
-import ComparisonModule from "./comparison/ComparisonModule";
+import ComparisonModule, { ComparisonModuleHandle } from "./comparison/ComparisonModule";
 import { getComparisonByCustomerId } from "./comparison/comparison.sampleData";
 
 interface CustomerRecord {
@@ -584,6 +584,8 @@ function App() {
   const [formValues, setFormValues] = useState<Record<string, string>>(
     () => Object.fromEntries(project.fields.map((f: string) => [f, ""]))
   );
+  const comparisonRef = useRef<ComparisonModuleHandle>(null);
+  const recordsRef = useRef<HTMLElement>(null);
 
   const values = project.metrics.map((metric: string, index: number) => {
     const base = [84, 12, 31, 7][index % 4];
@@ -615,10 +617,17 @@ function App() {
   const handleCompareClick = (customerId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setComparisonCustomerId(customerId);
+    setTimeout(() => {
+      comparisonRef.current?.scrollIntoView();
+      comparisonRef.current?.triggerHighlight();
+    }, 50);
   };
 
   const handleBackFromComparison = () => {
     setComparisonCustomerId(null);
+    setTimeout(() => {
+      recordsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   return (
@@ -688,7 +697,7 @@ function App() {
         onBack={comparisonCustomerId ? handleBackFromComparison : undefined}
       />
 
-      <section className="records panel">
+      <section ref={recordsRef as React.RefObject<HTMLElement>} className="records panel">
         <div className="section-heading">
           <div>
             <p>示例数据</p>
@@ -699,10 +708,11 @@ function App() {
         <div className="record-list">
           {project.records.map((record: CustomerRecord, index: number) => {
             const hasComparison = !!getComparisonByCustomerId(record.customerId);
+            const isActive = comparisonCustomerId === record.customerId;
             return (
               <article
                 key={record.id}
-                className="record-card"
+                className={`record-card ${isActive ? "record-card-active" : ""}`}
                 onClick={() => handleRecordClick(record)}
               >
                 <div className="record-index">{String(index + 1).padStart(2, "0")}</div>

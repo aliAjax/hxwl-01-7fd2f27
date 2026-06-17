@@ -1,11 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { ComparisonData, FittingRecord, ComparisonStatus } from "./comparison.types";
 import { SAMPLE_COMPARISONS, getComparisonByCustomerId, createEmptyComparison } from "./comparison.sampleData";
 import { generateComparisonResults, updateFittingRecord, statusLabelMap } from "./comparison.utils";
 
+export interface ComparisonModuleHandle {
+  scrollIntoView: () => void;
+  triggerHighlight: () => void;
+}
+
 interface ComparisonModuleProps {
   customerId?: string;
   onBack?: () => void;
+  autoHighlight?: boolean;
 }
 
 function StatusBadge({ status }: { status: ComparisonStatus }) {
@@ -130,21 +136,42 @@ function FittingForm({
   );
 }
 
-export default function ComparisonModule({ customerId, onBack }: ComparisonModuleProps) {
-  const [activeCustomerId, setActiveCustomerId] = useState<string>(customerId || SAMPLE_COMPARISONS[0]?.customerId || "");
-  const [comparisonData, setComparisonData] = useState<ComparisonData>(() => {
-    if (customerId) {
-      return getComparisonByCustomerId(customerId) || createEmptyComparison(customerId);
-    }
-    return SAMPLE_COMPARISONS[0] || createEmptyComparison("new");
-  });
+const ComparisonModule = forwardRef<ComparisonModuleHandle, ComparisonModuleProps>(
+  function ComparisonModule({ customerId, onBack, autoHighlight = false }, ref) {
+    const moduleRef = useRef<HTMLElement>(null);
+    const [activeCustomerId, setActiveCustomerId] = useState<string>(customerId || SAMPLE_COMPARISONS[0]?.customerId || "");
+    const [comparisonData, setComparisonData] = useState<ComparisonData>(() => {
+      if (customerId) {
+        return getComparisonByCustomerId(customerId) || createEmptyComparison(customerId);
+      }
+      return SAMPLE_COMPARISONS[0] || createEmptyComparison("new");
+    });
+    const [isHighlighted, setIsHighlighted] = useState(false);
 
-  useEffect(() => {
-    if (customerId) {
-      setActiveCustomerId(customerId);
-      setComparisonData(getComparisonByCustomerId(customerId) || createEmptyComparison(customerId));
-    }
-  }, [customerId]);
+    useImperativeHandle(ref, () => ({
+      scrollIntoView: () => {
+        moduleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      },
+      triggerHighlight: () => {
+        setIsHighlighted(true);
+        setTimeout(() => setIsHighlighted(false), 2400);
+      }
+    }));
+
+    useEffect(() => {
+      if (customerId) {
+        setActiveCustomerId(customerId);
+        setComparisonData(getComparisonByCustomerId(customerId) || createEmptyComparison(customerId));
+      }
+    }, [customerId]);
+
+    useEffect(() => {
+      if (autoHighlight && customerId) {
+        setIsHighlighted(true);
+        const timer = setTimeout(() => setIsHighlighted(false), 2400);
+        return () => clearTimeout(timer);
+      }
+    }, [autoHighlight, customerId]);
 
   const results = generateComparisonResults(comparisonData);
 
@@ -173,7 +200,10 @@ export default function ComparisonModule({ customerId, onBack }: ComparisonModul
   const worsenedCount = results.filter(r => r.status === "worsened").length;
 
   return (
-    <section className="comparison-module panel">
+    <section
+      ref={moduleRef as React.RefObject<HTMLElement>}
+      className={`comparison-module panel ${isHighlighted ? "cmp-highlight" : ""}`}
+    >
       <div className="section-heading">
         <div>
           <p>验配效果评估</p>
@@ -278,4 +308,7 @@ export default function ComparisonModule({ customerId, onBack }: ComparisonModul
       )}
     </section>
   );
-}
+  }
+);
+
+export default ComparisonModule;

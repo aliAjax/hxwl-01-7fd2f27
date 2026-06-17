@@ -272,6 +272,17 @@ input {
   transform: translateX(4px);
 }
 
+.record-card.record-card-active {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, #ecfeff 0%, #f0f9ff 100%);
+  box-shadow: 0 4px 16px rgba(21, 94, 117, 0.15);
+}
+
+.record-card.record-card-active .record-index {
+  background: var(--accent);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);
+}
+
 .record-arrow {
   position: absolute;
   right: 20px;
@@ -1478,6 +1489,34 @@ input {
 
 .comparison-module {
   margin-bottom: 20px;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.cmp-highlight {
+  animation: cmp-pulse-glow 2.4s ease;
+  box-shadow: 0 0 0 3px var(--primary), 0 14px 36px rgba(21, 94, 117, 0.25);
+  transform: translateY(-2px);
+}
+
+@keyframes cmp-pulse-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(21, 94, 117, 0.6), 0 14px 36px rgba(31, 41, 55, 0.08);
+  }
+  20% {
+    box-shadow: 0 0 0 6px rgba(21, 94, 117, 0.3), 0 14px 36px rgba(21, 94, 117, 0.2);
+  }
+  40% {
+    box-shadow: 0 0 0 3px rgba(21, 94, 117, 0.5), 0 14px 36px rgba(21, 94, 117, 0.25);
+  }
+  60% {
+    box-shadow: 0 0 0 6px rgba(21, 94, 117, 0.3), 0 14px 36px rgba(21, 94, 117, 0.2);
+  }
+  80% {
+    box-shadow: 0 0 0 3px rgba(21, 94, 117, 0.5), 0 14px 36px rgba(21, 94, 117, 0.25);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(21, 94, 117, 0), 0 14px 36px rgba(31, 41, 55, 0.08);
+  }
 }
 
 .cmp-header-actions {
