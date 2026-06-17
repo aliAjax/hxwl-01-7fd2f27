@@ -23,3 +23,17 @@ export interface FittingSummaryData {
   summaryDate?: string;
   audiologist?: string;
 }
+
+export interface SummaryPreviewConfig {
+  showKeyMetrics: boolean;
+  showAdjustments: boolean;
+  showFollowUpAdvice: boolean;
+  showEnglishSubtitle: boolean;
+}
+
+export const DEFAULT_SUMMARY_CONFIG: SummaryPreviewConfig = {
+  showKeyMetrics: true,
+  showAdjustments: true,
+  showFollowUpAdvice: true,
+  showEnglishSubtitle: true,
+};

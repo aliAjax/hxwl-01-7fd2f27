@@ -4,9 +4,11 @@ import HearingModule from "./hearing/HearingModule";
 import ComparisonModule, { ComparisonModuleHandle } from "./comparison/ComparisonModule";
 import QcModule from "./qc/QcModule";
 import FittingSummary from "./summary/FittingSummary";
+import SummaryConfigModal from "./summary/SummaryConfigModal";
 import { getComparisonByCustomerId } from "./comparison/comparison.sampleData";
 import { getSummaryByCustomerId } from "./summary/summary.sampleData";
-import type { FittingSummaryData } from "./summary/summary.types";
+import type { FittingSummaryData, SummaryPreviewConfig } from "./summary/summary.types";
+import { DEFAULT_SUMMARY_CONFIG } from "./summary/summary.types";
 import { useDraft, DraftIndicator } from "./draft";
 import { ArchiveProvider, ArchiveModule } from "./archive";
 import { WorkflowModule, WorkflowProvider } from "./workflow";
@@ -741,6 +743,9 @@ function App() {
   const [comparisonCustomerId, setComparisonCustomerId] = useState<string | null>(null);
   const [summaryData, setSummaryData] = useState<FittingSummaryData | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryConfigOpen, setSummaryConfigOpen] = useState(false);
+  const [summaryConfig, setSummaryConfig] = useState<SummaryPreviewConfig>(DEFAULT_SUMMARY_CONFIG);
+  const [pendingSummaryCustomerId, setPendingSummaryCustomerId] = useState<string | null>(null);
 
   const initialFormValues = Object.fromEntries(
     project.fields.map((f: string) => [f, ""])
@@ -811,9 +816,35 @@ function App() {
   const handleExportSummary = (customerId: string) => {
     const summary = getSummaryByCustomerId(customerId);
     if (summary) {
-      setSummaryData(summary);
-      setSummaryOpen(true);
+      setPendingSummaryCustomerId(customerId);
+      setSummaryConfigOpen(true);
     }
+  };
+
+  const handleConfirmSummaryConfig = (config: SummaryPreviewConfig) => {
+    setSummaryConfig(config);
+    setSummaryConfigOpen(false);
+    if (pendingSummaryCustomerId) {
+      const summary = getSummaryByCustomerId(pendingSummaryCustomerId);
+      if (summary) {
+        setSummaryData(summary);
+        setSummaryOpen(true);
+      }
+      setPendingSummaryCustomerId(null);
+    }
+  };
+
+  const handleCloseSummaryConfig = () => {
+    setSummaryConfigOpen(false);
+    setPendingSummaryCustomerId(null);
+  };
+
+  const handleOpenConfigFromSummary = () => {
+    setSummaryOpen(false);
+    if (summaryData) {
+      setPendingSummaryCustomerId(summaryData.customerId);
+    }
+    setSummaryConfigOpen(true);
   };
 
   const handleCloseSummary = () => {
@@ -973,6 +1004,15 @@ function App() {
         data={summaryData}
         open={summaryOpen}
         onClose={handleCloseSummary}
+        config={summaryConfig}
+        onOpenConfig={handleOpenConfigFromSummary}
+      />
+
+      <SummaryConfigModal
+        open={summaryConfigOpen}
+        initialConfig={summaryConfig}
+        onClose={handleCloseSummaryConfig}
+        onConfirm={handleConfirmSummaryConfig}
       />
     </>
   );
