@@ -47,7 +47,7 @@ export default function ConflictResolver({ customerId, onClose }: Props) {
         diffs.forEach((d) => {
           const choice = selections[d.field] || "local";
           const val = choice === "local" ? d.localValue : d.remoteValue;
-          applyNestedValue(merged, d.field, val);
+          applyNestedValue(merged as unknown as Record<string, unknown>, d.field, val);
         });
         await resolveConflict("customer", customerId, "merge", merged);
       } else {

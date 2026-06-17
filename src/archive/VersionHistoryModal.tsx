@@ -57,7 +57,8 @@ export default function VersionHistoryModal({ entityId, entityType, onClose }: P
   };
 
   const renderSnapshotFields = (snap: VersionSnapshot) => {
-    const data = snap.data as Record<string, unknown>;
+    const data = snap.data as unknown as Record<string, unknown>;
+    const tags = data.tags;
     const fieldsToShow: [string, string][] = [
       ["name", "姓名"],
       ["customerNo", "编号"],
@@ -81,10 +82,10 @@ export default function VersionHistoryModal({ entityId, entityType, onClose }: P
             </div>
           );
         })}
-        {data.tags && Array.isArray(data.tags) && data.tags.length > 0 && (
+        {Array.isArray(tags) && tags.length > 0 && (
           <div className="snap-field">
             <span className="snap-label">标签</span>
-            <span className="snap-value">{(data.tags as string[]).join(", ")}</span>
+            <span className="snap-value">{tags.map(String).join(", ")}</span>
           </div>
         )}
       </div>
@@ -201,8 +202,8 @@ export default function VersionHistoryModal({ entityId, entityType, onClose }: P
                         </button>
                       </h5>
                       <VersionDiff
-                        a={compareVersion.data as Record<string, unknown>}
-                        b={selectedVersion.data as Record<string, unknown>}
+                        a={compareVersion.data as unknown as Record<string, unknown>}
+                        b={selectedVersion.data as unknown as Record<string, unknown>}
                       />
                     </div>
                   )}

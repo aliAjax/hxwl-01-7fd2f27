@@ -844,33 +844,49 @@ class ArchiveDatabase {
   }
 
   async getStats(): Promise<ArchiveStats> {
-    return this.tx(
-      [STORE_CUSTOMERS, STORE_AUDIOGRAMS, STORE_FITTINGS, STORE_FOLLOWUPS, STORE_VERSIONS],
-      "readonly",
-      (s) => {
-        const count = (store: IDBObjectStore) =>
-          new Promise<number>((resolve, reject) => {
-            const r = store.count();
-            r.onsuccess = () => resolve(r.result as number);
-            r.onerror = () => reject(r.error);
-          });
-        return Promise.all([
-          count(s[STORE_CUSTOMERS]),
-          count(s[STORE_AUDIOGRAMS]),
-          count(s[STORE_FITTINGS]),
-          count(s[STORE_FOLLOWUPS]),
-          count(s[STORE_VERSIONS]),
-          this.detectConflicts().then((l) => l.length)
-        ]).then(([c, a, f, fu, v, cf]) => ({
-          customers: c,
-          audiograms: a,
-          fittings: f,
-          followups: fu,
-          versions: v,
-          conflicts: cf
-        }));
-      }
-    );
+    const [counts, conflicts] = await Promise.all([
+      this.tx(
+        [STORE_CUSTOMERS, STORE_AUDIOGRAMS, STORE_FITTINGS, STORE_FOLLOWUPS, STORE_VERSIONS],
+        "readonly",
+        (s) => {
+          const countActive = <T extends { deletedAt?: number }>(store: IDBObjectStore) =>
+            new Promise<number>((resolve, reject) => {
+              const req = store.getAll();
+              req.onsuccess = () => {
+                const rows = req.result as T[];
+                resolve(rows.filter((row) => !row.deletedAt).length);
+              };
+              req.onerror = () => reject(req.error);
+            });
+
+          const countAll = (store: IDBObjectStore) =>
+            new Promise<number>((resolve, reject) => {
+              const req = store.count();
+              req.onsuccess = () => resolve(req.result);
+              req.onerror = () => reject(req.error);
+            });
+
+          return Promise.all([
+            countActive<CustomerProfile>(s[STORE_CUSTOMERS]),
+            countActive<AudiogramRecord>(s[STORE_AUDIOGRAMS]),
+            countActive<FittingRecord>(s[STORE_FITTINGS]),
+            countActive<FollowUpRecord>(s[STORE_FOLLOWUPS]),
+            countAll(s[STORE_VERSIONS])
+          ]);
+        }
+      ),
+      this.detectConflicts()
+    ]);
+
+    const [customers, audiograms, fittings, followups, versions] = counts;
+    return {
+      customers,
+      audiograms,
+      fittings,
+      followups,
+      versions,
+      conflicts: conflicts.length
+    };
   }
 
   async clearAll(): Promise<void> {

@@ -150,7 +150,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       const merged: CustomerProfile = {
         ...base,
         ...c,
-        id: c.id || base.id || `cust-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+        id: c.id || `cust-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
       } as CustomerProfile;
       const saved = await db.saveCustomer(merged, "创建档案");
       await listCustomers();

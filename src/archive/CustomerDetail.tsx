@@ -6,6 +6,8 @@ import type {
   AudiogramRecord,
   FittingRecord,
   FollowUpRecord,
+  FollowUpPriority,
+  FollowUpStatus,
   Frequency
 } from "./archive.types";
 import {
