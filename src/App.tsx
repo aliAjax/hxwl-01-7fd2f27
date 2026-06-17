@@ -693,6 +693,7 @@ function App() {
       <HearingModule />
 
       <ComparisonModule
+        ref={comparisonRef}
         customerId={comparisonCustomerId || undefined}
         onBack={comparisonCustomerId ? handleBackFromComparison : undefined}
       />
