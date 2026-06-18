@@ -5,7 +5,9 @@ import type {
   OperationLog,
   RoleType,
   RecordStatus,
-  ReviewField
+  ReviewField,
+  RejectedField,
+  FieldChange
 } from "./workflow.types";
 import {
   generateId,
@@ -20,11 +22,13 @@ type WorkflowAction =
   | { type: "SET_ROLE"; payload: { role: RoleType } }
   | { type: "SELECT_RECORD"; payload: { recordId: string | null } }
   | { type: "CREATE_RECORD"; payload: Partial<WorkflowFittingRecord> }
-  | { type: "UPDATE_RECORD"; payload: { recordId: string; updates: Partial<WorkflowFittingRecord> } }
+  | { type: "UPDATE_RECORD"; payload: { recordId: string; updates: Partial<WorkflowFittingRecord>; fieldChanges?: FieldChange[] } }
   | { type: "DELETE_RECORD"; payload: { recordId: string } }
   | { type: "SUBMIT_FOR_REVIEW"; payload: { recordId: string } }
   | { type: "APPROVE_REVIEW"; payload: { recordId: string; comment?: string } }
   | { type: "REJECT_REVIEW"; payload: { recordId: string; comment: string } }
+  | { type: "REJECT_REVIEW_WITH_FIELDS"; payload: { recordId: string; comment: string; rejectedFields: RejectedField[] } }
+  | { type: "RESUBMIT_FOR_REVIEW"; payload: { recordId: string; fieldChanges: FieldChange[]; rejectionId: string } }
   | { type: "ASSIGN_FOLLOWUP"; payload: { recordId: string; days?: number } }
   | { type: "START_FOLLOWUP"; payload: { recordId: string } }
   | { type: "COMPLETE_FOLLOWUP"; payload: { recordId: string; note: string } }
@@ -37,11 +41,13 @@ const WorkflowContext = createContext<{
   state: WorkflowState;
   dispatch: React.Dispatch<WorkflowAction>;
   createRecord: (data: Partial<WorkflowFittingRecord>) => void;
-  updateRecord: (recordId: string, updates: Partial<WorkflowFittingRecord>) => void;
+  updateRecord: (recordId: string, updates: Partial<WorkflowFittingRecord>, fieldChanges?: FieldChange[]) => void;
   deleteRecord: (recordId: string) => void;
   submitForReview: (recordId: string) => void;
   approveReview: (recordId: string, comment?: string) => void;
   rejectReview: (recordId: string, comment: string) => void;
+  rejectReviewWithFields: (recordId: string, comment: string, rejectedFields: RejectedField[]) => void;
+  resubmitForReview: (recordId: string, fieldChanges: FieldChange[], rejectionId: string) => void;
   assignFollowUp: (recordId: string, days?: number) => void;
   startFollowUp: (recordId: string) => void;
   completeFollowUp: (recordId: string, note: string) => void;
@@ -120,7 +126,8 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
         createdAt: now,
         updatedAt: now,
         version: 1,
-        reviewFields: defaultReviewFields
+        reviewFields: defaultReviewFields,
+        rejectionHistory: []
       };
 
       const newLog: OperationLog = {
@@ -154,20 +161,24 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
           : r
       );
 
-      const changes = Object.entries(action.payload.updates)
-        .filter(([key]) => key !== "updatedAt" && key !== "version")
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(", ");
+      const fieldChanges = action.payload.fieldChanges;
+      const changes = fieldChanges && fieldChanges.length > 0
+        ? fieldChanges.map(fc => `${fc.fieldLabel}: ${fc.oldValue} → ${fc.newValue}`).join("; ")
+        : Object.entries(action.payload.updates)
+            .filter(([key]) => key !== "updatedAt" && key !== "version")
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(", ");
 
       const newLog: OperationLog = {
         id: generateId("log"),
         recordId: action.payload.recordId,
         operatorRole: state.currentRole,
         operatorName: state.currentUserName,
-        action: "更新记录",
-        actionType: "update",
-        detail: `更新字段: ${changes}`,
-        timestamp: now
+        action: fieldChanges && fieldChanges.length > 0 ? "整改修改" : "更新记录",
+        actionType: fieldChanges && fieldChanges.length > 0 ? "correct" : "update",
+        detail: fieldChanges && fieldChanges.length > 0 ? `整改修改: ${changes}` : `更新字段: ${changes}`,
+        timestamp: now,
+        fieldChanges: fieldChanges
       };
 
       return {
@@ -301,6 +312,152 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
         newStatus: "review_rejected",
         detail: action.payload.comment,
         timestamp: now
+      };
+
+      return {
+        ...state,
+        records: updatedRecords,
+        operationLogs: [newLog, ...state.operationLogs]
+      };
+    }
+
+    case "REJECT_REVIEW_WITH_FIELDS": {
+      const now = Date.now();
+      const record = state.records.find(r => r.id === action.payload.recordId);
+      if (!record || !canTransition(record.status, "review_rejected", state.currentRole)) return state;
+
+      const rejectionId = generateId("rej");
+      const rejectionRecord = {
+        id: rejectionId,
+        rejectionId,
+        rejectedBy: state.currentUserName,
+        rejectedAt: now,
+        overallComment: action.payload.comment,
+        rejectedFields: action.payload.rejectedFields
+      };
+
+      const updatedReviewFields = record.reviewFields.map(field => {
+        const rejected = action.payload.rejectedFields.find(rf => rf.fieldName === field.fieldName);
+        if (rejected) {
+          return {
+            ...field,
+            hasAbnormality: true,
+            abnormalityNote: rejected.rejectReason
+          };
+        }
+        return field;
+      });
+
+      const updatedRecords = state.records.map(r =>
+        r.id === action.payload.recordId
+          ? {
+              ...r,
+              status: "review_rejected" as RecordStatus,
+              reviewedAt: now,
+              reviewedBy: state.currentUserName,
+              reviewComment: action.payload.comment,
+              reviewFields: updatedReviewFields,
+              rejectionHistory: [...(r.rejectionHistory || []), rejectionRecord],
+              updatedAt: now,
+              version: r.version + 1
+            }
+          : r
+      );
+
+      const fieldSummary = action.payload.rejectedFields
+        .map(f => `${f.fieldLabel}: ${f.rejectReason}`)
+        .join("; ");
+
+      const newLog: OperationLog = {
+        id: generateId("log"),
+        recordId: action.payload.recordId,
+        operatorRole: state.currentRole,
+        operatorName: state.currentUserName,
+        action: "审核驳回",
+        actionType: "reject",
+        oldStatus: record.status,
+        newStatus: "review_rejected",
+        detail: `${action.payload.comment} | 异常字段: ${fieldSummary}`,
+        timestamp: now,
+        rejectionId
+      };
+
+      return {
+        ...state,
+        records: updatedRecords,
+        operationLogs: [newLog, ...state.operationLogs]
+      };
+    }
+
+    case "RESUBMIT_FOR_REVIEW": {
+      const now = Date.now();
+      const record = state.records.find(r => r.id === action.payload.recordId);
+      if (!record) return state;
+      if (record.status !== "review_rejected" && record.status !== "draft") return state;
+
+      const { fieldChanges, rejectionId } = action.payload;
+
+      const updatedRejectionHistory = (record.rejectionHistory || []).map(rh => {
+        if (rh.rejectionId === rejectionId) {
+          return {
+            ...rh,
+            correctionStartedAt: rh.correctionStartedAt || now,
+            correctedBy: state.currentUserName,
+            correctedAt: now,
+            correctionFields: fieldChanges.map(fc => ({
+              fieldName: fc.fieldName,
+              fieldLabel: fc.fieldLabel,
+              oldValue: fc.oldValue,
+              newValue: fc.newValue
+            })),
+            resubmittedAt: now
+          };
+        }
+        return rh;
+      });
+
+      const clearedReviewFields = record.reviewFields.map(field => ({
+        ...field,
+        hasAbnormality: false,
+        abnormalityNote: undefined
+      }));
+
+      const updatedRecords = state.records.map(r =>
+        r.id === action.payload.recordId
+          ? {
+              ...r,
+              status: "pending_review" as RecordStatus,
+              submittedAt: now,
+              reviewFields: clearedReviewFields,
+              rejectionHistory: updatedRejectionHistory,
+              updatedAt: now,
+              version: r.version + 1
+            }
+          : r
+      );
+
+      const changesSummary = fieldChanges
+        .map(fc => `${fc.fieldLabel}: ${fc.oldValue} → ${fc.newValue}`)
+        .join("; ");
+
+      const rejection = (record.rejectionHistory || []).find(rh => rh.rejectionId === rejectionId);
+      const linkDetail = rejection
+        ? `原驳回原因: ${rejection.overallComment} | 修改内容: ${changesSummary}`
+        : `整改后重新提交 | 修改内容: ${changesSummary}`;
+
+      const newLog: OperationLog = {
+        id: generateId("log"),
+        recordId: action.payload.recordId,
+        operatorRole: state.currentRole,
+        operatorName: state.currentUserName,
+        action: "整改后重新提交",
+        actionType: "resubmit",
+        oldStatus: record.status,
+        newStatus: "pending_review",
+        detail: linkDetail,
+        timestamp: now,
+        rejectionId,
+        fieldChanges
       };
 
       return {
@@ -515,8 +672,8 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "CREATE_RECORD", payload: data });
   }, []);
 
-  const updateRecord = useCallback((recordId: string, updates: Partial<WorkflowFittingRecord>) => {
-    dispatch({ type: "UPDATE_RECORD", payload: { recordId, updates } });
+  const updateRecord = useCallback((recordId: string, updates: Partial<WorkflowFittingRecord>, fieldChanges?: FieldChange[]) => {
+    dispatch({ type: "UPDATE_RECORD", payload: { recordId, updates, fieldChanges } });
   }, []);
 
   const deleteRecord = useCallback((recordId: string) => {
@@ -533,6 +690,14 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 
   const rejectReview = useCallback((recordId: string, comment: string) => {
     dispatch({ type: "REJECT_REVIEW", payload: { recordId, comment } });
+  }, []);
+
+  const rejectReviewWithFields = useCallback((recordId: string, comment: string, rejectedFields: RejectedField[]) => {
+    dispatch({ type: "REJECT_REVIEW_WITH_FIELDS", payload: { recordId, comment, rejectedFields } });
+  }, []);
+
+  const resubmitForReview = useCallback((recordId: string, fieldChanges: FieldChange[], rejectionId: string) => {
+    dispatch({ type: "RESUBMIT_FOR_REVIEW", payload: { recordId, fieldChanges, rejectionId } });
   }, []);
 
   const assignFollowUp = useCallback((recordId: string, days?: number) => {
@@ -592,6 +757,8 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         submitForReview,
         approveReview,
         rejectReview,
+        rejectReviewWithFields,
+        resubmitForReview,
         assignFollowUp,
         startFollowUp,
         completeFollowUp,

@@ -49,18 +49,56 @@ export interface ReviewField {
   abnormalityNote?: string;
 }
 
+export interface RejectedField {
+  fieldName: string;
+  fieldLabel: string;
+  oldValue: string | number;
+  rejectReason: string;
+  corrected?: boolean;
+  correctedValue?: string | number;
+  correctionNote?: string;
+}
+
+export interface RejectionRecord {
+  id: string;
+  rejectionId: string;
+  rejectedBy: string;
+  rejectedAt: number;
+  overallComment: string;
+  rejectedFields: RejectedField[];
+  correctionStartedAt?: number;
+  correctedBy?: string;
+  correctedAt?: number;
+  correctionFields?: Array<{
+    fieldName: string;
+    fieldLabel: string;
+    oldValue: string | number;
+    newValue: string | number;
+  }>;
+  resubmittedAt?: number;
+}
+
+export interface FieldChange {
+  fieldName: string;
+  fieldLabel: string;
+  oldValue: string | number;
+  newValue: string | number;
+}
+
 export interface OperationLog {
   id: string;
   recordId: string;
   operatorRole: RoleType;
   operatorName: string;
   action: string;
-  actionType: "create" | "update" | "submit" | "approve" | "reject" | "assign" | "followup" | "complete" | "status_change";
+  actionType: "create" | "update" | "submit" | "approve" | "reject" | "assign" | "followup" | "complete" | "status_change" | "resubmit" | "correct";
   oldStatus?: RecordStatus;
   newStatus?: RecordStatus;
   detail?: string;
   timestamp: number;
   ip?: string;
+  rejectionId?: string;
+  fieldChanges?: FieldChange[];
 }
 
 export interface WorkflowFittingRecord {
@@ -92,6 +130,7 @@ export interface WorkflowFittingRecord {
   followUpCompletedAt?: number;
   followUpNote?: string;
   reviewFields: ReviewField[];
+  rejectionHistory: RejectionRecord[];
   version: number;
 }
 
@@ -163,7 +202,7 @@ export const STATUS_TRANSITIONS: Record<RecordStatus, RecordStatus[]> = {
   draft: ["pending_review", "cancelled"],
   pending_review: ["review_approved", "review_rejected", "draft"],
   review_approved: ["pending_followup", "completed"],
-  review_rejected: ["draft", "cancelled"],
+  review_rejected: ["pending_review", "draft", "cancelled"],
   pending_followup: ["followup_in_progress", "cancelled"],
   followup_in_progress: ["completed", "pending_followup"],
   completed: [],

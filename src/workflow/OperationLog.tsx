@@ -16,8 +16,15 @@ const actionTypeIcons: Record<OperationLogType["actionType"], string> = {
   assign: "👥",
   followup: "📞",
   complete: "🎉",
-  status_change: "🔄"
+  status_change: "🔄",
+  resubmit: "🔁",
+  correct: "🛠️"
 };
+
+function formatFieldValue(value: string | number): string {
+  if (typeof value === "number") return String(value);
+  return value || "-";
+}
 
 export default function OperationLog({ recordId, limit = 50 }: OperationLogProps) {
   const { getRecordLogs, state } = useWorkflow();
@@ -65,7 +72,7 @@ export default function OperationLog({ recordId, limit = 50 }: OperationLogProps
         ) : (
           <div className="log-timeline">
             {displayLogs.map((log, index) => (
-              <div key={log.id} className="log-item">
+              <div key={log.id} className={`log-item log-type-${log.actionType}`}>
                 <div className="log-timeline-line">
                   <div className="log-timeline-dot">
                     {actionTypeIcons[log.actionType]}
@@ -90,6 +97,33 @@ export default function OperationLog({ recordId, limit = 50 }: OperationLogProps
                   </div>
                   {log.detail && (
                     <p className="log-detail">{log.detail}</p>
+                  )}
+                  {log.fieldChanges && log.fieldChanges.length > 0 && (
+                    <div className="log-field-changes">
+                      <div className="log-field-changes-title">
+                        📝 字段变更（{log.fieldChanges.length} 项）：
+                      </div>
+                      <div className="log-field-changes-list">
+                        {log.fieldChanges.map(fc => (
+                          <div key={fc.fieldName} className="log-field-change-item">
+                            <span className="lfci-label">{fc.fieldLabel}：</span>
+                            <span className="lfci-old">{formatFieldValue(fc.oldValue)}</span>
+                            <span className="lfci-arrow">→</span>
+                            <span className="lfci-new">{formatFieldValue(fc.newValue)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {log.actionType === "resubmit" && log.rejectionId && (
+                    <div className="log-resubmit-link">
+                      🔗 此次提交关联驳回记录 #{log.rejectionId.slice(-6)}，驳回原因与修改内容已串联
+                    </div>
+                  )}
+                  {log.actionType === "reject" && log.rejectionId && (
+                    <div className="log-reject-link">
+                      🔗 驳回记录编号 #{log.rejectionId.slice(-6)}，等待听力师整改
+                    </div>
                   )}
                 </div>
               </div>

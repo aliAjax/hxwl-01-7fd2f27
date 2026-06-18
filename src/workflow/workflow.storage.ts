@@ -1,4 +1,4 @@
-import type { WorkflowState, WorkflowFittingRecord, OperationLog, RoleType } from "./workflow.types";
+import type { WorkflowState, WorkflowFittingRecord, OperationLog, RoleType, RejectionRecord } from "./workflow.types";
 import { generateId } from "./workflow.types";
 
 const STORAGE_KEY = "hearing_workflow_state";
@@ -53,7 +53,8 @@ function getDefaultState(): WorkflowState {
         { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: false },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: false }
-      ]
+      ],
+      rejectionHistory: []
     },
     {
       id: generateId("rec"),
@@ -87,7 +88,8 @@ function getDefaultState(): WorkflowState {
         { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: false },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: false }
-      ]
+      ],
+      rejectionHistory: []
     },
     {
       id: generateId("rec"),
@@ -122,7 +124,8 @@ function getDefaultState(): WorkflowState {
         { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: false },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: false }
-      ]
+      ],
+      rejectionHistory: []
     },
     {
       id: generateId("rec"),
@@ -159,7 +162,8 @@ function getDefaultState(): WorkflowState {
         { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: true, abnormalityNote: "重度听损，需关注助听效果" },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: true, abnormalityNote: "重度听损，需关注助听效果" }
-      ]
+      ],
+      rejectionHistory: []
     },
     {
       id: generateId("rec"),
@@ -189,7 +193,8 @@ function getDefaultState(): WorkflowState {
         { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: false },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: false }
-      ]
+      ],
+      rejectionHistory: []
     },
     {
       id: generateId("rec"),
@@ -226,7 +231,8 @@ function getDefaultState(): WorkflowState {
         { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: true, abnormalityNote: "识别率较低，需家属配合康复训练" },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: true, abnormalityNote: "极重度听损" },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: true, abnormalityNote: "极重度听损" }
-      ]
+      ],
+      rejectionHistory: []
     },
     {
       id: generateId("rec"),
@@ -260,6 +266,29 @@ function getDefaultState(): WorkflowState {
         { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: false },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: false }
+      ],
+      rejectionHistory: [
+        {
+          id: "rej-sample-001",
+          rejectionId: "rej-sample-001",
+          rejectedBy: "李主管",
+          rejectedAt: Date.now() - 86400000 * 2,
+          overallComment: "突发性耳聋处于恢复期，建议观察一个月后再考虑验配。如患者坚持，需签署知情同意书。",
+          rejectedFields: [
+            {
+              fieldName: "hearingLossType",
+              fieldLabel: "听损类型",
+              oldValue: "突发性耳聋恢复期",
+              rejectReason: "突发性耳聋，建议先医学观察一个月确认听力稳定后再验配，目前不建议急于选配"
+            },
+            {
+              fieldName: "gainAdjustment",
+              fieldLabel: "增益调整",
+              oldValue: "保守验配，增益设置较低，预留调整空间",
+              rejectReason: "增益描述过于笼统，未说明具体频段和调整参数，需补充具体处方公式和增益数值"
+            }
+          ]
+        }
       ]
     }
   ];

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useWorkflow } from "./WorkflowContext";
 import { STATUS_LABELS, PRIORITY_LABELS, canTransition, KEY_REVIEW_FIELDS } from "./workflow.types";
-import type { WorkflowFittingRecord, RecordStatus, ReviewField } from "./workflow.types";
+import type { WorkflowFittingRecord, RecordStatus, ReviewField, RejectedField } from "./workflow.types";
 
 const statusFilterOptions: { key: RecordStatus | "all"; label: string }[] = [
   { key: "all", label: "全部" },
@@ -11,12 +11,45 @@ const statusFilterOptions: { key: RecordStatus | "all"; label: string }[] = [
   { key: "pending_followup", label: "待跟进" }
 ];
 
+const FIELD_LABELS: Record<string, string> = {
+  hearingLossType: "听损类型",
+  hearingAidModel: "助听器型号",
+  gainAdjustment: "增益调整",
+  speechRecognitionRate: "言语识别率",
+  leftPta: "左耳PTA",
+  rightPta: "右耳PTA"
+};
+
+function getFieldValue(record: WorkflowFittingRecord, fieldName: string): string | number {
+  const map: Record<string, string | number> = {
+    hearingLossType: record.hearingLossType,
+    hearingAidModel: record.hearingAidModel,
+    gainAdjustment: record.gainAdjustment,
+    speechRecognitionRate: `${record.speechRecognitionRate}%`,
+    leftPta: `${record.leftPta} dB`,
+    rightPta: `${record.rightPta} dB`
+  };
+  return map[fieldName] || "-";
+}
+
+function getRawFieldValue(record: WorkflowFittingRecord, fieldName: string): string | number {
+  const map: Record<string, string | number> = {
+    hearingLossType: record.hearingLossType,
+    hearingAidModel: record.hearingAidModel,
+    gainAdjustment: record.gainAdjustment,
+    speechRecognitionRate: record.speechRecognitionRate,
+    leftPta: record.leftPta,
+    rightPta: record.rightPta
+  };
+  return map[fieldName] ?? "";
+}
+
 export default function SupervisorView() {
   const {
     state,
     getFilteredRecords,
     approveReview,
-    rejectReview,
+    rejectReviewWithFields,
     assignFollowUp,
     updateReviewField,
     selectRecord,
@@ -29,6 +62,7 @@ export default function SupervisorView() {
   const [reviewAction, setReviewAction] = useState<"approve" | "reject" | null>(null);
   const [reviewComment, setReviewComment] = useState("");
   const [assignDays, setAssignDays] = useState(7);
+  const [selectedRejectFields, setSelectedRejectFields] = useState<Record<string, { selected: boolean; reason: string }>>({});
 
   const records = useMemo(() => {
     const filtered = getFilteredRecords();
@@ -59,7 +93,45 @@ export default function SupervisorView() {
     setReviewRecord(record);
     setReviewAction(action);
     setReviewComment("");
+    if (action === "reject") {
+      const initial: Record<string, { selected: boolean; reason: string }> = {};
+      KEY_REVIEW_FIELDS.forEach(fieldName => {
+        const reviewField = record.reviewFields.find(f => f.fieldName === fieldName);
+        initial[fieldName] = {
+          selected: reviewField?.hasAbnormality || false,
+          reason: reviewField?.abnormalityNote || ""
+        };
+      });
+      setSelectedRejectFields(initial);
+    }
     setShowReviewModal(true);
+  };
+
+  const handleRejectFieldToggle = (fieldName: string) => {
+    setSelectedRejectFields(prev => ({
+      ...prev,
+      [fieldName]: {
+        ...prev[fieldName],
+        selected: !prev[fieldName]?.selected
+      }
+    }));
+  };
+
+  const handleRejectFieldReasonChange = (fieldName: string, reason: string) => {
+    setSelectedRejectFields(prev => ({
+      ...prev,
+      [fieldName]: {
+        ...prev[fieldName],
+        reason
+      }
+    }));
+  };
+
+  const canSubmitReject = () => {
+    if (!reviewComment.trim()) return false;
+    const selectedList = Object.entries(selectedRejectFields).filter(([, v]) => v.selected);
+    if (selectedList.length === 0) return false;
+    return selectedList.every(([, v]) => v.reason.trim().length > 0);
   };
 
   const handleReviewSubmit = () => {
@@ -67,11 +139,21 @@ export default function SupervisorView() {
     if (reviewAction === "approve") {
       approveReview(reviewRecord.id, reviewComment);
     } else {
-      rejectReview(reviewRecord.id, reviewComment);
+      if (!canSubmitReject()) return;
+      const rejectedFields: RejectedField[] = Object.entries(selectedRejectFields)
+        .filter(([, v]) => v.selected)
+        .map(([fieldName, v]) => ({
+          fieldName,
+          fieldLabel: FIELD_LABELS[fieldName] || fieldName,
+          oldValue: getRawFieldValue(reviewRecord, fieldName),
+          rejectReason: v.reason.trim()
+        }));
+      rejectReviewWithFields(reviewRecord.id, reviewComment.trim(), rejectedFields);
     }
     setShowReviewModal(false);
     setReviewRecord(null);
     setReviewAction(null);
+    setSelectedRejectFields({});
   };
 
   const handleAssignFollowUp = (record: WorkflowFittingRecord) => {
@@ -89,17 +171,8 @@ export default function SupervisorView() {
     );
   };
 
-  const getFieldValue = (record: WorkflowFittingRecord, fieldName: string): string | number => {
-    const map: Record<string, string | number> = {
-      hearingLossType: record.hearingLossType,
-      hearingAidModel: record.hearingAidModel,
-      gainAdjustment: record.gainAdjustment,
-      speechRecognitionRate: `${record.speechRecognitionRate}%`,
-      leftPta: `${record.leftPta} dB`,
-      rightPta: `${record.rightPta} dB`
-    };
-    return map[fieldName] || "-";
-  };
+  const selectedRejectCount = Object.values(selectedRejectFields).filter(v => v.selected).length;
+  const validRejectCount = Object.entries(selectedRejectFields).filter(([, v]) => v.selected && v.reason.trim().length > 0).length;
 
   return (
     <div className="role-view supervisor-view">
@@ -185,6 +258,15 @@ export default function SupervisorView() {
                     <span className="abnormality-icon">⚠️</span>
                     <span>
                       包含 {record.reviewFields.filter(f => f.hasAbnormality).length} 个异常字段，需重点关注
+                    </span>
+                  </div>
+                )}
+
+                {record.rejectionHistory && record.rejectionHistory.length > 0 && (
+                  <div className="rejection-history-banner">
+                    <span className="rejection-icon">🔄</span>
+                    <span>
+                      已被驳回 {record.rejectionHistory.length} 次，最近一次：{record.rejectionHistory[record.rejectionHistory.length - 1].overallComment.slice(0, 30)}...
                     </span>
                   </div>
                 )}
@@ -291,6 +373,48 @@ export default function SupervisorView() {
             </div>
           )}
 
+          {selectedRecord.rejectionHistory && selectedRecord.rejectionHistory.length > 0 && (
+            <div className="detail-group full-width rejection-history-section">
+              <h3>驳回历史记录 <span className="hint">（共 {selectedRecord.rejectionHistory.length} 次）</span></h3>
+              {selectedRecord.rejectionHistory.map((rh, idx) => (
+                <div key={rh.rejectionId} className="rejection-history-item">
+                  <div className="rejection-history-header">
+                    <span className="rejection-index">第 {idx + 1} 次驳回</span>
+                    <span className="rejection-meta">
+                      由 {rh.rejectedBy} 于 {new Date(rh.rejectedAt).toLocaleString("zh-CN")} 驳回
+                    </span>
+                    {rh.resubmittedAt && (
+                      <span className="resubmit-meta">
+                        → {rh.correctedBy} 于 {new Date(rh.resubmittedAt).toLocaleString("zh-CN")} 整改后重新提交
+                      </span>
+                    )}
+                  </div>
+                  <div className="rejection-overall-comment">
+                    <strong>总体意见：</strong>{rh.overallComment}
+                  </div>
+                  <div className="rejection-fields-list">
+                    {rh.rejectedFields.map(rf => (
+                      <div key={rf.fieldName} className="rejection-field-row">
+                        <span className="rejection-field-label">{rf.fieldLabel}</span>
+                        <span className="rejection-field-old">原值：{String(rf.oldValue) || "-"}</span>
+                        <span className="rejection-field-reason">问题：{rf.rejectReason}</span>
+                        {rf.correctedValue !== undefined && (
+                          <span className="rejection-field-corrected">整改后：{String(rf.correctedValue)}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {rh.correctionFields && rh.correctionFields.length > 0 && (
+                    <div className="correction-summary">
+                      <strong>整改修改：</strong>
+                      {rh.correctionFields.map(cf => `${cf.fieldLabel}: ${cf.oldValue} → ${cf.newValue}`).join("；")}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="detail-grid">
             <div className="detail-group">
               <h3>基本信息</h3>
@@ -361,7 +485,7 @@ export default function SupervisorView() {
 
       {showReviewModal && reviewRecord && (
         <div className="modal-overlay" onClick={() => setShowReviewModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className={`modal-content ${reviewAction === "reject" ? "reject-modal" : ""}`} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2>
                 {reviewAction === "approve" ? "审核通过" : "审核驳回"} - {reviewRecord.customerName}
@@ -369,21 +493,85 @@ export default function SupervisorView() {
               <button className="modal-close" onClick={() => setShowReviewModal(false)}>×</button>
             </div>
             <form className="modal-form" onSubmit={(e) => { e.preventDefault(); handleReviewSubmit(); }}>
-              <label className="form-field full-width">
-                <span>{reviewAction === "approve" ? "审核意见（可选）" : "驳回原因 *"}</span>
-                <textarea
-                  rows={4}
-                  value={reviewComment}
-                  onChange={e => setReviewComment(e.target.value)}
-                  placeholder={reviewAction === "approve" ? "请输入审核意见..." : "请详细说明驳回原因..."}
-                  required={reviewAction === "reject"}
-                />
-              </label>
+              {reviewAction === "approve" ? (
+                <label className="form-field full-width">
+                  <span>审核意见（可选）</span>
+                  <textarea
+                    rows={4}
+                    value={reviewComment}
+                    onChange={e => setReviewComment(e.target.value)}
+                    placeholder="请输入审核意见..."
+                  />
+                </label>
+              ) : (
+                <>
+                  <div className="reject-section-title">
+                    <h3>选择异常字段并填写整改说明 <span className="required">*</span></h3>
+                    <p className="reject-progress">
+                      已选 {selectedRejectCount} 个字段
+                      {selectedRejectCount > 0 && `，已填说明 ${validRejectCount}/${selectedRejectCount}`}
+                    </p>
+                  </div>
+                  <div className="reject-fields-list">
+                    {KEY_REVIEW_FIELDS.map(fieldName => {
+                      const fieldState = selectedRejectFields[fieldName] || { selected: false, reason: "" };
+                      const label = FIELD_LABELS[fieldName] || fieldName;
+                      return (
+                        <div
+                          key={fieldName}
+                          className={`reject-field-item ${fieldState.selected ? "selected" : ""}`}
+                        >
+                          <label className="reject-field-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={fieldState.selected}
+                              onChange={() => handleRejectFieldToggle(fieldName)}
+                            />
+                            <span className="reject-field-name">{label}</span>
+                          </label>
+                          <div className="reject-field-value">
+                            当前值：{getFieldValue(reviewRecord, fieldName)}
+                          </div>
+                          {fieldState.selected && (
+                            <textarea
+                              className="reject-field-reason"
+                              rows={2}
+                              value={fieldState.reason}
+                              onChange={e => handleRejectFieldReasonChange(fieldName, e.target.value)}
+                              placeholder={`请说明"${label}"存在的问题及整改要求...`}
+                              required
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <label className="form-field full-width">
+                    <span>总体驳回意见 *</span>
+                    <textarea
+                      rows={3}
+                      value={reviewComment}
+                      onChange={e => setReviewComment(e.target.value)}
+                      placeholder="请填写总体驳回意见，说明审核不通过的主要原因..."
+                      required
+                    />
+                  </label>
+                  {!canSubmitReject() && (
+                    <div className="form-warning">
+                      ⚠️ 请至少选择 1 个异常字段，并为每个选中字段填写整改说明，同时填写总体驳回意见
+                    </div>
+                  )}
+                </>
+              )}
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowReviewModal(false)}>
                   取消
                 </button>
-                <button type="submit" className={`btn-primary ${reviewAction}`}>
+                <button
+                  type="submit"
+                  className={`btn-primary ${reviewAction}`}
+                  disabled={reviewAction === "reject" && !canSubmitReject()}
+                >
                   {reviewAction === "approve" ? "确认通过" : "确认驳回"}
                 </button>
               </div>
