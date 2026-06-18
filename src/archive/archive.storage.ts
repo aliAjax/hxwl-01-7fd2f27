@@ -57,7 +57,7 @@ export type SearchFilter = {
   syncStatus?: string;
 };
 
-class ArchiveDatabase {
+export class ArchiveDatabase {
   private dbPromise: Promise<IDBDatabase> | null = null;
   private isSupported = typeof window !== "undefined" && "indexedDB" in window;
 
@@ -154,7 +154,7 @@ class ArchiveDatabase {
             vs.createIndex("editedAt", "editedAt", { unique: false });
             vs.createIndex("syncStatus", "syncStatus", { unique: false });
           } else {
-            const txn = event.target?.transaction;
+            const txn = (event.target as IDBOpenDBRequest).transaction;
             if (txn) {
               const vs = txn.objectStore(STORE_VERSIONS);
               if (!vs.indexNames.contains("syncStatus")) {
@@ -414,6 +414,19 @@ class ArchiveDatabase {
           resolve();
         };
         req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async saveRemoteVersions(snapshots: VersionSnapshot[]): Promise<void> {
+    if (snapshots.length === 0) return;
+
+    await this.tx(STORE_VERSIONS, "readwrite", (s) => {
+      snapshots.forEach((snapshot) => {
+        s[STORE_VERSIONS].put({
+          ...JSON.parse(JSON.stringify(snapshot)),
+          syncStatus: "synced"
+        });
       });
     });
   }
@@ -814,8 +827,9 @@ class ArchiveDatabase {
       });
     });
 
-    if (entity) {
-      await this.enqueueChange("customer", id, "delete", entity, entity.versionId);
+    const deleted = entity as CustomerProfile | null;
+    if (deleted) {
+      await this.enqueueChange("customer", id, "delete", deleted, deleted.versionId);
     }
   }
 
@@ -886,8 +900,9 @@ class ArchiveDatabase {
       });
     });
 
-    if (entity) {
-      await this.enqueueChange("audiogram", id, "delete", entity, entity.versionId);
+    const deleted = entity as AudiogramRecord | null;
+    if (deleted) {
+      await this.enqueueChange("audiogram", id, "delete", deleted, deleted.versionId);
     }
   }
 
@@ -910,8 +925,9 @@ class ArchiveDatabase {
       });
     });
 
-    if (entity) {
-      await this.enqueueChange("fitting", id, "delete", entity, entity.versionId);
+    const deleted = entity as FittingRecord | null;
+    if (deleted) {
+      await this.enqueueChange("fitting", id, "delete", deleted, deleted.versionId);
     }
   }
 
@@ -934,8 +950,9 @@ class ArchiveDatabase {
       });
     });
 
-    if (entity) {
-      await this.enqueueChange("followup", id, "delete", entity, entity.versionId);
+    const deleted = entity as FollowUpRecord | null;
+    if (deleted) {
+      await this.enqueueChange("followup", id, "delete", deleted, deleted.versionId);
     }
   }
 
@@ -958,8 +975,9 @@ class ArchiveDatabase {
       });
     });
 
-    if (entity) {
-      await this.enqueueChange("comparison", id, "delete", entity, entity.versionId);
+    const deleted = entity as ComparisonRecord | null;
+    if (deleted) {
+      await this.enqueueChange("comparison", id, "delete", deleted, deleted.versionId);
     }
   }
 

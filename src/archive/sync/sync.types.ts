@@ -139,6 +139,7 @@ export interface RetryQueueStats {
 export interface IncrementalSyncCursor {
   lastPullTime: number;
   lastPushTime: number;
+  lastVersionPullTime: number;
   entityCursors: Partial<Record<EntityType, string>>;
 }
 

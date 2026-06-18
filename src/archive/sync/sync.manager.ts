@@ -137,6 +137,7 @@ export class SyncManager implements ISyncManager {
       if (direction === "pull" || direction === "both") {
         this.setPhase("pulling");
         changesProcessed += await this.doPull();
+        versionsProcessed += await this.doPullVersions();
       }
 
       if (direction === "push" || direction === "both") {
@@ -457,23 +458,40 @@ export class SyncManager implements ISyncManager {
     return processed;
   }
 
+  private async doPullVersions(): Promise<number> {
+    const response = await this.remote.pullVersions(this.cursor.lastVersionPullTime);
+    const snapshots = response.snapshots;
+
+    this.setProgress(0, snapshots.length);
+
+    if (snapshots.length > 0) {
+      await this.db.saveRemoteVersions(snapshots);
+    }
+
+    this.cursor.lastVersionPullTime = response.serverTime;
+    this.setProgress(snapshots.length, snapshots.length);
+    return snapshots.length;
+  }
+
   private async doPush(): Promise<number> {
     const pendingEntries = await this.db.getPendingChanges(50);
-    const pendingChanges = pendingEntries.map((entry) => ({
+    const pendingChanges: SyncChangeSet[] = pendingEntries.map((entry: ChangeLogEntry) => ({
       entityType: entry.entityType,
       entityId: entry.entityId,
       operation: entry.operation,
       entity: entry.entity,
       baseVersionId: entry.baseVersionId,
       timestamp: entry.timestamp
-    })) as SyncChangeSet[];
+    }));
     let processed = 0;
 
     this.setProgress(0, pendingChanges.length);
 
     if (pendingChanges.length === 0) return 0;
 
-    const entryMap = new Map(pendingEntries.map((e) => [`${e.entityType}:${e.entityId}`, e]));
+    const entryMap = new Map<string, ChangeLogEntry>(
+      pendingEntries.map((e: ChangeLogEntry) => [`${e.entityType}:${e.entityId}`, e])
+    );
 
     const batchSize = 10;
     for (let i = 0; i < pendingChanges.length; i += batchSize) {
@@ -697,14 +715,14 @@ export class SyncManager implements ISyncManager {
 
   private async collectPendingChanges(): Promise<SyncChangeSet[]> {
     const entries = await this.db.getPendingChanges(50);
-    return entries.map((entry) => ({
+    return entries.map((entry: ChangeLogEntry): SyncChangeSet => ({
       entityType: entry.entityType,
       entityId: entry.entityId,
       operation: entry.operation,
       entity: entry.entity,
       baseVersionId: entry.baseVersionId,
       timestamp: entry.timestamp
-    })) as SyncChangeSet[];
+    }));
   }
 
   private async doPushVersions(): Promise<number> {
@@ -864,16 +882,28 @@ export class SyncManager implements ISyncManager {
   }
 
   private loadCursor(): IncrementalSyncCursor {
+    const defaultCursor: IncrementalSyncCursor = {
+      lastPullTime: 0,
+      lastPushTime: 0,
+      lastVersionPullTime: 0,
+      entityCursors: {}
+    };
+
     if (typeof window === "undefined") {
-      return { lastPullTime: 0, lastPushTime: 0, entityCursors: {} };
+      return defaultCursor;
     }
     try {
       const raw = window.localStorage.getItem(CURSOR_STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        return {
+          ...defaultCursor,
+          ...JSON.parse(raw)
+        };
+      }
     } catch (e) {
       console.warn("Failed to load sync cursor:", e);
     }
-    return { lastPullTime: 0, lastPushTime: 0, entityCursors: {} };
+    return defaultCursor;
   }
 
   private saveCursor(): void {
