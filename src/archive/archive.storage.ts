@@ -237,9 +237,10 @@ export class ArchiveDatabase {
     changeNote?: string,
     isCurrent = true
   ): Promise<void> {
+    const existingSyncStatus = (entity as unknown as { syncStatus?: string }).syncStatus;
     const snapshot = {
       ...this.snapshotFromEntity(entity, changeNote, isCurrent),
-      syncStatus: "pending" as const
+      syncStatus: existingSyncStatus || "pending"
     };
     await this.tx(STORE_VERSIONS, "readwrite", (s) => {
       s[STORE_VERSIONS].put(snapshot);

@@ -107,7 +107,7 @@ export interface WorkflowFittingRecord {
   customerName: string;
   phone: string;
   hearingLossType: string;
-  fittingStage: "初配" | "复调" | "复诊" | "随访";
+  fittingStage: "初配" | "复调" | "复诊";
   hearingAidModel: string;
   gainAdjustment: string;
   userFeedback: string;

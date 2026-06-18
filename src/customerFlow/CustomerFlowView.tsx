@@ -65,10 +65,6 @@ function CustomerList() {
     );
   }, [customers, search]);
 
-  const handleSelectCustomer = async (customerId: string) => {
-    await setActiveCustomerId(customerId);
-  };
-
   return (
     <aside className="flow-customer-list panel">
       <div className="flow-customer-list-header">
@@ -96,7 +92,7 @@ function CustomerList() {
               <article
                 key={c.id}
                 className={`flow-customer-row ${active ? "flow-customer-active" : ""}`}
-                onClick={() => handleSelectCustomer(c.id)}
+                onClick={() => setActiveCustomerId(c.id)}
               >
                 <div className="flow-customer-avatar" style={{ background: avatarColor(c.name) }}>
                   {c.name.slice(0, 1) || "?"}
@@ -129,9 +125,6 @@ function ActiveStepPanel() {
     generateSummaryFromFlow,
     goToNextStep,
     goToPrevStep,
-    dataConsistency,
-    fixDataConsistency,
-    isLoading,
   } = useCustomerFlow();
 
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -194,40 +187,48 @@ function ActiveStepPanel() {
 
       case "review":
         return (
-          <div>
-            {!dataConsistency.isConsistent && (
-              <div className="data-consistency-warning">
-                <div className="consistency-warning-content">
-                  <span className="consistency-icon">⚠️</span>
-                  <div>
-                    <strong>数据不一致提示</strong>
-                    <p className="muted">
-                      发现 {dataConsistency.issues.length} 个问题：{dataConsistency.issues.join("；")}
-                    </p>
-                  </div>
-                </div>
-                <button className="primary-action" onClick={fixDataConsistency}>
-                  🔄 一键同步
-                </button>
-              </div>
-            )}
+          <div className="flow-review-step">
+            <div className="flow-review-header">
+              <h3>质控审核 - 当前客户</h3>
+              <p className="muted">
+                {activeCustomerProfile?.name} ({activeCustomerProfile?.customerNo})
+              </p>
+            </div>
             <QcModule
-              customerId={customerId}
-              customerProfile={activeCustomerProfile}
+              customerId={customerId || undefined}
+              customerNo={activeCustomerProfile?.customerNo}
             />
           </div>
         );
 
       case "comparison":
         return (
-          <ComparisonModule
-            customerId={customerId || undefined}
-            showCustomerSelector={false}
-          />
+          <div className="flow-comparison-step">
+            <div className="flow-comparison-header">
+              <h3>验配对比 - 当前客户</h3>
+              <p className="muted">
+                {activeCustomerProfile?.name} ({activeCustomerProfile?.customerNo})
+              </p>
+            </div>
+            <ComparisonModule
+              customerId={customerId || undefined}
+              customerNo={activeCustomerProfile?.customerNo}
+            />
+          </div>
         );
 
       case "followup":
-        return <FollowUpPanel customerId={customerId} />;
+        return (
+          <div className="flow-followup-step">
+            <div className="flow-followup-header">
+              <h3>安排复诊 - 当前客户</h3>
+              <p className="muted">
+                {activeCustomerProfile?.name} ({activeCustomerProfile?.customerNo})
+              </p>
+            </div>
+            <FollowUpPanel customerId={customerId} />
+          </div>
+        );
 
       case "summary":
         return (

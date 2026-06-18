@@ -341,7 +341,8 @@ export class SyncManager implements ISyncManager {
           hasConflict: true,
           remoteVersionId: remoteEntity.versionId,
           remoteEditedAt: remoteEntity.editedAt,
-          remoteEditedBy: remoteEntity.editedBy
+          remoteEditedBy: remoteEntity.editedBy,
+          remoteEntity
         }
       } as ArchiveEntity;
       s[storeName].put(updated);
@@ -361,6 +362,10 @@ export class SyncManager implements ISyncManager {
       "模拟远程端修改冲突"
     );
 
+    this.state.conflictCount++;
+    this.state.pendingCount++;
+    await this.refreshCounts();
+
     this.emit("conflict:detected", {
       entityType,
       entityId,
@@ -373,8 +378,6 @@ export class SyncManager implements ISyncManager {
         diffs
       }
     });
-
-    await this.refreshCounts();
   }
 
   async getRetryQueueStats(): Promise<RetryQueueStats> {

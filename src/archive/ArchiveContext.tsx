@@ -467,6 +467,13 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     async (customerId: string): Promise<ConflictDiff[]> => {
       const local = await db.getCustomer(customerId);
       if (!local) return [];
+
+      if (local.conflict?.hasConflict && local.conflict.remoteEntity) {
+        const diff = conflictResolver.detectConflicts(local, local.conflict.remoteEntity as ArchiveEntity);
+        setConflictDiffs(diff);
+        return diff;
+      }
+
       const allVersions = await db.getVersions(customerId);
       const remoteSnapshot = allVersions.find((v) => v.editedBy !== "当前用户" && v.versionId !== local.versionId);
       if (!remoteSnapshot) {

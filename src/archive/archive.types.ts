@@ -38,6 +38,7 @@ export interface ConflictInfo {
   remoteVersionId?: string;
   remoteEditedAt?: number;
   remoteEditedBy?: string;
+  remoteEntity?: unknown;
   resolution?: ConflictResolution;
   resolvedAt?: number;
 }
