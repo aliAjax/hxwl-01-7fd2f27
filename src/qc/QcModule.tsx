@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { QcRecord, ReviewStatus, QcFilter, reviewStatusLabelMap, qcFilterOptions } from "./qc.types";
 import { useWorkflow } from "../workflow/WorkflowContext";
-import { getReviewableRecords, getAuditReasons } from "./qc.utils";
+import { useArchive } from "../archive/ArchiveContext";
+import { getReviewableRecords, getAuditReasons, convertWorkflowRecordToQc } from "./qc.utils";
+import type { CustomerProfile, FittingRecord } from "../archive/archive.types";
 
 function CompletenessBar({ value }: { value: number }) {
   let colorClass = "qc-complete-high";
@@ -403,19 +405,39 @@ function DetailDrawer({
   );
 }
 
-export default function QcModule() {
+interface QcModuleProps {
+  customerId?: string | null;
+  customerProfile?: CustomerProfile | null;
+}
+
+export default function QcModule({ customerId, customerProfile }: QcModuleProps) {
   const {
     state,
     approveReview,
     rejectReview,
-    canPerformAction
+    canPerformAction,
+    createRecord,
+    updateRecord,
   } = useWorkflow();
 
+  const { aggregate, createFitting, updateFitting } = useArchive();
+
+  const isContextMode = !!customerId;
+
   const records = useMemo<QcRecord[]>(() => {
-    return getReviewableRecords(state.records);
-  }, [state.records]);
+    let workflowRecords = state.records;
+
+    if (isContextMode && customerId) {
+      workflowRecords = workflowRecords.filter(
+        (r) => r.customerId === customerId || r.customerId === customerProfile?.customerNo
+      );
+    }
+
+    return getReviewableRecords(workflowRecords);
+  }, [state.records, isContextMode, customerId, customerProfile?.customerNo]);
 
   const canReview = canPerformAction("canReview");
+  const canCreateRecord = canPerformAction("canCreateRecord");
 
   const [activeFilter, setActiveFilter] = useState<QcFilter>("all");
   const [selectedRecord, setSelectedRecord] = useState<QcRecord | null>(null);
@@ -435,9 +457,20 @@ export default function QcModule() {
       const updated = records.find(r => r.id === selectedRecord.id);
       if (updated) {
         setSelectedRecord(updated);
+      } else {
+        setSelectedRecord(null);
+        setDrawerOpen(false);
       }
     }
   }, [records, selectedRecord?.id]);
+
+  useEffect(() => {
+    if (isContextMode) {
+      setActiveFilter("all");
+      setSelectedRecord(null);
+      setDrawerOpen(false);
+    }
+  }, [isContextMode, customerId]);
 
   const counts = useMemo(() => ({
     all: records.length,
@@ -510,7 +543,7 @@ export default function QcModule() {
     setReviewModal({ record, mode: "reject" });
   };
 
-  const handleReviewConfirm = (reason?: string) => {
+  const handleReviewConfirm = async (reason?: string) => {
     if (!reviewModal) return;
     if (!canReview) {
       setToastMsg("🔒 权限不足，操作已取消");
@@ -531,6 +564,38 @@ export default function QcModule() {
     setReviewModal(null);
   };
 
+  const handleCreateFromArchive = async (fitting: FittingRecord) => {
+    if (!canCreateRecord || !customerProfile) return;
+
+    const pta = aggregate?.audiograms[0]?.pta;
+    const speechScore = aggregate?.audiograms[0]?.speechRecognitionScore;
+
+    createRecord({
+      customerId: customerProfile.id,
+      customerName: customerProfile.name,
+      phone: customerProfile.phone,
+      hearingLossType: customerProfile.hearingLossType,
+      fittingStage: fitting.stage,
+      hearingAidModel: fitting.hearingAid?.left?.model || fitting.hearingAid?.right?.model || "",
+      gainAdjustment: fitting.gainAdjustment?.binaural || fitting.gainAdjustment?.left || "",
+      userFeedback: fitting.userFeedback || "",
+      speechRecognitionRate: speechScore?.binaural || speechScore?.left || 0,
+      leftPta: pta?.left || 0,
+      rightPta: pta?.right || 0,
+    });
+
+    setToastMsg(`✅ 已从档案库导入「${fitting.stage}」记录到审核流程`);
+  };
+
+  const archiveFittings = aggregate?.fittings || [];
+  const unreviewedFittings = useMemo(() => {
+    if (!isContextMode) return [];
+    const workflowCustomerIds = records.map(r => r.recordId);
+    return archiveFittings.filter(
+      f => !workflowCustomerIds.some(wid => wid === f.id || wid === `fit-${f.id}`)
+    );
+  }, [isContextMode, archiveFittings, records]);
+
   return (
     <section className="qc-module panel">
       {toastMsg && (
@@ -540,8 +605,14 @@ export default function QcModule() {
       )}
       <div className="section-heading">
         <div>
-          <p>门店主管工作台</p>
-          <h2>记录质控审核</h2>
+          <p>{isContextMode ? "客户流程" : "门店主管工作台"}</p>
+          <h2>{isContextMode ? `${customerProfile?.name || "该客户"} 的质控审核` : "记录质控审核"}</h2>
+          {isContextMode && customerProfile && (
+            <p className="customer-context">
+              客户：<strong>{customerProfile.name}</strong>
+              <span className="cust-no">({customerProfile.customerNo})</span>
+            </p>
+          )}
         </div>
         <div className="qc-header-actions">
           {!canReview && (
@@ -556,6 +627,35 @@ export default function QcModule() {
           </div>
         </div>
       </div>
+
+      {isContextMode && unreviewedFittings.length > 0 && canCreateRecord && (
+        <div className="qc-import-section">
+          <div className="qc-import-header">
+            <span className="qc-import-icon">📥</span>
+            <div>
+              <h4>从档案库导入待审核记录</h4>
+              <p className="muted">发现 {unreviewedFittings.length} 条验配记录尚未进入审核流程</p>
+            </div>
+          </div>
+          <div className="qc-import-list">
+            {unreviewedFittings.map(fitting => (
+              <div key={fitting.id} className="qc-import-item">
+                <div className="qc-import-info">
+                  <span className="qc-import-stage">{fitting.stage}</span>
+                  <span className="qc-import-date">{fitting.fittingDate}</span>
+                  <span className="qc-import-model">{fitting.hearingAid?.left?.model || fitting.hearingAid?.right?.model}</span>
+                </div>
+                <button
+                  className="qc-import-btn"
+                  onClick={() => handleCreateFromArchive(fitting)}
+                >
+                  导入审核
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="qc-summary-bar">
         <div className="qc-summary-item qc-summary-pending">
@@ -601,7 +701,18 @@ export default function QcModule() {
         {filteredRecords.length === 0 ? (
           <div className="qc-empty">
             <div className="empty-icon">📋</div>
-            <h3>暂无{qcFilterOptions.find(f => f.key === activeFilter)?.label}的审核记录</h3>
+            <h3>
+              {isContextMode
+                ? `${customerProfile?.name || "该客户"} 暂无${qcFilterOptions.find(f => f.key === activeFilter)?.label}的审核记录`
+                : `暂无${qcFilterOptions.find(f => f.key === activeFilter)?.label}的审核记录`
+              }
+            </h3>
+            {isContextMode && unreviewedFittings.length > 0 && (
+              <p className="muted">可从上方档案库导入记录进行审核</p>
+            )}
+            {isContextMode && unreviewedFittings.length === 0 && (
+              <p className="muted">请先在「验配记录」步骤创建记录</p>
+            )}
           </div>
         ) : (
           filteredRecords.map(record => (
