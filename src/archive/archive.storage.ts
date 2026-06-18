@@ -683,7 +683,8 @@ class ArchiveDatabase {
     const storeName = ENTITY_STORES[entityType];
     const now = Date.now();
     const current = snapshot.data as ArchiveEntity;
-    const nextVersion = current.version + 1;
+    const latestEntity = await this.getEntityById(entityId);
+    const nextVersion = (latestEntity?.version ?? current.version) + 1;
     const nextVersionId = generateVersionId();
 
     const reverted: ArchiveEntity = {

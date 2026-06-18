@@ -427,8 +427,14 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
   const revertToVersion = useCallback(
     async (entityType: EntityType, entityId: string, versionId: string, note?: string) => {
       await db.revertToVersion(entityType, entityId, versionId, note);
-      if (entityType === "customer" && selectedCustomerId === entityId) {
-        await selectCustomer(entityId);
+      if (selectedCustomerId) {
+        if (entityType === "customer") {
+          if (selectedCustomerId === entityId) {
+            await selectCustomer(entityId);
+          }
+        } else {
+          await selectCustomer(selectedCustomerId);
+        }
       }
       await listCustomers();
       await refreshStats();
