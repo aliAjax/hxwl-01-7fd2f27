@@ -8,8 +8,10 @@ import type {
   FollowUpRecord,
   FollowUpPriority,
   FollowUpStatus,
-  Frequency
+  Frequency,
+  EntityType
 } from "./archive.types";
+import VersionHistoryModal from "./VersionHistoryModal";
 import {
   createEmptyAudiogram,
   createEmptyFitting,
@@ -37,6 +39,8 @@ type ModalState =
   | { type: "followup"; data: FollowUpRecord }
   | null;
 
+type VersionModalState = { entityId: string; entityType: EntityType } | null;
+
 export default function CustomerDetail({
   aggregate,
   onEdit,
@@ -63,6 +67,7 @@ export default function CustomerDetail({
   const [showWorkbench, setShowWorkbench] = useState(false);
   const [workbenchAudiogramId, setWorkbenchAudiogramId] = useState<string | null>(null);
   const [expandedAudiogramId, setExpandedAudiogramId] = useState<string | null>(null);
+  const [versionModal, setVersionModal] = useState<VersionModalState>(null);
 
   const hasConflict = profile.conflict?.hasConflict || profile.syncStatus === "conflict";
   const latestAudiogram = audiograms.length > 0 ? audiograms[0] : null;
@@ -531,6 +536,13 @@ export default function CustomerDetail({
                             🎯 工作台
                           </button>
                           <button
+                            className="row-btn"
+                            title="版本历史"
+                            onClick={() => setVersionModal({ entityId: a.id, entityType: "audiogram" })}
+                          >
+                            🕘 历史
+                          </button>
+                          <button
                             className="row-btn danger"
                             title="删除"
                             onClick={() => handleDeleteAudiogram(a.id)}
@@ -622,6 +634,13 @@ export default function CustomerDetail({
                           ✎
                         </button>
                         <button
+                          className="row-btn"
+                          title="版本历史"
+                          onClick={() => setVersionModal({ entityId: f.id, entityType: "fitting" })}
+                        >
+                          🕘
+                        </button>
+                        <button
                           className="row-btn danger"
                           title="删除"
                           onClick={() => handleDeleteFitting(f.id)}
@@ -706,6 +725,13 @@ export default function CustomerDetail({
                             ✎
                           </button>
                           <button
+                            className="row-btn"
+                            title="版本历史"
+                            onClick={() => setVersionModal({ entityId: f.id, entityType: "followup" })}
+                          >
+                            🕘
+                          </button>
+                          <button
                             className="row-btn danger"
                             title="删除"
                             onClick={() => handleDeleteFollowUp(f.id)}
@@ -759,6 +785,17 @@ export default function CustomerDetail({
           onChangeNote={setChangeNote}
           onClose={() => setModal(null)}
           onSave={handleSaveFollowUp}
+        />
+      )}
+
+      {versionModal && (
+        <VersionHistoryModal
+          entityId={versionModal.entityId}
+          entityType={versionModal.entityType}
+          onClose={() => {
+            setVersionModal(null);
+            onRefresh();
+          }}
         />
       )}
     </div>
