@@ -232,12 +232,13 @@ export function CustomerFlowProvider({ children }: { children: ReactNode }) {
     const rightPta = latestAudiogram?.pta?.right || 0;
     const speechRecognitionRate = latestAudiogram?.speechRecognitionScore?.binaural || latestAudiogram?.speechRecognitionScore?.left || 0;
 
+    const workflowStage = (fitting.stage === "随访" ? "复诊" : fitting.stage) as "初配" | "复调" | "复诊" | undefined;
     const workflowRecordData: Partial<WorkflowFittingRecord> = {
       customerId,
       customerName: activeCustomerProfile.name,
       phone: activeCustomerProfile.phone,
       hearingLossType: activeCustomerProfile.hearingLossType,
-      fittingStage: fitting.stage,
+      fittingStage: workflowStage,
       hearingAidModel,
       gainAdjustment,
       userFeedback: fitting.userFeedback || "",

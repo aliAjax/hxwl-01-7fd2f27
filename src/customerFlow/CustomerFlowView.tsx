@@ -120,7 +120,7 @@ function ActiveStepPanel() {
     activeStep,
     activeCustomerProfile,
     aggregate,
-    activeWorkflowRecord,
+    activeLatestWorkflowRecord,
     summaryData,
     generateSummaryFromFlow,
     goToNextStep,
@@ -212,7 +212,8 @@ function ActiveStepPanel() {
             </div>
             <ComparisonModule
               customerId={customerId || undefined}
-              customerNo={activeCustomerProfile?.customerNo}
+              showCustomerSelector={false}
+              autoHighlight={true}
             />
           </div>
         );

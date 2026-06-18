@@ -40,7 +40,7 @@ type WorkflowAction =
 const WorkflowContext = createContext<{
   state: WorkflowState;
   dispatch: React.Dispatch<WorkflowAction>;
-  createRecord: (data: Partial<WorkflowFittingRecord>) => void;
+  createRecord: (data: Partial<WorkflowFittingRecord>) => WorkflowFittingRecord;
   updateRecord: (recordId: string, updates: Partial<WorkflowFittingRecord>, fieldChanges?: FieldChange[]) => void;
   deleteRecord: (recordId: string) => void;
   submitForReview: (recordId: string) => void;
@@ -80,55 +80,8 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
       };
 
     case "CREATE_RECORD": {
-      const now = Date.now();
-      const today = new Date().toISOString().slice(0, 10);
-      const addDays = (days: number) => {
-        const d = new Date();
-        d.setDate(d.getDate() + days);
-        return d.toISOString().slice(0, 10);
-      };
-
-      const defaultReviewFields: ReviewField[] = KEY_REVIEW_FIELDS.map(fieldName => {
-        const labels: Record<string, string> = {
-          hearingLossType: "听损类型",
-          hearingAidModel: "助听器型号",
-          gainAdjustment: "增益调整",
-          speechRecognitionRate: "言语识别率",
-          leftPta: "左耳PTA",
-          rightPta: "右耳PTA"
-        };
-        return {
-          fieldName,
-          fieldLabel: labels[fieldName] || fieldName,
-          isKey: true,
-          hasAbnormality: false
-        };
-      });
-
-      const newRecord: WorkflowFittingRecord = {
-        id: generateId("rec"),
-        customerId: action.payload.customerId || `CUST-${Date.now().toString(36).slice(-4).toUpperCase()}`,
-        customerName: action.payload.customerName || "",
-        phone: action.payload.phone || "",
-        hearingLossType: action.payload.hearingLossType || "",
-        fittingStage: action.payload.fittingStage || "初配",
-        hearingAidModel: action.payload.hearingAidModel || "",
-        gainAdjustment: action.payload.gainAdjustment || "",
-        userFeedback: action.payload.userFeedback || "",
-        speechRecognitionRate: action.payload.speechRecognitionRate || 0,
-        leftPta: action.payload.leftPta || 0,
-        rightPta: action.payload.rightPta || 0,
-        status: "draft",
-        priority: action.payload.priority || "medium",
-        followUpDays: action.payload.followUpDays || 7,
-        nextFollowUpDate: action.payload.nextFollowUpDate || addDays(7),
-        createdBy: state.currentUserName,
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-        reviewFields: defaultReviewFields,
-        rejectionHistory: []
-      };
+      const newRecord = action.payload as WorkflowFittingRecord;
+      const now = newRecord.createdAt;
 
       const newLog: OperationLog = {
         id: generateId("log"),
@@ -672,9 +625,60 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     saveWorkflowState(state);
   }, [state]);
 
-  const createRecord = useCallback((data: Partial<WorkflowFittingRecord>) => {
-    dispatch({ type: "CREATE_RECORD", payload: data });
-  }, []);
+  const createRecord = useCallback((data: Partial<WorkflowFittingRecord>): WorkflowFittingRecord => {
+    const now = Date.now();
+    const today = new Date().toISOString().slice(0, 10);
+    const addDays = (days: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    };
+
+    const defaultReviewFields: ReviewField[] = KEY_REVIEW_FIELDS.map(fieldName => {
+      const labels: Record<string, string> = {
+        hearingLossType: "听损类型",
+        hearingAidModel: "助听器型号",
+        gainAdjustment: "增益调整",
+        speechRecognitionRate: "言语识别率",
+        leftPta: "左耳PTA",
+        rightPta: "右耳PTA"
+      };
+      return {
+        fieldName,
+        fieldLabel: labels[fieldName] || fieldName,
+        isKey: true,
+        hasAbnormality: false
+      };
+    });
+
+    const newRecord: WorkflowFittingRecord = {
+      id: generateId("rec"),
+      customerId: data.customerId || `CUST-${Date.now().toString(36).slice(-4).toUpperCase()}`,
+      customerName: data.customerName || "",
+      phone: data.phone || "",
+      hearingLossType: data.hearingLossType || "",
+      fittingStage: data.fittingStage || "初配",
+      hearingAidModel: data.hearingAidModel || "",
+      gainAdjustment: data.gainAdjustment || "",
+      userFeedback: data.userFeedback || "",
+      speechRecognitionRate: data.speechRecognitionRate || 0,
+      leftPta: data.leftPta || 0,
+      rightPta: data.rightPta || 0,
+      status: "draft",
+      priority: data.priority || "medium",
+      followUpDays: data.followUpDays || 7,
+      nextFollowUpDate: data.nextFollowUpDate || addDays(7),
+      createdBy: state.currentUserName,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+      reviewFields: defaultReviewFields,
+      rejectionHistory: []
+    };
+
+    dispatch({ type: "CREATE_RECORD", payload: newRecord });
+    return newRecord;
+  }, [state.currentUserName]);
 
   const updateRecord = useCallback((recordId: string, updates: Partial<WorkflowFittingRecord>, fieldChanges?: FieldChange[]) => {
     dispatch({ type: "UPDATE_RECORD", payload: { recordId, updates, fieldChanges } });
