@@ -15,6 +15,7 @@ function phaseLabel(phase: string): string {
     checking: "检查中...",
     pulling: "拉取数据...",
     pushing: "推送数据...",
+    pushing_versions: "推送版本快照...",
     resolving: "解决冲突...",
     retrying: "重试中...",
     error: "错误"
@@ -59,6 +60,11 @@ export default function SyncStatusBar() {
         {syncState.pendingCount > 0 && (
           <span className="sync-badge pending" title="待同步数量">
             ⏳ {syncState.pendingCount}
+          </span>
+        )}
+        {syncState.pendingVersionCount > 0 && (
+          <span className="sync-badge version" title="待同步版本快照">
+            📋 {syncState.pendingVersionCount}
           </span>
         )}
         {syncState.conflictCount > 0 && (

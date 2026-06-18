@@ -11,9 +11,15 @@ import type {
   VersionSnapshot
 } from "./archive.types";
 import { generateId, generateVersionId } from "./archive.types";
+import type {
+  ChangeLogEntry,
+  ChangeLogStatus,
+  IChangeLogStore,
+  SyncOperation
+} from "./sync/sync.types";
 
 const DB_NAME = "hearing_archive_db";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 const STORE_CUSTOMERS = "customers";
 const STORE_AUDIOGRAMS = "audiograms";
@@ -21,6 +27,7 @@ const STORE_FITTINGS = "fittings";
 const STORE_FOLLOWUPS = "followups";
 const STORE_COMPARISONS = "comparisons";
 const STORE_VERSIONS = "versions";
+const STORE_CHANGE_LOG = "change_log";
 
 export const ENTITY_STORES: Record<EntityType, string> = {
   customer: STORE_CUSTOMERS,
@@ -129,6 +136,33 @@ class ArchiveDatabase {
             cs.createIndex("updatedAt", "updatedAt", { unique: false });
           }
         }
+
+        if (oldVersion < 4) {
+          if (!db.objectStoreNames.contains(STORE_CHANGE_LOG)) {
+            const cls = db.createObjectStore(STORE_CHANGE_LOG, { keyPath: "id" });
+            cls.createIndex("entityId", "entityId", { unique: false });
+            cls.createIndex("entityType", "entityType", { unique: false });
+            cls.createIndex("status", "status", { unique: false });
+            cls.createIndex("timestamp", "timestamp", { unique: false });
+            cls.createIndex("entityType_status", ["entityType", "status"], { unique: false });
+          }
+          if (!db.objectStoreNames.contains(STORE_VERSIONS)) {
+            const vs = db.createObjectStore(STORE_VERSIONS, { keyPath: "id" });
+            vs.createIndex("entityId", "entityId", { unique: false });
+            vs.createIndex("entityType", "entityType", { unique: false });
+            vs.createIndex("entityId_version", ["entityId", "version"], { unique: true });
+            vs.createIndex("editedAt", "editedAt", { unique: false });
+            vs.createIndex("syncStatus", "syncStatus", { unique: false });
+          } else {
+            const txn = event.target?.transaction;
+            if (txn) {
+              const vs = txn.objectStore(STORE_VERSIONS);
+              if (!vs.indexNames.contains("syncStatus")) {
+                vs.createIndex("syncStatus", "syncStatus", { unique: false });
+              }
+            }
+          }
+        }
       };
     });
 
@@ -181,7 +215,7 @@ class ArchiveDatabase {
     entity: T,
     changeNote?: string,
     isCurrent = true
-  ): VersionSnapshot<T> {
+  ): VersionSnapshot<T> & { syncStatus: string } {
     return {
       id: generateId("ver"),
       entityId: entity.id,
@@ -193,7 +227,8 @@ class ArchiveDatabase {
       editedAt: entity.editedAt,
       changeNote,
       data: JSON.parse(JSON.stringify(entity)),
-      isCurrent
+      isCurrent,
+      syncStatus: "pending"
     };
   }
 
@@ -202,9 +237,184 @@ class ArchiveDatabase {
     changeNote?: string,
     isCurrent = true
   ): Promise<void> {
-    const snapshot = this.snapshotFromEntity(entity, changeNote, isCurrent);
+    const snapshot = {
+      ...this.snapshotFromEntity(entity, changeNote, isCurrent),
+      syncStatus: "pending" as const
+    };
     await this.tx(STORE_VERSIONS, "readwrite", (s) => {
       s[STORE_VERSIONS].put(snapshot);
+    });
+  }
+
+  async enqueueChange(
+    entityType: EntityType,
+    entityId: string,
+    operation: SyncOperation,
+    entity: ArchiveEntity | null,
+    baseVersionId?: string
+  ): Promise<ChangeLogEntry> {
+    const entry: ChangeLogEntry = {
+      id: generateId("chg"),
+      entityType,
+      entityId,
+      operation,
+      entity,
+      baseVersionId,
+      status: "pending",
+      timestamp: Date.now()
+    };
+
+    await this.tx(STORE_CHANGE_LOG, "readwrite", (s) => {
+      s[STORE_CHANGE_LOG].put(entry);
+    });
+
+    return entry;
+  }
+
+  async getPendingChanges(limit = 50): Promise<ChangeLogEntry[]> {
+    return this.tx(STORE_CHANGE_LOG, "readonly", (s) => {
+      return new Promise<ChangeLogEntry[]>((resolve, reject) => {
+        const idx = s[STORE_CHANGE_LOG].index("status");
+        const range = IDBKeyRange.only("pending");
+        const req = idx.openCursor(range, "next");
+        const results: ChangeLogEntry[] = [];
+
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor && results.length < limit) {
+            results.push(cursor.value);
+            cursor.continue();
+          } else {
+            resolve(results);
+          }
+        };
+
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async markChangeSynced(id: string): Promise<void> {
+    await this.tx(STORE_CHANGE_LOG, "readwrite", (s) => {
+      return new Promise<void>((resolve, reject) => {
+        const req = s[STORE_CHANGE_LOG].get(id);
+        req.onsuccess = () => {
+          const entry = req.result as ChangeLogEntry | undefined;
+          if (entry) {
+            entry.status = "synced";
+            entry.syncedAt = Date.now();
+            s[STORE_CHANGE_LOG].put(entry);
+          }
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async markChangeFailed(id: string, error: string): Promise<void> {
+    await this.tx(STORE_CHANGE_LOG, "readwrite", (s) => {
+      return new Promise<void>((resolve, reject) => {
+        const req = s[STORE_CHANGE_LOG].get(id);
+        req.onsuccess = () => {
+          const entry = req.result as ChangeLogEntry | undefined;
+          if (entry) {
+            entry.status = "failed";
+            entry.error = error;
+            s[STORE_CHANGE_LOG].put(entry);
+          }
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async markChangeConflict(id: string): Promise<void> {
+    await this.tx(STORE_CHANGE_LOG, "readwrite", (s) => {
+      return new Promise<void>((resolve, reject) => {
+        const req = s[STORE_CHANGE_LOG].get(id);
+        req.onsuccess = () => {
+          const entry = req.result as ChangeLogEntry | undefined;
+          if (entry) {
+            entry.status = "conflict";
+            s[STORE_CHANGE_LOG].put(entry);
+          }
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async clearChangeLog(): Promise<void> {
+    await this.tx(STORE_CHANGE_LOG, "readwrite", (s) => {
+      s[STORE_CHANGE_LOG].clear();
+    });
+  }
+
+  async getChangeLogStats(): Promise<{ pending: number; synced: number; failed: number }> {
+    return this.tx(STORE_CHANGE_LOG, "readonly", (s) => {
+      return Promise.all([
+        new Promise<number>((resolve, reject) => {
+          const idx = s[STORE_CHANGE_LOG].index("status");
+          const req = idx.count(IDBKeyRange.only("pending"));
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        }),
+        new Promise<number>((resolve, reject) => {
+          const idx = s[STORE_CHANGE_LOG].index("status");
+          const req = idx.count(IDBKeyRange.only("synced"));
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        }),
+        new Promise<number>((resolve, reject) => {
+          const idx = s[STORE_CHANGE_LOG].index("status");
+          const req = idx.count(IDBKeyRange.only("failed"));
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        })
+      ]).then(([pending, synced, failed]) => ({ pending, synced, failed }));
+    });
+  }
+
+  async getPendingVersions(limit = 50): Promise<VersionSnapshot[]> {
+    return this.tx(STORE_VERSIONS, "readonly", (s) => {
+      return new Promise<VersionSnapshot[]>((resolve, reject) => {
+        const idx = s[STORE_VERSIONS].index("syncStatus");
+        const range = IDBKeyRange.only("pending");
+        const req = idx.openCursor(range, "next");
+        const results: VersionSnapshot[] = [];
+
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor && results.length < limit) {
+            results.push(cursor.value);
+            cursor.continue();
+          } else {
+            resolve(results);
+          }
+        };
+
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async markVersionSynced(versionId: string): Promise<void> {
+    await this.tx(STORE_VERSIONS, "readwrite", (s) => {
+      return new Promise<void>((resolve, reject) => {
+        const req = s[STORE_VERSIONS].get(versionId);
+        req.onsuccess = () => {
+          const snapshot = req.result as VersionSnapshot & { syncStatus?: string } | undefined;
+          if (snapshot) {
+            snapshot.syncStatus = "synced";
+            s[STORE_VERSIONS].put(snapshot);
+          }
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
     });
   }
 
@@ -255,7 +465,8 @@ class ArchiveDatabase {
     const toSave: CustomerProfile = {
       ...customer,
       updatedAt: now,
-      editedAt: now
+      editedAt: now,
+      syncStatus: "pending"
     };
 
     await this.tx([STORE_CUSTOMERS, STORE_VERSIONS], "readwrite", (s) => {
@@ -263,6 +474,14 @@ class ArchiveDatabase {
       const snapshot = this.snapshotFromEntity(toSave, changeNote);
       s[STORE_VERSIONS].put(snapshot);
     });
+
+    await this.enqueueChange(
+      "customer",
+      toSave.id,
+      customer.version === 1 ? "create" : "update",
+      toSave,
+      customer.parentVersionId
+    );
 
     return toSave;
   }
@@ -275,7 +494,8 @@ class ArchiveDatabase {
     const toSave: AudiogramRecord = {
       ...audiogram,
       updatedAt: now,
-      editedAt: now
+      editedAt: now,
+      syncStatus: "pending"
     };
 
     await this.tx([STORE_AUDIOGRAMS, STORE_VERSIONS], "readwrite", (s) => {
@@ -283,6 +503,14 @@ class ArchiveDatabase {
       const snapshot = this.snapshotFromEntity(toSave, changeNote);
       s[STORE_VERSIONS].put(snapshot);
     });
+
+    await this.enqueueChange(
+      "audiogram",
+      toSave.id,
+      audiogram.version === 1 ? "create" : "update",
+      toSave,
+      audiogram.parentVersionId
+    );
 
     return toSave;
   }
@@ -295,7 +523,8 @@ class ArchiveDatabase {
     const toSave: FittingRecord = {
       ...fitting,
       updatedAt: now,
-      editedAt: now
+      editedAt: now,
+      syncStatus: "pending"
     };
 
     await this.tx([STORE_FITTINGS, STORE_VERSIONS], "readwrite", (s) => {
@@ -303,6 +532,14 @@ class ArchiveDatabase {
       const snapshot = this.snapshotFromEntity(toSave, changeNote);
       s[STORE_VERSIONS].put(snapshot);
     });
+
+    await this.enqueueChange(
+      "fitting",
+      toSave.id,
+      fitting.version === 1 ? "create" : "update",
+      toSave,
+      fitting.parentVersionId
+    );
 
     return toSave;
   }
@@ -315,7 +552,8 @@ class ArchiveDatabase {
     const toSave: FollowUpRecord = {
       ...followup,
       updatedAt: now,
-      editedAt: now
+      editedAt: now,
+      syncStatus: "pending"
     };
 
     await this.tx([STORE_FOLLOWUPS, STORE_VERSIONS], "readwrite", (s) => {
@@ -323,6 +561,14 @@ class ArchiveDatabase {
       const snapshot = this.snapshotFromEntity(toSave, changeNote);
       s[STORE_VERSIONS].put(snapshot);
     });
+
+    await this.enqueueChange(
+      "followup",
+      toSave.id,
+      followup.version === 1 ? "create" : "update",
+      toSave,
+      followup.parentVersionId
+    );
 
     return toSave;
   }
@@ -335,7 +581,8 @@ class ArchiveDatabase {
     const toSave: ComparisonRecord = {
       ...comparison,
       updatedAt: now,
-      editedAt: now
+      editedAt: now,
+      syncStatus: "pending"
     };
 
     await this.tx([STORE_COMPARISONS, STORE_VERSIONS], "readwrite", (s) => {
@@ -343,6 +590,14 @@ class ArchiveDatabase {
       const snapshot = this.snapshotFromEntity(toSave, changeNote);
       s[STORE_VERSIONS].put(snapshot);
     });
+
+    await this.enqueueChange(
+      "comparison",
+      toSave.id,
+      comparison.version === 1 ? "create" : "update",
+      toSave,
+      comparison.parentVersionId
+    );
 
     return toSave;
   }
@@ -541,6 +796,7 @@ class ArchiveDatabase {
   }
 
   async deleteCustomer(id: string): Promise<void> {
+    let entity: CustomerProfile | null = null;
     await this.tx(STORE_CUSTOMERS, "readwrite", (s) => {
       return new Promise<void>((resolve, reject) => {
         const req = s[STORE_CUSTOMERS].get(id);
@@ -548,6 +804,8 @@ class ArchiveDatabase {
           const r = req.result as CustomerProfile | undefined;
           if (r) {
             r.deletedAt = Date.now();
+            r.syncStatus = "pending";
+            entity = r;
             s[STORE_CUSTOMERS].put(r);
           }
           resolve();
@@ -555,6 +813,10 @@ class ArchiveDatabase {
         req.onerror = () => reject(req.error);
       });
     });
+
+    if (entity) {
+      await this.enqueueChange("customer", id, "delete", entity, entity.versionId);
+    }
   }
 
   async updateAudiogram(a: AudiogramRecord, changeNote?: string): Promise<AudiogramRecord> {
@@ -606,6 +868,7 @@ class ArchiveDatabase {
   }
 
   async deleteAudiogram(id: string): Promise<void> {
+    let entity: AudiogramRecord | null = null;
     await this.tx(STORE_AUDIOGRAMS, "readwrite", (s) => {
       return new Promise<void>((resolve, reject) => {
         const req = s[STORE_AUDIOGRAMS].get(id);
@@ -613,6 +876,8 @@ class ArchiveDatabase {
           const r = req.result as AudiogramRecord | undefined;
           if (r) {
             r.deletedAt = Date.now();
+            r.syncStatus = "pending";
+            entity = r;
             s[STORE_AUDIOGRAMS].put(r);
           }
           resolve();
@@ -620,9 +885,14 @@ class ArchiveDatabase {
         req.onerror = () => reject(req.error);
       });
     });
+
+    if (entity) {
+      await this.enqueueChange("audiogram", id, "delete", entity, entity.versionId);
+    }
   }
 
   async deleteFitting(id: string): Promise<void> {
+    let entity: FittingRecord | null = null;
     await this.tx(STORE_FITTINGS, "readwrite", (s) => {
       return new Promise<void>((resolve, reject) => {
         const req = s[STORE_FITTINGS].get(id);
@@ -630,6 +900,8 @@ class ArchiveDatabase {
           const r = req.result as FittingRecord | undefined;
           if (r) {
             r.deletedAt = Date.now();
+            r.syncStatus = "pending";
+            entity = r;
             s[STORE_FITTINGS].put(r);
           }
           resolve();
@@ -637,9 +909,14 @@ class ArchiveDatabase {
         req.onerror = () => reject(req.error);
       });
     });
+
+    if (entity) {
+      await this.enqueueChange("fitting", id, "delete", entity, entity.versionId);
+    }
   }
 
   async deleteFollowUp(id: string): Promise<void> {
+    let entity: FollowUpRecord | null = null;
     await this.tx(STORE_FOLLOWUPS, "readwrite", (s) => {
       return new Promise<void>((resolve, reject) => {
         const req = s[STORE_FOLLOWUPS].get(id);
@@ -647,6 +924,8 @@ class ArchiveDatabase {
           const r = req.result as FollowUpRecord | undefined;
           if (r) {
             r.deletedAt = Date.now();
+            r.syncStatus = "pending";
+            entity = r;
             s[STORE_FOLLOWUPS].put(r);
           }
           resolve();
@@ -654,9 +933,14 @@ class ArchiveDatabase {
         req.onerror = () => reject(req.error);
       });
     });
+
+    if (entity) {
+      await this.enqueueChange("followup", id, "delete", entity, entity.versionId);
+    }
   }
 
   async deleteComparison(id: string): Promise<void> {
+    let entity: ComparisonRecord | null = null;
     await this.tx(STORE_COMPARISONS, "readwrite", (s) => {
       return new Promise<void>((resolve, reject) => {
         const req = s[STORE_COMPARISONS].get(id);
@@ -664,6 +948,8 @@ class ArchiveDatabase {
           const r = req.result as ComparisonRecord | undefined;
           if (r) {
             r.deletedAt = Date.now();
+            r.syncStatus = "pending";
+            entity = r;
             s[STORE_COMPARISONS].put(r);
           }
           resolve();
@@ -671,6 +957,10 @@ class ArchiveDatabase {
         req.onerror = () => reject(req.error);
       });
     });
+
+    if (entity) {
+      await this.enqueueChange("comparison", id, "delete", entity, entity.versionId);
+    }
   }
 
   async revertToVersion(

@@ -1,6 +1,7 @@
 import type {
   ArchiveEntity,
-  EntityType
+  EntityType,
+  VersionSnapshot
 } from "../archive.types";
 import { generateId, generateVersionId } from "../archive.types";
 import type {
@@ -8,7 +9,10 @@ import type {
   SyncChangeSet,
   SyncPullResponse,
   SyncPushRequest,
-  SyncPushResult
+  SyncPushResult,
+  VersionSnapshotPullResponse,
+  VersionSnapshotSyncRequest,
+  VersionSnapshotSyncResult
 } from "./sync.types";
 
 interface StoredRemoteEntity {
@@ -16,9 +20,16 @@ interface StoredRemoteEntity {
   lastModified: number;
 }
 
+interface StoredVersion {
+  snapshot: VersionSnapshot;
+  lastModified: number;
+}
+
 export class MockRemoteAdapter implements IRemoteAdapter {
   private storage = new Map<string, StoredRemoteEntity>();
   private changeLog: SyncChangeSet[] = [];
+  private versionStorage = new Map<string, StoredVersion>();
+  private versionChangeLog: VersionSnapshot[] = [];
   private latencyMs = 300;
   private failureRate = 0;
   private serverTimeOffset = 0;
@@ -219,6 +230,52 @@ export class MockRemoteAdapter implements IRemoteAdapter {
     });
   }
 
+  async pushVersions(request: VersionSnapshotSyncRequest): Promise<VersionSnapshotSyncResult> {
+    await this.delay();
+    this.maybeFail();
+
+    const accepted: string[] = [];
+    const rejected: Array<{ versionId: string; reason: string }> = [];
+    const serverTime = this.getServerTime();
+
+    for (const snapshot of request.snapshots) {
+      try {
+        if (!snapshot.id) {
+          rejected.push({ versionId: snapshot.id || "unknown", reason: "快照ID为空" });
+          continue;
+        }
+
+        this.versionStorage.set(snapshot.id, {
+          snapshot: JSON.parse(JSON.stringify(snapshot)),
+          lastModified: serverTime
+        });
+
+        this.versionChangeLog.push(JSON.parse(JSON.stringify(snapshot)));
+        accepted.push(snapshot.id);
+      } catch (e) {
+        rejected.push({
+          versionId: snapshot.id || "unknown",
+          reason: (e as Error).message
+        });
+      }
+    }
+
+    return { accepted, rejected, serverTime };
+  }
+
+  async pullVersions(since: number, _cursor?: string): Promise<VersionSnapshotPullResponse> {
+    await this.delay();
+    this.maybeFail();
+
+    const snapshots = this.versionChangeLog.filter((v) => v.editedAt > since);
+
+    return {
+      snapshots: JSON.parse(JSON.stringify(snapshots)),
+      serverTime: this.getServerTime(),
+      hasMore: false
+    };
+  }
+
   setFailureRate(rate: number): void {
     this.failureRate = Math.max(0, Math.min(1, rate));
   }
@@ -230,6 +287,8 @@ export class MockRemoteAdapter implements IRemoteAdapter {
   clearAll(): void {
     this.storage.clear();
     this.changeLog = [];
+    this.versionStorage.clear();
+    this.versionChangeLog = [];
   }
 
   private computeBasicDiffs(local: ArchiveEntity, remote: ArchiveEntity) {

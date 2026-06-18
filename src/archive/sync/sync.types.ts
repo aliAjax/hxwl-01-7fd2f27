@@ -14,11 +14,14 @@ export type SyncDirection = "push" | "pull" | "both";
 
 export type SyncOperation = "create" | "update" | "delete";
 
+export type ChangeLogStatus = "pending" | "synced" | "failed" | "conflict";
+
 export type SyncPhase =
   | "idle"
   | "checking"
   | "pulling"
   | "pushing"
+  | "pushing_versions"
   | "resolving"
   | "retrying"
   | "error";
@@ -35,6 +38,38 @@ export interface SyncState {
   pendingCount: number;
   conflictCount: number;
   retryCount: number;
+  pendingVersionCount: number;
+}
+
+export interface ChangeLogEntry {
+  id: string;
+  entityType: EntityType;
+  entityId: string;
+  operation: SyncOperation;
+  entity: ArchiveEntity | null;
+  baseVersionId?: string;
+  status: ChangeLogStatus;
+  timestamp: number;
+  syncedAt?: number;
+  error?: string;
+}
+
+export interface VersionSnapshotSyncRequest {
+  snapshots: VersionSnapshot[];
+  clientTime: number;
+}
+
+export interface VersionSnapshotSyncResult {
+  accepted: string[];
+  rejected: Array<{ versionId: string; reason: string }>;
+  serverTime: number;
+}
+
+export interface VersionSnapshotPullResponse {
+  snapshots: VersionSnapshot[];
+  serverTime: number;
+  hasMore: boolean;
+  cursor?: string;
 }
 
 export interface SyncChangeSet {
@@ -110,7 +145,7 @@ export interface IncrementalSyncCursor {
 export interface SyncEventMap {
   "sync:start": { direction: SyncDirection };
   "sync:progress": { completed: number; total: number; phase: SyncPhase };
-  "sync:complete": { direction: SyncDirection; changesProcessed: number };
+  "sync:complete": { direction: SyncDirection; changesProcessed: number; versionsProcessed: number };
   "sync:error": { error: string; phase: SyncPhase };
   "conflict:detected": {
     entityType: EntityType;
@@ -126,6 +161,8 @@ export interface SyncEventMap {
   "retry:success": { entityId: string };
   "retry:failed": { entityId: string; error: string };
   "entity:synced": { entityType: EntityType; entityId: string };
+  "entity:enqueued": { entry: ChangeLogEntry };
+  "version:synced": { versionId: string };
   "network:change": { isOnline: boolean };
 }
 
@@ -135,6 +172,53 @@ export interface IRemoteAdapter {
   push(request: SyncPushRequest): Promise<SyncPushResult>;
   getEntity(entityType: EntityType, entityId: string): Promise<ArchiveEntity | null>;
   simulateRemoteEdit(entityType: EntityType, entityId: string, edits: Partial<ArchiveEntity>): Promise<void>;
+  pushVersions(request: VersionSnapshotSyncRequest): Promise<VersionSnapshotSyncResult>;
+  pullVersions(since: number, cursor?: string): Promise<VersionSnapshotPullResponse>;
+}
+
+export interface IChangeLogStore {
+  enqueue(entityType: EntityType, entityId: string, operation: SyncOperation, entity: ArchiveEntity | null): Promise<ChangeLogEntry>;
+  getPending(limit?: number): Promise<ChangeLogEntry[]>;
+  markSynced(id: string): Promise<void>;
+  markFailed(id: string, error: string): Promise<void>;
+  markConflict(id: string): Promise<void>;
+  clear(): Promise<void>;
+  getStats(): Promise<{ pending: number; synced: number; failed: number }>;
+  getPendingVersions(limit?: number): Promise<VersionSnapshot[]>;
+  markVersionSynced(versionId: string): Promise<void>;
+}
+
+export interface ISyncManager {
+  start(): void;
+  stop(): void;
+  sync(direction?: SyncDirection): Promise<void>;
+  syncEntity(entityType: EntityType, entityId: string): Promise<void>;
+  getState(): SyncState;
+  subscribe<K extends keyof SyncEventMap>(
+    event: K,
+    handler: (payload: SyncEventMap[K]) => void
+  ): () => void;
+  resolveConflict(
+    entityType: EntityType,
+    entityId: string,
+    resolution: "local" | "remote" | "merge",
+    mergedData?: ArchiveEntity
+  ): Promise<void>;
+  simulateRemoteConflict(
+    entityType: EntityType,
+    entityId: string,
+    edits?: Partial<ArchiveEntity>
+  ): Promise<void>;
+  getRetryQueueStats(): Promise<RetryQueueStats>;
+  processRetryQueue(): Promise<void>;
+  enqueueLocalEdit(
+    entityType: EntityType,
+    entityId: string,
+    operation: SyncOperation,
+    entity: ArchiveEntity | null
+  ): Promise<void>;
+  getPendingChangeCount(): Promise<number>;
+  getPendingVersionCount(): Promise<number>;
 }
 
 export interface IConflictResolver {
@@ -163,31 +247,6 @@ export interface IRetryQueue {
   markFailed(id: string, error: string): Promise<void>;
   getStats(): Promise<RetryQueueStats>;
   clear(): Promise<void>;
-}
-
-export interface ISyncManager {
-  start(): void;
-  stop(): void;
-  sync(direction?: SyncDirection): Promise<void>;
-  syncEntity(entityType: EntityType, entityId: string): Promise<void>;
-  getState(): SyncState;
-  subscribe<K extends keyof SyncEventMap>(
-    event: K,
-    handler: (payload: SyncEventMap[K]) => void
-  ): () => void;
-  resolveConflict(
-    entityType: EntityType,
-    entityId: string,
-    resolution: "local" | "remote" | "merge",
-    mergedData?: ArchiveEntity
-  ): Promise<void>;
-  simulateRemoteConflict(
-    entityType: EntityType,
-    entityId: string,
-    edits?: Partial<ArchiveEntity>
-  ): Promise<void>;
-  getRetryQueueStats(): Promise<RetryQueueStats>;
-  processRetryQueue(): Promise<void>;
 }
 
 export type SyncableEntity =

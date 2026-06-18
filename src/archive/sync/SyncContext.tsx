@@ -40,6 +40,14 @@ interface SyncContextValue {
   startSync: () => void;
   stopSync: () => void;
   isSyncing: boolean;
+  enqueueLocalEdit: (
+    entityType: EntityType,
+    entityId: string,
+    operation: "create" | "update" | "delete",
+    entity: ArchiveEntity | null
+  ) => Promise<void>;
+  getPendingChangeCount: () => Promise<number>;
+  getPendingVersionCount: () => Promise<number>;
 }
 
 const SyncContext = createContext<SyncContextValue | null>(null);
@@ -68,6 +76,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       syncManager.subscribe("retry:success", () => refreshState()),
       syncManager.subscribe("retry:failed", () => refreshState()),
       syncManager.subscribe("entity:synced", () => refreshState()),
+      syncManager.subscribe("entity:enqueued", () => refreshState()),
+      syncManager.subscribe("version:synced", () => refreshState()),
       syncManager.subscribe("network:change", () => refreshState())
     ];
 
@@ -121,6 +131,29 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     refreshState();
   }, [syncManager, refreshState]);
 
+  const enqueueLocalEdit = useCallback(
+    async (
+      entityType: EntityType,
+      entityId: string,
+      operation: "create" | "update" | "delete",
+      entity: ArchiveEntity | null
+    ) => {
+      await syncManager.enqueueLocalEdit(entityType, entityId, operation, entity);
+      refreshState();
+    },
+    [syncManager, refreshState]
+  );
+
+  const getPendingChangeCount = useCallback(
+    () => syncManager.getPendingChangeCount(),
+    [syncManager]
+  );
+
+  const getPendingVersionCount = useCallback(
+    () => syncManager.getPendingVersionCount(),
+    [syncManager]
+  );
+
   const startSync = useCallback(() => {
     syncManager.start();
     refreshState();
@@ -147,7 +180,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     processRetryQueue,
     startSync,
     stopSync,
-    isSyncing
+    isSyncing,
+    enqueueLocalEdit,
+    getPendingChangeCount,
+    getPendingVersionCount
   };
 
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;

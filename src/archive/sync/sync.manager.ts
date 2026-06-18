@@ -4,7 +4,8 @@ import type {
   ComparisonRecord,
   EntityType,
   FollowUpRecord,
-  FittingRecord
+  FittingRecord,
+  VersionSnapshot
 } from "../archive.types";
 import { generateVersionId } from "../archive.types";
 import {
@@ -13,6 +14,7 @@ import {
   getArchiveDB
 } from "../archive.storage";
 import type {
+  ChangeLogEntry,
   IConflictResolver,
   IRemoteAdapter,
   IRetryQueue,
@@ -24,8 +26,10 @@ import type {
   SyncChangeSet,
   SyncDirection,
   SyncEventMap,
+  SyncOperation,
   SyncPhase,
-  SyncState
+  SyncState,
+  VersionSnapshotSyncResult
 } from "./sync.types";
 import { getMockRemoteAdapter, MockRemoteAdapter } from "./remote.adapter";
 import { getConflictResolver } from "./conflict.resolver";
@@ -78,7 +82,8 @@ export class SyncManager implements ISyncManager {
       isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
       pendingCount: 0,
       conflictCount: 0,
-      retryCount: 0
+      retryCount: 0,
+      pendingVersionCount: 0
     };
   }
 
@@ -127,6 +132,7 @@ export class SyncManager implements ISyncManager {
       this.setOnline(true);
 
       let changesProcessed = 0;
+      let versionsProcessed = 0;
 
       if (direction === "pull" || direction === "both") {
         this.setPhase("pulling");
@@ -136,6 +142,9 @@ export class SyncManager implements ISyncManager {
       if (direction === "push" || direction === "both") {
         this.setPhase("pushing");
         changesProcessed += await this.doPush();
+
+        this.setPhase("pushing_versions");
+        versionsProcessed += await this.doPushVersions();
       }
 
       this.setPhase("retrying");
@@ -144,7 +153,7 @@ export class SyncManager implements ISyncManager {
       this.state.lastSyncAt = Date.now();
       this.state.lastError = null;
       this.saveCursor();
-      this.emit("sync:complete", { direction, changesProcessed });
+      this.emit("sync:complete", { direction, changesProcessed, versionsProcessed });
       await this.refreshCounts();
     } catch (e) {
       this.state.lastError = (e as Error).message;
@@ -449,12 +458,22 @@ export class SyncManager implements ISyncManager {
   }
 
   private async doPush(): Promise<number> {
-    const pendingChanges = await this.collectPendingChanges();
+    const pendingEntries = await this.db.getPendingChanges(50);
+    const pendingChanges = pendingEntries.map((entry) => ({
+      entityType: entry.entityType,
+      entityId: entry.entityId,
+      operation: entry.operation,
+      entity: entry.entity,
+      baseVersionId: entry.baseVersionId,
+      timestamp: entry.timestamp
+    })) as SyncChangeSet[];
     let processed = 0;
 
     this.setProgress(0, pendingChanges.length);
 
     if (pendingChanges.length === 0) return 0;
+
+    const entryMap = new Map(pendingEntries.map((e) => [`${e.entityType}:${e.entityId}`, e]));
 
     const batchSize = 10;
     for (let i = 0; i < pendingChanges.length; i += batchSize) {
@@ -467,6 +486,11 @@ export class SyncManager implements ISyncManager {
 
         for (const accepted of result.accepted) {
           await this.markSynced(accepted.entityType, accepted.entityId, accepted.newVersionId);
+          const key = `${accepted.entityType}:${accepted.entityId}`;
+          const entry = entryMap.get(key);
+          if (entry) {
+            await this.db.markChangeSynced(entry.id);
+          }
           this.emit("entity:synced", {
             entityType: accepted.entityType,
             entityId: accepted.entityId
@@ -475,9 +499,15 @@ export class SyncManager implements ISyncManager {
         }
 
         for (const rejected of result.rejected) {
+          const key = `${rejected.entityType}:${rejected.entityId}`;
+          const entry = entryMap.get(key);
+
           if (rejected.conflict) {
             const entity = await this.db.getEntityById(rejected.entityId);
             if (entity) {
+              if (entry) {
+                await this.db.markChangeConflict(entry.id);
+              }
               await this.handlePushConflict(
                 rejected.entityType,
                 rejected.entityId,
@@ -486,6 +516,9 @@ export class SyncManager implements ISyncManager {
               );
             }
           } else {
+            if (entry) {
+              await this.db.markChangeFailed(entry.id, rejected.reason);
+            }
             const change = batch.find(
               (c) => c.entityId === rejected.entityId && c.entityType === rejected.entityType
             );
@@ -497,6 +530,11 @@ export class SyncManager implements ISyncManager {
         }
       } catch (e) {
         for (const change of batch) {
+          const key = `${change.entityType}:${change.entityId}`;
+          const entry = entryMap.get(key);
+          if (entry) {
+            await this.db.markChangeFailed(entry.id, (e as Error).message);
+          }
           const item = await this.retryQueue.enqueue(change, (e as Error).message);
           this.emit("retry:queued", { item });
         }
@@ -658,57 +696,46 @@ export class SyncManager implements ISyncManager {
   }
 
   private async collectPendingChanges(): Promise<SyncChangeSet[]> {
-    const changes: SyncChangeSet[] = [];
-
-    const customers = await this.db.listCustomers();
-    for (const c of customers) {
-      if (c.syncStatus === "pending") {
-        changes.push({
-          entityType: "customer",
-          entityId: c.id,
-          operation: c.deletedAt ? "delete" : c.version === 1 ? "create" : "update",
-          entity: c.deletedAt ? null : c,
-          baseVersionId: c.parentVersionId,
-          timestamp: c.updatedAt
-        });
-      }
-    }
-
-    const audiograms = await this.collectPendingFromStore<AudiogramRecord>("audiograms");
-    const fittings = await this.collectPendingFromStore<FittingRecord>("fittings");
-    const followups = await this.collectPendingFromStore<FollowUpRecord>("followups");
-    const comparisons = await this.collectPendingFromStore<ComparisonRecord>("comparisons");
-
-    for (const list of [audiograms, fittings, followups, comparisons]) {
-      for (const entity of list) {
-        changes.push({
-          entityType: entity.entityType,
-          entityId: entity.id,
-          operation: entity.deletedAt ? "delete" : entity.version === 1 ? "create" : "update",
-          entity: entity.deletedAt ? null : (entity as ArchiveEntity),
-          baseVersionId: entity.parentVersionId,
-          timestamp: entity.updatedAt
-        });
-      }
-    }
-
-    return changes;
+    const entries = await this.db.getPendingChanges(50);
+    return entries.map((entry) => ({
+      entityType: entry.entityType,
+      entityId: entry.entityId,
+      operation: entry.operation,
+      entity: entry.entity,
+      baseVersionId: entry.baseVersionId,
+      timestamp: entry.timestamp
+    })) as SyncChangeSet[];
   }
 
-  private async collectPendingFromStore<T extends ArchiveEntity>(storeName: string): Promise<T[]> {
-    return this.dbTx(storeName, "readonly", (s) => {
-      return new Promise<T[]>((resolve, reject) => {
-        const req = s[storeName].getAll();
-        req.onsuccess = () => {
-          resolve(
-            (req.result as T[]).filter(
-              (e) => !e.deletedAt && e.syncStatus === "pending"
-            )
-          );
-        };
-        req.onerror = () => reject(req.error);
-      });
-    });
+  private async doPushVersions(): Promise<number> {
+    const pendingVersions = await this.db.getPendingVersions(50);
+    let processed = 0;
+
+    this.setProgress(0, pendingVersions.length);
+
+    if (pendingVersions.length === 0) return 0;
+
+    const batchSize = 20;
+    for (let i = 0; i < pendingVersions.length; i += batchSize) {
+      const batch = pendingVersions.slice(i, i + batchSize);
+      try {
+        const result = await this.remote.pushVersions({
+          snapshots: batch,
+          clientTime: Date.now()
+        });
+
+        for (const acceptedId of result.accepted) {
+          await this.db.markVersionSynced(acceptedId);
+          this.emit("version:synced", { versionId: acceptedId });
+          processed++;
+        }
+      } catch (e) {
+        console.warn("Version snapshot batch push failed:", e);
+      }
+      this.setProgress(Math.min(i + batchSize, pendingVersions.length), pendingVersions.length);
+    }
+
+    return processed;
   }
 
   private async markSynced(
@@ -763,14 +790,39 @@ export class SyncManager implements ISyncManager {
     try {
       const conflicts = await this.db.detectConflicts();
       const retryStats = await this.retryQueue.getStats();
-      const pending = await this.collectPendingChanges();
+      const [changeLogStats, pendingVersions] = await Promise.all([
+        this.db.getChangeLogStats(),
+        this.db.getPendingVersions(1000)
+      ]);
 
       this.state.conflictCount = conflicts.length;
       this.state.retryCount = retryStats.total;
-      this.state.pendingCount = pending.length;
+      this.state.pendingCount = changeLogStats.pending;
+      this.state.pendingVersionCount = pendingVersions.length;
     } catch (e) {
       console.warn("Failed to refresh counts:", e);
     }
+  }
+
+  async enqueueLocalEdit(
+    entityType: EntityType,
+    entityId: string,
+    operation: SyncOperation,
+    entity: ArchiveEntity | null
+  ): Promise<void> {
+    const entry = await this.db.enqueueChange(entityType, entityId, operation, entity);
+    this.emit("entity:enqueued", { entry });
+    await this.refreshCounts();
+  }
+
+  async getPendingChangeCount(): Promise<number> {
+    const stats = await this.db.getChangeLogStats();
+    return stats.pending;
+  }
+
+  async getPendingVersionCount(): Promise<number> {
+    const pending = await this.db.getPendingVersions(1000);
+    return pending.length;
   }
 
   private setPhase(phase: SyncPhase): void {
