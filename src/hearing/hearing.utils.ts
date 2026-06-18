@@ -37,7 +37,7 @@ export function createEmptyRecord(): HearingRecord {
   };
 }
 
-export function validateThreshold(raw: string | number | null): {
+export function validateThreshold(raw: string | number | null | undefined): {
   value: number | null;
   valid: boolean;
   warning?: string;

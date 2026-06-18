@@ -69,6 +69,7 @@ export default function HearingModule({
   const [activeSample, setActiveSample] = useState<string>(showSamples ? "high-frequency" : "");
   const [savingStatus, setSavingStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [editingAudiogramId, setEditingAudiogramId] = useState<string | null>(null);
+  const prevCustomerIdRef = useRef<string | null | undefined>(effectiveCustomerId);
 
   useEffect(() => {
     if (effectiveCustomerId && audiogramId && aggregate) {
@@ -83,8 +84,17 @@ export default function HearingModule({
   }, [audiogramId, effectiveCustomerId, aggregate, updateRecord]);
 
   useEffect(() => {
-    setEditingAudiogramId(null);
-    setActiveSample("");
+    const prevCustomerId = prevCustomerIdRef.current;
+    const hasCustomerSwitched =
+      prevCustomerId !== undefined &&
+      prevCustomerId !== effectiveCustomerId;
+
+    if (hasCustomerSwitched) {
+      setEditingAudiogramId(null);
+      setActiveSample("");
+    }
+
+    prevCustomerIdRef.current = effectiveCustomerId;
   }, [effectiveCustomerId]);
 
   const handleSample = (id: string) => {
