@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { QcRecord, ReviewStatus, QcFilter, reviewStatusLabelMap, qcFilterOptions } from "./qc.types";
-import { SAMPLE_QC_RECORDS } from "./qc.sampleData";
+import { useWorkflow } from "../workflow/WorkflowContext";
+import { getReviewableRecords, getAuditReasons } from "./qc.utils";
 
 function CompletenessBar({ value }: { value: number }) {
   let colorClass = "qc-complete-high";
@@ -174,13 +175,7 @@ function ReviewModal({
               <div className="qc-reject-suggest">
                 <span className="qc-suggest-label">常用原因：</span>
                 <div className="qc-suggest-chips">
-                  {[
-                    "关键字段填写不完整，请补充",
-                    "增益调整幅度超出推荐范围",
-                    "用户反馈内容缺失，请回访补充",
-                    "气导/骨导测试数据不完整",
-                    "言语识别率测试数据缺失"
-                  ].map(s => (
+                  {getAuditReasons().map(s => (
                     <button
                       key={s}
                       className="qc-suggest-chip"
@@ -362,11 +357,29 @@ function DetailDrawer({
 }
 
 export default function QcModule() {
-  const [records, setRecords] = useState<QcRecord[]>(SAMPLE_QC_RECORDS);
+  const {
+    state,
+    approveReview,
+    rejectReview
+  } = useWorkflow();
+
+  const records = useMemo<QcRecord[]>(() => {
+    return getReviewableRecords(state.records);
+  }, [state.records]);
+
   const [activeFilter, setActiveFilter] = useState<QcFilter>("all");
   const [selectedRecord, setSelectedRecord] = useState<QcRecord | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [reviewModal, setReviewModal] = useState<{ record: QcRecord; mode: "approve" | "reject" } | null>(null);
+
+  useEffect(() => {
+    if (selectedRecord) {
+      const updated = records.find(r => r.id === selectedRecord.id);
+      if (updated) {
+        setSelectedRecord(updated);
+      }
+    }
+  }, [records, selectedRecord?.id]);
 
   const counts = useMemo(() => ({
     all: records.length,
@@ -434,34 +447,12 @@ export default function QcModule() {
   const handleReviewConfirm = (reason?: string) => {
     if (!reviewModal) return;
     const { record, mode } = reviewModal;
-    const now = new Date();
-    const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
-    setRecords(prev => prev.map(r => {
-      if (r.id === record.id) {
-        return {
-          ...r,
-          reviewStatus: mode === "approve" ? "approved" : "rejected",
-          reviewedBy: "主管-当前用户",
-          reviewedAt: timestamp,
-          rejectReason: mode === "reject" ? reason : undefined
-        };
-      }
-      return r;
-    }));
-
-    setSelectedRecord(prev => {
-      if (prev && prev.id === record.id) {
-        return {
-          ...prev,
-          reviewStatus: mode === "approve" ? "approved" : "rejected",
-          reviewedBy: "主管-当前用户",
-          reviewedAt: timestamp,
-          rejectReason: mode === "reject" ? reason : undefined
-        };
-      }
-      return prev;
-    });
+    if (mode === "approve") {
+      approveReview(record.recordId, reason);
+    } else {
+      rejectReview(record.recordId, reason || "退回修改");
+    }
 
     setReviewModal(null);
   };

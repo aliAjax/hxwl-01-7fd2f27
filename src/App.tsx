@@ -11,7 +11,9 @@ import type { FittingSummaryData, SummaryPreviewConfig } from "./summary/summary
 import { DEFAULT_SUMMARY_CONFIG } from "./summary/summary.types";
 import { useDraft, DraftIndicator } from "./draft";
 import { ArchiveProvider, ArchiveModule } from "./archive";
-import { WorkflowModule, WorkflowProvider } from "./workflow";
+import { WorkflowModule, WorkflowProvider, useWorkflow } from "./workflow";
+import type { RoleType } from "./workflow/workflow.types";
+import { ROLE_LABELS } from "./workflow/workflow.types";
 
 interface CustomerRecord {
   id: string;
@@ -380,6 +382,38 @@ function CustomerDrawer({
         )}
       </aside>
     </>
+  );
+}
+
+function WorkbenchRoleChips() {
+  const { state, switchRole } = useWorkflow();
+  const roleMap: { label: string; role: RoleType }[] = [
+    { label: "听力师", role: "audiologist" },
+    { label: "门店主管", role: "supervisor" },
+    { label: "复诊助理", role: "assistant" }
+  ];
+  return (
+    <div className="chips">
+      {roleMap.map(({ label, role }) => (
+        <button
+          key={role}
+          className={state.currentRole === role ? "chip-active" : ""}
+          onClick={() => switchRole(role)}
+          style={{
+            cursor: "pointer",
+            padding: "6px 14px",
+            borderRadius: "999px",
+            border: state.currentRole === role ? "2px solid #155e75" : "1px solid #d1d5db",
+            background: state.currentRole === role ? "#ecfeff" : "#fff",
+            color: state.currentRole === role ? "#155e75" : "#374151",
+            fontWeight: state.currentRole === role ? 600 : 400,
+            fontSize: "14px"
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -881,11 +915,7 @@ function App() {
       <section className="workspace">
         <aside className="panel narrow">
           <h2>角色</h2>
-          <div className="chips">
-            {project.users.map((user: string) => (
-              <span key={user}>{user}</span>
-            ))}
-          </div>
+          <WorkbenchRoleChips />
           <h2>筛选</h2>
           <div className="chips muted">
             {project.filters.map((filter: string) => (
