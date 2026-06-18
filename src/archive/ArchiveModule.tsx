@@ -5,6 +5,7 @@ import { createEmptyCustomer } from "./archive.types";
 import CustomerDetail from "./CustomerDetail";
 import VersionHistoryModal from "./VersionHistoryModal";
 import ConflictResolver from "./ConflictResolver";
+import { SyncStatusBar } from "./sync";
 import { useHearingDraft, DraftIndicator } from "../draft";
 import {
   getFilterViews,
@@ -201,6 +202,7 @@ export default function ArchiveModule() {
 
   return (
     <div className="archive-shell">
+      <SyncStatusBar />
       <div className="archive-header">
         <div>
           <p className="eyebrow">本地档案库 · 离线优先</p>

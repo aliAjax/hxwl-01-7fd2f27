@@ -22,13 +22,15 @@ const STORE_FOLLOWUPS = "followups";
 const STORE_COMPARISONS = "comparisons";
 const STORE_VERSIONS = "versions";
 
-const ENTITY_STORES: Record<EntityType, string> = {
+export const ENTITY_STORES: Record<EntityType, string> = {
   customer: STORE_CUSTOMERS,
   audiogram: STORE_AUDIOGRAMS,
   fitting: STORE_FITTINGS,
   followup: STORE_FOLLOWUPS,
   comparison: STORE_COMPARISONS
 };
+
+export type ENTITY_STORES_TYPE = typeof ENTITY_STORES;
 
 export interface ArchiveStats {
   customers: number;

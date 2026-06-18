@@ -21,6 +21,12 @@ import type {
   VersionSnapshot
 } from "./archive.types";
 import { generateVersionId } from "./archive.types";
+import {
+  SyncProvider,
+  useSync,
+  getSyncManager,
+  getConflictResolver
+} from "./sync";
 
 type LoadingState = "idle" | "loading" | "loaded" | "error";
 
@@ -442,16 +448,19 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     [db, selectedCustomerId, selectCustomer, listCustomers, refreshStats]
   );
 
+  const syncManager = useMemo(() => getSyncManager(), []);
+  const conflictResolver = useMemo(() => getConflictResolver(), []);
+
   const simulateConflict = useCallback(
     async (customerId: string) => {
-      await db.simulateConflict(customerId);
+      await syncManager.simulateRemoteConflict("customer", customerId);
       if (selectedCustomerId === customerId) {
         await selectCustomer(customerId);
       }
       await listCustomers();
       await refreshStats();
     },
-    [db, selectedCustomerId, selectCustomer, listCustomers, refreshStats]
+    [syncManager, selectedCustomerId, selectCustomer, listCustomers, refreshStats]
   );
 
   const computeConflictDiff = useCallback(
@@ -466,15 +475,15 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
           remark: (local.remark || "") + "\n[远程模拟] 请于下周三复诊",
           occupation: local.occupation || "远程端补充的职业"
         };
-        const diff = db.computeDiff(local, simulated);
+        const diff = conflictResolver.detectConflicts(local, simulated);
         setConflictDiffs(diff);
         return diff;
       }
-      const diff = db.computeDiff(local, remoteSnapshot.data);
+      const diff = conflictResolver.detectConflicts(local, remoteSnapshot.data as ArchiveEntity);
       setConflictDiffs(diff);
       return diff;
     },
-    [db]
+    [db, conflictResolver]
   );
 
   const resolveConflict = useCallback(
@@ -484,7 +493,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       resolution: "local" | "remote" | "merge",
       merged?: ArchiveEntity
     ) => {
-      await db.resolveConflict(entityType, entityId, resolution, merged);
+      await syncManager.resolveConflict(entityType, entityId, resolution, merged);
       if (entityType === "customer" && selectedCustomerId === entityId) {
         await selectCustomer(entityId);
       }
@@ -492,7 +501,7 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       await refreshStats();
       setConflictDiffs([]);
     },
-    [db, selectedCustomerId, selectCustomer, listCustomers, refreshStats]
+    [syncManager, selectedCustomerId, selectCustomer, listCustomers, refreshStats]
   );
 
   const seedData = useCallback(async () => {
@@ -553,7 +562,11 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     clearAll
   };
 
-  return <ArchiveContext.Provider value={value}>{children}</ArchiveContext.Provider>;
+  return (
+    <SyncProvider>
+      <ArchiveContext.Provider value={value}>{children}</ArchiveContext.Provider>
+    </SyncProvider>
+  );
 }
 
 export function useArchive(): ArchiveContextValue {
