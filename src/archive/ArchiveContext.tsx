@@ -11,6 +11,7 @@ import { getArchiveDB, type ArchiveStats, type SearchFilter } from "./archive.st
 import type {
   ArchiveEntity,
   AudiogramRecord,
+  ComparisonRecord,
   ConflictDiff,
   CustomerAggregate,
   CustomerProfile,
@@ -46,6 +47,10 @@ interface ArchiveContextValue {
   createFollowUp: (f: Partial<FollowUpRecord>) => Promise<FollowUpRecord>;
   updateFollowUp: (f: FollowUpRecord, changeNote?: string) => Promise<FollowUpRecord>;
   deleteFollowUp: (id: string) => Promise<void>;
+  createComparison: (c: Partial<ComparisonRecord>) => Promise<ComparisonRecord>;
+  updateComparison: (c: ComparisonRecord, changeNote?: string) => Promise<ComparisonRecord>;
+  deleteComparison: (id: string) => Promise<void>;
+  getLatestComparison: (customerId: string) => Promise<ComparisonRecord | null>;
   loadVersions: (entityId: string) => Promise<void>;
   revertToVersion: (
     entityType: EntityType,
@@ -352,6 +357,65 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     [db, selectedCustomerId, selectCustomer, refreshStats]
   );
 
+  const createComparison = useCallback(
+    async (c: Partial<ComparisonRecord>): Promise<ComparisonRecord> => {
+      const now = Date.now();
+      const merged: ComparisonRecord = {
+        entityType: "comparison",
+        customerId: c.customerId || "",
+        initial: c.initial || { speechRecognitionRate: null, feedbackWhistle: "", gainAdjustment: "", fittingStage: "初配" },
+        followUp: c.followUp || { speechRecognitionRate: null, feedbackWhistle: "", gainAdjustment: "", fittingStage: "复调" },
+        id: c.id || `cmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        createdAt: now,
+        updatedAt: now,
+        version: 1,
+        versionId: generateVersionId(),
+        editedBy: "当前用户",
+        editedAt: now,
+        syncStatus: "local",
+        ...c
+      } as ComparisonRecord;
+      const saved = await db.saveComparison(merged, "创建对比记录");
+      if (selectedCustomerId === merged.customerId) {
+        await selectCustomer(merged.customerId);
+      }
+      await refreshStats();
+      return saved;
+    },
+    [db, selectedCustomerId, selectCustomer, refreshStats]
+  );
+
+  const updateComparison = useCallback(
+    async (c: ComparisonRecord, changeNote?: string): Promise<ComparisonRecord> => {
+      const saved = await db.updateComparison(c, changeNote);
+      if (selectedCustomerId === saved.customerId) {
+        await selectCustomer(saved.customerId);
+      }
+      await refreshStats();
+      return saved;
+    },
+    [db, selectedCustomerId, selectCustomer, refreshStats]
+  );
+
+  const deleteComparison = useCallback(
+    async (id: string) => {
+      const c = await db.getComparison(id);
+      await db.deleteComparison(id);
+      if (c && selectedCustomerId === c.customerId) {
+        await selectCustomer(c.customerId);
+      }
+      await refreshStats();
+    },
+    [db, selectedCustomerId, selectCustomer, refreshStats]
+  );
+
+  const getLatestComparison = useCallback(
+    async (customerId: string): Promise<ComparisonRecord | null> => {
+      return await db.getLatestComparisonByCustomer(customerId);
+    },
+    [db]
+  );
+
   const loadVersions = useCallback(
     async (entityId: string) => {
       const v = await db.getVersions(entityId);
@@ -469,6 +533,10 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
     createFollowUp,
     updateFollowUp,
     deleteFollowUp,
+    createComparison,
+    updateComparison,
+    deleteComparison,
+    getLatestComparison,
     loadVersions,
     revertToVersion,
     simulateConflict,

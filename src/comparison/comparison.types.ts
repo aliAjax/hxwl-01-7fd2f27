@@ -1,21 +1,14 @@
-export type ComparisonStatus = "improved" | "stable" | "worsened";
+import type {
+  ComparisonStatus as ArchiveComparisonStatus,
+  FittingComparisonItem,
+  ComparisonRecord
+} from "../archive/archive.types";
 
-export interface FittingRecord {
-  speechRecognitionRate: number | null;
-  feedbackWhistle: string;
-  gainAdjustment: string;
-  recordDate?: string;
-  fittingStage?: string;
-}
+export type ComparisonStatus = ArchiveComparisonStatus;
 
-export interface ComparisonData {
-  customerId: string;
-  customerName?: string;
-  hearingLossType?: string;
-  hearingAidModel?: string;
-  initial: FittingRecord;
-  followUp: FittingRecord;
-}
+export type FittingRecord = FittingComparisonItem;
+
+export type ComparisonData = ComparisonRecord;
 
 export interface ComparisonResultItem {
   label: string;

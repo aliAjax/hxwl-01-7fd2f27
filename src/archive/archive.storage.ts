@@ -1,6 +1,7 @@
 import type {
   ArchiveEntity,
   AudiogramRecord,
+  ComparisonRecord,
   ConflictDiff,
   CustomerAggregate,
   CustomerProfile,
@@ -12,19 +13,21 @@ import type {
 import { generateId, generateVersionId } from "./archive.types";
 
 const DB_NAME = "hearing_archive_db";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 const STORE_CUSTOMERS = "customers";
 const STORE_AUDIOGRAMS = "audiograms";
 const STORE_FITTINGS = "fittings";
 const STORE_FOLLOWUPS = "followups";
+const STORE_COMPARISONS = "comparisons";
 const STORE_VERSIONS = "versions";
 
 const ENTITY_STORES: Record<EntityType, string> = {
   customer: STORE_CUSTOMERS,
   audiogram: STORE_AUDIOGRAMS,
   fitting: STORE_FITTINGS,
-  followup: STORE_FOLLOWUPS
+  followup: STORE_FOLLOWUPS,
+  comparison: STORE_COMPARISONS
 };
 
 export interface ArchiveStats {
@@ -32,6 +35,7 @@ export interface ArchiveStats {
   audiograms: number;
   fittings: number;
   followups: number;
+  comparisons: number;
   versions: number;
   conflicts: number;
 }
@@ -113,6 +117,14 @@ class ArchiveDatabase {
             vs.createIndex("entityType", "entityType", { unique: false });
             vs.createIndex("entityId_version", ["entityId", "version"], { unique: true });
             vs.createIndex("editedAt", "editedAt", { unique: false });
+          }
+        }
+
+        if (oldVersion < 3) {
+          if (!db.objectStoreNames.contains(STORE_COMPARISONS)) {
+            const cs = db.createObjectStore(STORE_COMPARISONS, { keyPath: "id" });
+            cs.createIndex("customerId", "customerId", { unique: false });
+            cs.createIndex("updatedAt", "updatedAt", { unique: false });
           }
         }
       };
@@ -313,6 +325,26 @@ class ArchiveDatabase {
     return toSave;
   }
 
+  async saveComparison(
+    comparison: ComparisonRecord,
+    changeNote?: string
+  ): Promise<ComparisonRecord> {
+    const now = Date.now();
+    const toSave: ComparisonRecord = {
+      ...comparison,
+      updatedAt: now,
+      editedAt: now
+    };
+
+    await this.tx([STORE_COMPARISONS, STORE_VERSIONS], "readwrite", (s) => {
+      s[STORE_COMPARISONS].put(toSave);
+      const snapshot = this.snapshotFromEntity(toSave, changeNote);
+      s[STORE_VERSIONS].put(snapshot);
+    });
+
+    return toSave;
+  }
+
   async listCustomers(filter?: SearchFilter): Promise<CustomerProfile[]> {
     return this.tx(STORE_CUSTOMERS, "readonly", (s) => {
       return new Promise<CustomerProfile[]>((resolve, reject) => {
@@ -423,13 +455,36 @@ class ArchiveDatabase {
     });
   }
 
+  async getComparisonsByCustomer(customerId: string): Promise<ComparisonRecord[]> {
+    return this.tx(STORE_COMPARISONS, "readonly", (s) => {
+      return new Promise<ComparisonRecord[]>((resolve, reject) => {
+        const idx = s[STORE_COMPARISONS].index("customerId");
+        const req = idx.getAll(IDBKeyRange.only(customerId));
+        req.onsuccess = () => {
+          resolve(
+            (req.result as ComparisonRecord[])
+              .filter((x) => !x.deletedAt)
+              .sort((a, b) => b.updatedAt - a.updatedAt)
+          );
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async getLatestComparisonByCustomer(customerId: string): Promise<ComparisonRecord | null> {
+    const list = await this.getComparisonsByCustomer(customerId);
+    return list.length > 0 ? list[0] : null;
+  }
+
   async getCustomerAggregate(customerId: string): Promise<CustomerAggregate | null> {
     const profile = await this.getCustomer(customerId);
     if (!profile) return null;
-    const [audiograms, fittings, followUps, versions] = await Promise.all([
+    const [audiograms, fittings, followUps, comparisons, versions] = await Promise.all([
       this.getAudiogramsByCustomer(customerId),
       this.getFittingsByCustomer(customerId),
       this.getFollowUpsByCustomer(customerId),
+      this.getComparisonsByCustomer(customerId),
       this.getVersions(customerId)
     ]);
     return {
@@ -437,6 +492,7 @@ class ArchiveDatabase {
       audiograms,
       fittings,
       followUps,
+      comparisons,
       versionCount: versions.length
     };
   }
@@ -451,6 +507,10 @@ class ArchiveDatabase {
 
   async getFollowUp(id: string): Promise<FollowUpRecord | null> {
     return this.tx(STORE_FOLLOWUPS, "readonly", (s) => this._getOne<FollowUpRecord>(s[STORE_FOLLOWUPS], id));
+  }
+
+  async getComparison(id: string): Promise<ComparisonRecord | null> {
+    return this.tx(STORE_COMPARISONS, "readonly", (s) => this._getOne<ComparisonRecord>(s[STORE_COMPARISONS], id));
   }
 
   private _getOne<T extends ArchiveEntity>(store: IDBObjectStore, id: string): Promise<T | null> {
@@ -473,6 +533,8 @@ class ArchiveDatabase {
     if (f) return f;
     const fu = await this.getFollowUp(entityId);
     if (fu) return fu;
+    const cmp = await this.getComparison(entityId);
+    if (cmp) return cmp;
     return null;
   }
 
@@ -529,6 +591,18 @@ class ArchiveDatabase {
     return this.saveFollowUp(bumped, changeNote || "更新复诊记录");
   }
 
+  async updateComparison(c: ComparisonRecord, changeNote?: string): Promise<ComparisonRecord> {
+    const bumped: ComparisonRecord = {
+      ...c,
+      version: c.version + 1,
+      parentVersionId: c.versionId,
+      versionId: generateVersionId(),
+      editedBy: "当前用户",
+      editedAt: Date.now()
+    };
+    return this.saveComparison(bumped, changeNote || "更新对比记录");
+  }
+
   async deleteAudiogram(id: string): Promise<void> {
     await this.tx(STORE_AUDIOGRAMS, "readwrite", (s) => {
       return new Promise<void>((resolve, reject) => {
@@ -572,6 +646,23 @@ class ArchiveDatabase {
           if (r) {
             r.deletedAt = Date.now();
             s[STORE_FOLLOWUPS].put(r);
+          }
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  async deleteComparison(id: string): Promise<void> {
+    await this.tx(STORE_COMPARISONS, "readwrite", (s) => {
+      return new Promise<void>((resolve, reject) => {
+        const req = s[STORE_COMPARISONS].get(id);
+        req.onsuccess = () => {
+          const r = req.result as ComparisonRecord | undefined;
+          if (r) {
+            r.deletedAt = Date.now();
+            s[STORE_COMPARISONS].put(r);
           }
           resolve();
         };
@@ -630,7 +721,7 @@ class ArchiveDatabase {
     const hasConflict = (e: ArchiveEntity) =>
       e.syncStatus === "conflict" || e.conflict?.hasConflict;
 
-    const [customers, audiograms, fittings, followups] = await Promise.all([
+    const [customers, audiograms, fittings, followups, comparisons] = await Promise.all([
       this.listCustomers(),
       this.tx(STORE_AUDIOGRAMS, "readonly", (s) =>
         new Promise<AudiogramRecord[]>((resolve, reject) => {
@@ -655,6 +746,14 @@ class ArchiveDatabase {
             resolve((req.result as FollowUpRecord[]).filter((e) => !e.deletedAt));
           req.onerror = () => reject(req.error);
         })
+      ),
+      this.tx(STORE_COMPARISONS, "readonly", (s) =>
+        new Promise<ComparisonRecord[]>((resolve, reject) => {
+          const req = s[STORE_COMPARISONS].getAll();
+          req.onsuccess = () =>
+            resolve((req.result as ComparisonRecord[]).filter((e) => !e.deletedAt));
+          req.onerror = () => reject(req.error);
+        })
       )
     ]);
 
@@ -662,7 +761,8 @@ class ArchiveDatabase {
       ...customers.filter(hasConflict),
       ...audiograms.filter(hasConflict),
       ...fittings.filter(hasConflict),
-      ...followups.filter(hasConflict)
+      ...followups.filter(hasConflict),
+      ...comparisons.filter(hasConflict)
     ];
   }
 
@@ -846,7 +946,7 @@ class ArchiveDatabase {
   async getStats(): Promise<ArchiveStats> {
     const [counts, conflicts] = await Promise.all([
       this.tx(
-        [STORE_CUSTOMERS, STORE_AUDIOGRAMS, STORE_FITTINGS, STORE_FOLLOWUPS, STORE_VERSIONS],
+        [STORE_CUSTOMERS, STORE_AUDIOGRAMS, STORE_FITTINGS, STORE_FOLLOWUPS, STORE_COMPARISONS, STORE_VERSIONS],
         "readonly",
         (s) => {
           const countActive = <T extends { deletedAt?: number }>(store: IDBObjectStore) =>
@@ -871,6 +971,7 @@ class ArchiveDatabase {
             countActive<AudiogramRecord>(s[STORE_AUDIOGRAMS]),
             countActive<FittingRecord>(s[STORE_FITTINGS]),
             countActive<FollowUpRecord>(s[STORE_FOLLOWUPS]),
+            countActive<ComparisonRecord>(s[STORE_COMPARISONS]),
             countAll(s[STORE_VERSIONS])
           ]);
         }
@@ -878,12 +979,13 @@ class ArchiveDatabase {
       this.detectConflicts()
     ]);
 
-    const [customers, audiograms, fittings, followups, versions] = counts;
+    const [customers, audiograms, fittings, followups, comparisons, versions] = counts;
     return {
       customers,
       audiograms,
       fittings,
       followups,
+      comparisons,
       versions,
       conflicts: conflicts.length
     };
@@ -891,7 +993,7 @@ class ArchiveDatabase {
 
   async clearAll(): Promise<void> {
     await this.tx(
-      [STORE_CUSTOMERS, STORE_AUDIOGRAMS, STORE_FITTINGS, STORE_FOLLOWUPS, STORE_VERSIONS],
+      [STORE_CUSTOMERS, STORE_AUDIOGRAMS, STORE_FITTINGS, STORE_FOLLOWUPS, STORE_COMPARISONS, STORE_VERSIONS],
       "readwrite",
       (s) => {
         Object.values(s).forEach((st) => st.clear());

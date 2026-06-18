@@ -1,4 +1,5 @@
 import { ComparisonData, ComparisonStatus, ComparisonResultItem, FittingRecord } from "./comparison.types";
+import type { KeyMetric } from "../summary/summary.types";
 
 export function computeSpeechStatus(initial: number | null, followUp: number | null): { status: ComparisonStatus; change: string } {
   if (initial === null || followUp === null) {
@@ -101,3 +102,52 @@ export const statusLabelMap: Record<ComparisonStatus, string> = {
   stable: "持平",
   worsened: "变差"
 };
+
+export function comparisonToKeyMetrics(data: ComparisonData): KeyMetric[] {
+  const results = generateComparisonResults(data);
+  const metrics: KeyMetric[] = [];
+
+  const speechResult = results.find(r => r.label === "言语识别率");
+  if (speechResult && data.followUp.speechRecognitionRate !== null) {
+    metrics.push({
+      label: "言语识别率",
+      value: String(data.followUp.speechRecognitionRate),
+      unit: "%",
+      trend: speechResult.status === "improved" ? "up" : speechResult.status === "worsened" ? "down" : "stable"
+    });
+  }
+
+  const feedbackResult = results.find(r => r.label === "反馈啸叫");
+  if (feedbackResult && data.followUp.feedbackWhistle) {
+    metrics.push({
+      label: "反馈啸叫",
+      value: feedbackResult.changeValue || "评估中",
+      trend: feedbackResult.status === "improved" ? "up" : feedbackResult.status === "worsened" ? "down" : "stable"
+    });
+  }
+
+  const gainResult = results.find(r => r.label === "增益调整");
+  if (gainResult && data.followUp.gainAdjustment) {
+    metrics.push({
+      label: "增益调整效果",
+      value: gainResult.changeValue || "评估中",
+      trend: gainResult.status === "improved" ? "up" : gainResult.status === "worsened" ? "down" : "stable"
+    });
+  }
+
+  return metrics;
+}
+
+export function getComparisonSummaryText(data: ComparisonData): string {
+  const results = generateComparisonResults(data);
+  const improved = results.filter(r => r.status === "improved").length;
+  const stable = results.filter(r => r.status === "stable").length;
+  const worsened = results.filter(r => r.status === "worsened").length;
+
+  const parts: string[] = [];
+  if (improved > 0) parts.push(`${improved}项指标改善`);
+  if (stable > 0) parts.push(`${stable}项指标持平`);
+  if (worsened > 0) parts.push(`${worsened}项指标变差`);
+
+  return parts.length > 0 ? `验配效果评估：${parts.join("，")}。` : "暂无足够对比数据";
+}

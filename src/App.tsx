@@ -5,13 +5,14 @@ import ComparisonModule, { ComparisonModuleHandle } from "./comparison/Compariso
 import QcModule from "./qc/QcModule";
 import FittingSummary from "./summary/FittingSummary";
 import SummaryConfigModal from "./summary/SummaryConfigModal";
-import { getComparisonByCustomerId } from "./comparison/comparison.sampleData";
 import { getSummaryByCustomerId } from "./summary/summary.sampleData";
 import type { FittingSummaryData, SummaryPreviewConfig } from "./summary/summary.types";
 import { DEFAULT_SUMMARY_CONFIG } from "./summary/summary.types";
 import { useDraft, DraftIndicator } from "./draft";
 import { ArchiveProvider, ArchiveModule } from "./archive";
+import { getArchiveDB } from "./archive/archive.storage";
 import { WorkflowModule, WorkflowProvider, useWorkflow } from "./workflow";
+import { comparisonToKeyMetrics, getComparisonSummaryText } from "./comparison/comparison.utils";
 import type { RoleType } from "./workflow/workflow.types";
 import { ROLE_LABELS } from "./workflow/workflow.types";
 
@@ -855,13 +856,39 @@ function App() {
     }
   };
 
-  const handleConfirmSummaryConfig = (config: SummaryPreviewConfig) => {
+  const handleConfirmSummaryConfig = async (config: SummaryPreviewConfig) => {
     setSummaryConfig(config);
     setSummaryConfigOpen(false);
     if (pendingSummaryCustomerId) {
       const summary = getSummaryByCustomerId(pendingSummaryCustomerId);
       if (summary) {
-        setSummaryData(summary);
+        try {
+          const db = getArchiveDB();
+          const comparison = await db.getLatestComparisonByCustomer(pendingSummaryCustomerId);
+          if (comparison) {
+            const comparisonMetrics = comparisonToKeyMetrics(comparison);
+            const existingLabels = summary.keyMetrics.map(m => m.label);
+            const newMetrics = comparisonMetrics.filter(m => !existingLabels.includes(m.label));
+            const mergedMetrics = [...summary.keyMetrics, ...newMetrics];
+
+            let followUpAdvice = summary.followUpAdvice;
+            const comparisonText = getComparisonSummaryText(comparison);
+            if (comparisonText && comparisonText !== "暂无足够对比数据") {
+              followUpAdvice = comparisonText + "\n\n" + followUpAdvice;
+            }
+
+            setSummaryData({
+              ...summary,
+              keyMetrics: mergedMetrics,
+              followUpAdvice
+            });
+          } else {
+            setSummaryData(summary);
+          }
+        } catch (e) {
+          console.warn("加载对比数据失败，使用默认摘要", e);
+          setSummaryData(summary);
+        }
         setSummaryOpen(true);
       }
       setPendingSummaryCustomerId(null);
@@ -976,7 +1003,6 @@ function App() {
         </div>
         <div className="record-list">
           {project.records.map((record: CustomerRecord, index: number) => {
-            const hasComparison = !!getComparisonByCustomerId(record.customerId);
             const hasSummary = !!getSummaryByCustomerId(record.customerId);
             const isActive = comparisonCustomerId === record.customerId;
             return (
@@ -990,29 +1016,25 @@ function App() {
                   <h3>{record.customerId}</h3>
                   <p>{record.hearingLossType} · {record.fittingStage} · {record.hearingAidModel}</p>
                 </div>
-                {(hasComparison || hasSummary) && (
-                  <div className="record-card-actions">
-                    {hasComparison && (
-                      <button
-                        className="record-card-action-btn"
-                        onClick={(e) => handleCompareClick(record.customerId, e)}
-                      >
-                        验配对比
-                      </button>
-                    )}
-                    {hasSummary && (
-                      <button
-                        className="record-card-action-btn record-card-btn-summary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleExportSummary(record.customerId);
-                        }}
-                      >
-                        导出摘要
-                      </button>
-                    )}
-                  </div>
-                )}
+                <div className="record-card-actions">
+                  <button
+                    className="record-card-action-btn"
+                    onClick={(e) => handleCompareClick(record.customerId, e)}
+                  >
+                    验配对比
+                  </button>
+                  {hasSummary && (
+                    <button
+                      className="record-card-action-btn record-card-btn-summary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExportSummary(record.customerId);
+                      }}
+                    >
+                      导出摘要
+                    </button>
+                  )}
+                </div>
                 <div className="record-arrow">→</div>
               </article>
             );

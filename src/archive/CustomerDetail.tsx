@@ -21,6 +21,7 @@ import HearingModule from "../hearing/HearingModule";
 import AudiogramChart from "../hearing/AudiogramChart";
 import { audiogramToHearingRecord } from "../hearing/hearing.utils";
 import type { HearingRecord } from "../hearing/hearing.types";
+import ComparisonModule from "../comparison/ComparisonModule";
 
 interface Props {
   aggregate: CustomerAggregate;
@@ -43,7 +44,7 @@ export default function CustomerDetail({
   onShowConflict,
   onRefresh
 }: Props) {
-  const { profile, audiograms, fittings, followUps, versionCount } = aggregate;
+  const { profile, audiograms, fittings, followUps, comparisons, versionCount } = aggregate;
   const {
     createAudiogram,
     updateAudiogram,
@@ -56,7 +57,7 @@ export default function CustomerDetail({
     deleteFollowUp,
     simulateConflict
   } = useArchive();
-  const [tab, setTab] = useState<"overview" | "audiogram" | "fitting" | "followup">("overview");
+  const [tab, setTab] = useState<"overview" | "audiogram" | "fitting" | "followup" | "comparison">("overview");
   const [modal, setModal] = useState<ModalState>(null);
   const [changeNote, setChangeNote] = useState("");
   const [showWorkbench, setShowWorkbench] = useState(false);
@@ -248,18 +249,20 @@ export default function CustomerDetail({
       </div>
 
       <div className="tabs">
-        {(["overview", "audiogram", "fitting", "followup"] as const).map((k) => {
+        {(["overview", "audiogram", "fitting", "followup", "comparison"] as const).map((k) => {
           const countMap: Record<string, number> = {
             overview: 1,
             audiogram: audiograms.length,
             fitting: fittings.length,
-            followup: followUps.length
+            followup: followUps.length,
+            comparison: comparisons.length
           };
           const labelMap: Record<string, string> = {
             overview: "📋 总览",
             audiogram: `📈 听力曲线 (${countMap.audiogram})`,
             fitting: `🔧 验配记录 (${countMap.fitting})`,
-            followup: `⏰ 复诊提醒 (${countMap.followup})`
+            followup: `⏰ 复诊提醒 (${countMap.followup})`,
+            comparison: `📊 验配对比 (${countMap.comparison})`
           };
           return (
             <button key={k} className={`tab ${tab === k ? "tab-active" : ""}`} onClick={() => setTab(k)}>
@@ -716,6 +719,15 @@ export default function CustomerDetail({
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === "comparison" && (
+          <div className="tab-section">
+            <ComparisonModule
+              customerId={profile.id}
+              showCustomerSelector={false}
+            />
           </div>
         )}
           </>

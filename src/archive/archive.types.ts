@@ -180,9 +180,30 @@ export type ArchiveEntity =
   | CustomerProfile
   | AudiogramRecord
   | FittingRecord
-  | FollowUpRecord;
+  | FollowUpRecord
+  | ComparisonRecord;
 
-export type EntityType = "customer" | "audiogram" | "fitting" | "followup";
+export type EntityType = "customer" | "audiogram" | "fitting" | "followup" | "comparison";
+
+export type ComparisonStatus = "improved" | "stable" | "worsened";
+
+export interface FittingComparisonItem {
+  speechRecognitionRate: number | null;
+  feedbackWhistle: string;
+  gainAdjustment: string;
+  recordDate?: string;
+  fittingStage?: string;
+}
+
+export interface ComparisonRecord extends BaseEntity, VersionMeta, SyncMeta {
+  entityType: "comparison";
+  customerId: string;
+  customerName?: string;
+  hearingLossType?: string;
+  hearingAidModel?: string;
+  initial: FittingComparisonItem;
+  followUp: FittingComparisonItem;
+}
 
 export interface VersionSnapshot<T = ArchiveEntity> {
   id: string;
@@ -209,6 +230,7 @@ export interface CustomerAggregate {
   audiograms: AudiogramRecord[];
   fittings: FittingRecord[];
   followUps: FollowUpRecord[];
+  comparisons: ComparisonRecord[];
   versionCount: number;
 }
 
@@ -314,6 +336,35 @@ export function createEmptyFollowUp(customerId: string): FollowUpRecord {
     scheduledDate: today,
     priority: "medium",
     status: "pending",
+    createdAt: now,
+    updatedAt: now,
+    version: 1,
+    versionId,
+    editedBy: "当前用户",
+    editedAt: now,
+    syncStatus: "local"
+  };
+}
+
+export function createEmptyComparison(customerId: string): ComparisonRecord {
+  const now = Date.now();
+  const versionId = generateVersionId();
+  return {
+    id: generateId("cmp"),
+    entityType: "comparison",
+    customerId,
+    initial: {
+      speechRecognitionRate: null,
+      feedbackWhistle: "",
+      gainAdjustment: "",
+      fittingStage: "初配"
+    },
+    followUp: {
+      speechRecognitionRate: null,
+      feedbackWhistle: "",
+      gainAdjustment: "",
+      fittingStage: "复调"
+    },
     createdAt: now,
     updatedAt: now,
     version: 1,
