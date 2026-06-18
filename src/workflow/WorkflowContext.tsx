@@ -28,7 +28,7 @@ type WorkflowAction =
   | { type: "APPROVE_REVIEW"; payload: { recordId: string; comment?: string } }
   | { type: "REJECT_REVIEW"; payload: { recordId: string; comment: string } }
   | { type: "REJECT_REVIEW_WITH_FIELDS"; payload: { recordId: string; comment: string; rejectedFields: RejectedField[] } }
-  | { type: "RESUBMIT_FOR_REVIEW"; payload: { recordId: string; fieldChanges: FieldChange[]; rejectionId: string } }
+  | { type: "RESUBMIT_FOR_REVIEW"; payload: { recordId: string; fieldChanges: FieldChange[]; rejectionId: string; updates: Partial<WorkflowFittingRecord> } }
   | { type: "ASSIGN_FOLLOWUP"; payload: { recordId: string; days?: number } }
   | { type: "START_FOLLOWUP"; payload: { recordId: string } }
   | { type: "COMPLETE_FOLLOWUP"; payload: { recordId: string; note: string } }
@@ -47,7 +47,7 @@ const WorkflowContext = createContext<{
   approveReview: (recordId: string, comment?: string) => void;
   rejectReview: (recordId: string, comment: string) => void;
   rejectReviewWithFields: (recordId: string, comment: string, rejectedFields: RejectedField[]) => void;
-  resubmitForReview: (recordId: string, fieldChanges: FieldChange[], rejectionId: string) => void;
+  resubmitForReview: (recordId: string, fieldChanges: FieldChange[], rejectionId: string, updates: Partial<WorkflowFittingRecord>) => void;
   assignFollowUp: (recordId: string, days?: number) => void;
   startFollowUp: (recordId: string) => void;
   completeFollowUp: (recordId: string, note: string) => void;
@@ -216,6 +216,9 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
       const now = Date.now();
       const record = state.records.find(r => r.id === action.payload.recordId);
       if (!record || !canTransition(record.status, "pending_review", state.currentRole)) return state;
+
+      const hasUnresolvedRejection = (record.rejectionHistory || []).some(rh => !rh.resubmittedAt);
+      if (hasUnresolvedRejection) return state;
 
       const updatedRecords = state.records.map(r =>
         r.id === action.payload.recordId
@@ -395,7 +398,7 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
       if (!record) return state;
       if (record.status !== "review_rejected" && record.status !== "draft") return state;
 
-      const { fieldChanges, rejectionId } = action.payload;
+      const { fieldChanges, rejectionId, updates } = action.payload;
 
       const updatedRejectionHistory = (record.rejectionHistory || []).map(rh => {
         if (rh.rejectionId === rejectionId) {
@@ -426,6 +429,7 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
         r.id === action.payload.recordId
           ? {
               ...r,
+              ...updates,
               status: "pending_review" as RecordStatus,
               submittedAt: now,
               reviewFields: clearedReviewFields,
@@ -696,8 +700,8 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "REJECT_REVIEW_WITH_FIELDS", payload: { recordId, comment, rejectedFields } });
   }, []);
 
-  const resubmitForReview = useCallback((recordId: string, fieldChanges: FieldChange[], rejectionId: string) => {
-    dispatch({ type: "RESUBMIT_FOR_REVIEW", payload: { recordId, fieldChanges, rejectionId } });
+  const resubmitForReview = useCallback((recordId: string, fieldChanges: FieldChange[], rejectionId: string, updates: Partial<WorkflowFittingRecord>) => {
+    dispatch({ type: "RESUBMIT_FOR_REVIEW", payload: { recordId, fieldChanges, rejectionId, updates } });
   }, []);
 
   const assignFollowUp = useCallback((recordId: string, days?: number) => {

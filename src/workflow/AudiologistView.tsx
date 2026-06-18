@@ -79,13 +79,12 @@ export default function AudiologistView() {
     const result: Record<string, boolean> = {};
     activeRejection.rejectedFields.forEach(rf => {
       const current = formData[rf.fieldName as keyof WorkflowFittingRecord];
-      const orig = originalValues[rf.fieldName];
-      if (current !== undefined && orig !== undefined) {
-        result[rf.fieldName] = String(current).trim() !== String(orig).trim();
+      if (current !== undefined && rf.oldValue !== undefined) {
+        result[rf.fieldName] = String(current).trim() !== String(rf.oldValue).trim();
       }
     });
     return result;
-  }, [activeRejection, formData, originalValues]);
+  }, [activeRejection, formData]);
 
   const allRejectedFieldsModified = useMemo(() => {
     if (!activeRejection) return true;
@@ -172,7 +171,7 @@ export default function AudiologistView() {
     });
 
     if (fieldChanges.length === 0) return;
-    resubmitForReview(editingRecord.id, fieldChanges, activeRejection.rejectionId);
+    resubmitForReview(editingRecord.id, fieldChanges, activeRejection.rejectionId, formData);
     setShowCreateForm(false);
     setEditingRecord(null);
     setFormData({});
@@ -198,7 +197,8 @@ export default function AudiologistView() {
 
   const canSubmit = (record: WorkflowFittingRecord) => {
     return canPerformAction("canSubmitForReview") &&
-           canTransition(record.status, "pending_review", state.currentRole);
+           canTransition(record.status, "pending_review", state.currentRole) &&
+           record.status !== "review_rejected";
   };
 
   useEffect(() => {
