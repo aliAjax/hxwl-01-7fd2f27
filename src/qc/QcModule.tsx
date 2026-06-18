@@ -123,16 +123,12 @@ function ReviewModal({
   onClose: () => void;
   onConfirm: (reason?: string) => void;
 }) {
-  const [rejectReason, setRejectReason] = useState("");
+  const [comment, setComment] = useState("");
   const isApprove = mode === "approve";
 
   const handleConfirm = () => {
-    if (isApprove) {
-      onConfirm();
-    } else {
-      if (rejectReason.trim().length === 0) return;
-      onConfirm(rejectReason);
-    }
+    if (!isApprove && comment.trim().length === 0) return;
+    onConfirm(comment.trim().length > 0 ? comment.trim() : undefined);
   };
 
   return (
@@ -161,33 +157,48 @@ function ReviewModal({
               <p className="qc-modal-sub">通过后该记录将归档为已审核状态。</p>
             </div>
           ) : (
-            <div className="qc-modal-reject-form">
-              <label className="qc-reject-label">
-                <span>退回原因 <em className="qc-required">*</em></span>
-                <textarea
-                  className="qc-reject-textarea"
-                  placeholder="请详细描述退回原因，便于听力师修正（例如：增益调整异常、关键字段缺失、反馈内容不完整等）"
-                  value={rejectReason}
-                  onChange={e => setRejectReason(e.target.value)}
-                  rows={5}
-                />
-              </label>
-              <div className="qc-reject-suggest">
+            <div className="qc-modal-reject-tip">
+              <div className="qc-modal-icon">↩️</div>
+              <p>将 <strong>{record.customerName}</strong> 的记录退回给听力师修改</p>
+              <p className="qc-modal-sub">退回后记录恢复为草稿状态，需填写退回原因。</p>
+            </div>
+          )}
+
+          <div className={`qc-modal-comment-form ${isApprove ? "qc-comment-optional" : "qc-comment-required"}`}>
+            <label className="qc-comment-label">
+              <span>
+                {isApprove ? "审核意见（可选）" : "退回原因"}
+                {!isApprove && <em className="qc-required">*</em>}
+              </span>
+              <textarea
+                className="qc-comment-textarea"
+                placeholder={isApprove
+                  ? "可填写本次审核的备注说明，例如：字段完整、增益调整合理、用户反馈充分等"
+                  : "请详细描述退回原因，便于听力师修正（例如：增益调整异常、关键字段缺失、反馈内容不完整等）"
+                }
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                rows={4}
+              />
+            </label>
+            {!isApprove && (
+              <div className="qc-comment-suggest">
                 <span className="qc-suggest-label">常用原因：</span>
                 <div className="qc-suggest-chips">
                   {getAuditReasons().map(s => (
                     <button
                       key={s}
                       className="qc-suggest-chip"
-                      onClick={() => setRejectReason(s)}
+                      onClick={() => setComment(s)}
+                      type="button"
                     >
                       {s}
                     </button>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <div className="qc-modal-footer">
           <button className="qc-btn qc-btn-ghost" onClick={onClose}>
@@ -196,7 +207,7 @@ function ReviewModal({
           <button
             className={`qc-btn ${isApprove ? "qc-btn-approve" : "qc-btn-reject"}`}
             onClick={handleConfirm}
-            disabled={!isApprove && rejectReason.trim().length === 0}
+            disabled={!isApprove && comment.trim().length === 0}
           >
             {isApprove ? "确认通过" : "提交退回"}
           </button>
@@ -211,15 +222,19 @@ function DetailDrawer({
   open,
   onClose,
   onApprove,
-  onReject
+  onReject,
+  canReview
 }: {
   record: QcRecord | null;
   open: boolean;
   onClose: () => void;
   onApprove: () => void;
   onReject: () => void;
+  canReview: boolean;
 }) {
   if (!record) return null;
+
+  const showReviewComment = record.reviewStatus !== "pending" && record.reviewComment;
 
   return (
     <>
@@ -257,6 +272,23 @@ function DetailDrawer({
                 <strong>退回原因</strong>
               </div>
               <p>{record.rejectReason}</p>
+            </div>
+          )}
+
+          {record.reviewStatus === "approved" && showReviewComment && (
+            <div className="qc-approve-comment-box">
+              <div className="qc-approve-comment-title">
+                <span>✅</span>
+                <strong>审核意见</strong>
+              </div>
+              <p>{record.reviewComment}</p>
+            </div>
+          )}
+
+          {!canReview && record.reviewStatus === "pending" && (
+            <div className="qc-permission-tip">
+              <span>🔒</span>
+              <p>当前角色无审核权限，请切换为 <strong>门店主管</strong> 后进行审核操作</p>
             </div>
           )}
 
@@ -342,13 +374,28 @@ function DetailDrawer({
         </div>
 
         {record.reviewStatus === "pending" && (
-          <div className="qc-drawer-footer">
-            <button className="qc-btn qc-btn-reject" onClick={onReject}>
+          <div className={`qc-drawer-footer ${!canReview ? "qc-footer-disabled" : ""}`}>
+            <button
+              className="qc-btn qc-btn-reject"
+              onClick={onReject}
+              disabled={!canReview}
+              title={!canReview ? "仅门店主管可执行退回操作" : ""}
+            >
               ↩️ 退回修改
             </button>
-            <button className="qc-btn qc-btn-approve" onClick={onApprove}>
+            <button
+              className="qc-btn qc-btn-approve"
+              onClick={onApprove}
+              disabled={!canReview}
+              title={!canReview ? "仅门店主管可执行审核通过操作" : ""}
+            >
               ✅ 审核通过
             </button>
+            {!canReview && (
+              <span className="qc-footer-hint">
+                🔒 请切换为「门店主管」角色后执行审核
+              </span>
+            )}
           </div>
         )}
       </aside>
@@ -360,17 +407,28 @@ export default function QcModule() {
   const {
     state,
     approveReview,
-    rejectReview
+    rejectReview,
+    canPerformAction
   } = useWorkflow();
 
   const records = useMemo<QcRecord[]>(() => {
     return getReviewableRecords(state.records);
   }, [state.records]);
 
+  const canReview = canPerformAction("canReview");
+
   const [activeFilter, setActiveFilter] = useState<QcFilter>("all");
   const [selectedRecord, setSelectedRecord] = useState<QcRecord | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [reviewModal, setReviewModal] = useState<{ record: QcRecord; mode: "approve" | "reject" } | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (toastMsg) {
+      const t = setTimeout(() => setToastMsg(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [toastMsg]);
 
   useEffect(() => {
     if (selectedRecord) {
@@ -437,21 +495,37 @@ export default function QcModule() {
   };
 
   const handleApproveClick = (record: QcRecord) => {
+    if (!canReview) {
+      setToastMsg("🔒 当前角色无审核权限，请切换为门店主管");
+      return;
+    }
     setReviewModal({ record, mode: "approve" });
   };
 
   const handleRejectClick = (record: QcRecord) => {
+    if (!canReview) {
+      setToastMsg("🔒 当前角色无退回权限，请切换为门店主管");
+      return;
+    }
     setReviewModal({ record, mode: "reject" });
   };
 
   const handleReviewConfirm = (reason?: string) => {
     if (!reviewModal) return;
+    if (!canReview) {
+      setToastMsg("🔒 权限不足，操作已取消");
+      setReviewModal(null);
+      return;
+    }
     const { record, mode } = reviewModal;
 
     if (mode === "approve") {
       approveReview(record.recordId, reason);
+      setToastMsg(`✅ ${record.customerName} 审核通过${reason ? "（已附意见）" : ""}`);
     } else {
-      rejectReview(record.recordId, reason || "退回修改");
+      const finalReason = reason || "退回修改";
+      rejectReview(record.recordId, finalReason);
+      setToastMsg(`↩️ ${record.customerName} 已退回：${finalReason.slice(0, 20)}${finalReason.length > 20 ? "..." : ""}`);
     }
 
     setReviewModal(null);
@@ -459,12 +533,23 @@ export default function QcModule() {
 
   return (
     <section className="qc-module panel">
+      {toastMsg && (
+        <div className="qc-toast" role="alert">
+          {toastMsg}
+        </div>
+      )}
       <div className="section-heading">
         <div>
           <p>门店主管工作台</p>
           <h2>记录质控审核</h2>
         </div>
         <div className="qc-header-actions">
+          {!canReview && (
+            <div className="qc-permission-badge" title="仅门店主管可执行审核操作">
+              <span>🔒</span>
+              <span>只读模式</span>
+            </div>
+          )}
           <div className="qc-header-stats">
             <span className="qc-stat-pending">待审核 {pendingCount}</span>
             <span className="qc-stat-alert">风险提示 {alertCount}</span>
@@ -555,18 +640,25 @@ export default function QcModule() {
                 </div>
               </div>
               {record.reviewStatus === "pending" && (
-                <div className="qc-card-actions" onClick={e => e.stopPropagation()}>
+                <div
+                  className={`qc-card-actions ${!canReview ? "qc-actions-disabled" : ""}`}
+                  onClick={e => e.stopPropagation()}
+                >
                   <button
                     className="qc-card-btn qc-card-btn-reject"
                     onClick={() => handleRejectClick(record)}
+                    disabled={!canReview}
+                    title={!canReview ? "仅门店主管可执行退回操作" : ""}
                   >
-                    退回
+                    {canReview ? "退回" : "🔒 退回"}
                   </button>
                   <button
                     className="qc-card-btn qc-card-btn-approve"
                     onClick={() => handleApproveClick(record)}
+                    disabled={!canReview}
+                    title={!canReview ? "仅门店主管可执行审核通过操作" : ""}
                   >
-                    通过
+                    {canReview ? "通过" : "🔒 通过"}
                   </button>
                 </div>
               )}
@@ -584,6 +676,7 @@ export default function QcModule() {
         onClose={handleCloseDrawer}
         onApprove={() => selectedRecord && handleApproveClick(selectedRecord)}
         onReject={() => selectedRecord && handleRejectClick(selectedRecord)}
+        canReview={canReview}
       />
 
       {reviewModal && (

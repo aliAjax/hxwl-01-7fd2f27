@@ -38,6 +38,7 @@ export interface QcRecord {
   reviewStatus: ReviewStatus;
   reviewedBy?: string;
   reviewedAt?: string;
+  reviewComment?: string;
   rejectReason?: string;
 }
 

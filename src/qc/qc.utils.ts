@@ -242,6 +242,7 @@ export function convertWorkflowRecordToQc(record: WorkflowFittingRecord): QcReco
     reviewStatus,
     reviewedBy: record.reviewedBy,
     reviewedAt: record.reviewedAt ? formatDate(record.reviewedAt) : undefined,
+    reviewComment: record.reviewComment,
     rejectReason: record.reviewComment && reviewStatus === "rejected" ? record.reviewComment : undefined
   };
 }
