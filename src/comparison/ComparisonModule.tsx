@@ -234,15 +234,16 @@ const ComparisonModule = forwardRef<ComparisonModuleHandle, ComparisonModuleProp
 
       setIsSaving(true);
       try {
-        const isNew = !comparisonData.createdAt || comparisonData.version === 1 && !comparisonData.updatedAt;
-        const hasId = comparisonData.id && comparisonData.id.startsWith("cmp-");
+        const hasId = !!comparisonData.id;
+        let saved: ComparisonData;
 
-        if (hasId && comparisonData.version > 1 || (comparisonData as any).updatedAt !== (comparisonData as any).createdAt) {
-          await updateComparison(comparisonData, "更新对比记录");
+        if (hasId) {
+          saved = await updateComparison(comparisonData, "更新对比记录");
         } else {
-          await createComparison(comparisonData);
+          saved = await createComparison(comparisonData);
         }
 
+        setComparisonData(saved);
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2000);
       } catch (e) {
