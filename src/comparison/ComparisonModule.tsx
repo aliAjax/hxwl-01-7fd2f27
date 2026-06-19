@@ -19,11 +19,7 @@ interface ComparisonModuleProps {
 
 function StatusBadge({ status }: { status: ComparisonStatus }) {
   const label = statusLabelMap[status];
-  return (
-    <span className={`cmp-status-badge cmp-status-${status}`}>
-      {label}
-    </span>
-  );
+  return <span className={`cmp-status-badge cmp-status-${status}`}>{label}</span>;
 }
 
 function ComparisonCard({
@@ -53,9 +49,7 @@ function ComparisonCard({
         <div className="cmp-card-arrow">
           <span className="cmp-arrow-icon">→</span>
           {changeValue && (
-            <span className={`cmp-change-text cmp-change-${status}`}>
-              {changeValue}
-            </span>
+            <span className={`cmp-change-text cmp-change-${status}`}>{changeValue}</span>
           )}
         </div>
         <div className="cmp-card-col">
@@ -87,9 +81,7 @@ function FittingForm({
           <h3>{title}</h3>
           <p className="fitting-form-sub">{subtitle}</p>
         </div>
-        {record.fittingStage && (
-          <span className="fitting-stage-tag">{record.fittingStage}</span>
-        )}
+        {record.fittingStage && <span className="fitting-stage-tag">{record.fittingStage}</span>}
       </div>
 
       <div className="fitting-form-body">
@@ -101,7 +93,7 @@ function FittingForm({
             max="100"
             placeholder="0 - 100"
             value={record.speechRecognitionRate ?? ""}
-            onChange={e => {
+            onChange={(e) => {
               const val = e.target.value;
               onChange("speechRecognitionRate", val === "" ? null : Number(val));
             }}
@@ -113,7 +105,7 @@ function FittingForm({
           <textarea
             placeholder="描述啸叫发生的场景、频率、严重程度等"
             value={record.feedbackWhistle}
-            onChange={e => onChange("feedbackWhistle", e.target.value)}
+            onChange={(e) => onChange("feedbackWhistle", e.target.value)}
             rows={3}
           />
         </label>
@@ -123,7 +115,7 @@ function FittingForm({
           <textarea
             placeholder="简述增益调整的频段、幅度、压缩比变化等"
             value={record.gainAdjustment}
-            onChange={e => onChange("gainAdjustment", e.target.value)}
+            onChange={(e) => onChange("gainAdjustment", e.target.value)}
             rows={4}
           />
         </label>
@@ -140,14 +132,12 @@ function FittingForm({
 }
 
 const ComparisonModule = forwardRef<ComparisonModuleHandle, ComparisonModuleProps>(
-  function ComparisonModule({ customerId, onBack, autoHighlight = false, showCustomerSelector = true }, ref) {
+  function ComparisonModule(
+    { customerId, onBack, autoHighlight = false, showCustomerSelector = true },
+    ref
+  ) {
     const moduleRef = useRef<HTMLElement>(null);
-    const {
-      customers,
-      createComparison,
-      updateComparison,
-      getLatestComparison
-    } = useArchive();
+    const { customers, createComparison, updateComparison, getLatestComparison } = useArchive();
 
     const [activeCustomerId, setActiveCustomerId] = useState<string>(customerId || "");
     const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
@@ -166,31 +156,34 @@ const ComparisonModule = forwardRef<ComparisonModuleHandle, ComparisonModuleProp
       }
     }));
 
-    const loadComparison = useCallback(async (cid: string) => {
-      if (!cid) {
-        setComparisonData(null);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const existing = await getLatestComparison(cid);
-        if (existing) {
-          setComparisonData(existing);
-        } else {
-          const customer = customers.find(c => c.id === cid);
-          const empty = createEmptyComparison(cid);
-          if (customer) {
-            empty.customerName = customer.name;
-            empty.hearingLossType = customer.hearingLossType;
-          }
-          setComparisonData(empty);
+    const loadComparison = useCallback(
+      async (cid: string) => {
+        if (!cid) {
+          setComparisonData(null);
+          return;
         }
-      } catch (e) {
-        console.error("加载对比数据失败:", e);
-      } finally {
-        setIsLoading(false);
-      }
-    }, [getLatestComparison, customers]);
+        setIsLoading(true);
+        try {
+          const existing = await getLatestComparison(cid);
+          if (existing) {
+            setComparisonData(existing);
+          } else {
+            const customer = customers.find((c) => c.id === cid);
+            const empty = createEmptyComparison(cid);
+            if (customer) {
+              empty.customerName = customer.name;
+              empty.hearingLossType = customer.hearingLossType;
+            }
+            setComparisonData(empty);
+          }
+        } catch (e) {
+          console.error("加载对比数据失败:", e);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      [getLatestComparison, customers]
+    );
 
     useEffect(() => {
       if (customerId) {
@@ -207,7 +200,7 @@ const ComparisonModule = forwardRef<ComparisonModuleHandle, ComparisonModuleProp
       }
     }, [autoHighlight, customerId]);
 
-    const activeCustomer = customers.find(c => c.id === activeCustomerId);
+    const activeCustomer = customers.find((c) => c.id === activeCustomerId);
 
     const results = comparisonData ? generateComparisonResults(comparisonData) : [];
 
@@ -219,13 +212,17 @@ const ComparisonModule = forwardRef<ComparisonModuleHandle, ComparisonModuleProp
 
     const handleInitialChange = (field: keyof FittingRecord, value: string | number | null) => {
       if (!comparisonData) return;
-      setComparisonData(prev => prev ? updateFittingRecord(prev, "initial", field, value) : null);
+      setComparisonData((prev) =>
+        prev ? updateFittingRecord(prev, "initial", field, value) : null
+      );
       setSaveSuccess(false);
     };
 
     const handleFollowUpChange = (field: keyof FittingRecord, value: string | number | null) => {
       if (!comparisonData) return;
-      setComparisonData(prev => prev ? updateFittingRecord(prev, "followUp", field, value) : null);
+      setComparisonData((prev) =>
+        prev ? updateFittingRecord(prev, "followUp", field, value) : null
+      );
       setSaveSuccess(false);
     };
 
@@ -254,21 +251,22 @@ const ComparisonModule = forwardRef<ComparisonModuleHandle, ComparisonModuleProp
       }
     };
 
-    const hasAnyData = comparisonData && (
-      comparisonData.initial.speechRecognitionRate !== null ||
-      comparisonData.initial.feedbackWhistle ||
-      comparisonData.initial.gainAdjustment ||
-      comparisonData.followUp.speechRecognitionRate !== null ||
-      comparisonData.followUp.feedbackWhistle ||
-      comparisonData.followUp.gainAdjustment
-    );
+    const hasAnyData =
+      comparisonData &&
+      (comparisonData.initial.speechRecognitionRate !== null ||
+        comparisonData.initial.feedbackWhistle ||
+        comparisonData.initial.gainAdjustment ||
+        comparisonData.followUp.speechRecognitionRate !== null ||
+        comparisonData.followUp.feedbackWhistle ||
+        comparisonData.followUp.gainAdjustment);
 
-    const improvedCount = results.filter(r => r.status === "improved").length;
-    const stableCount = results.filter(r => r.status === "stable").length;
-    const worsenedCount = results.filter(r => r.status === "worsened").length;
+    const improvedCount = results.filter((r) => r.status === "improved").length;
+    const stableCount = results.filter((r) => r.status === "stable").length;
+    const worsenedCount = results.filter((r) => r.status === "worsened").length;
 
     const displayCustomerName = comparisonData?.customerName || activeCustomer?.name || "";
-    const displayHearingLossType = comparisonData?.hearingLossType || activeCustomer?.hearingLossType || "";
+    const displayHearingLossType =
+      comparisonData?.hearingLossType || activeCustomer?.hearingLossType || "";
 
     return (
       <section

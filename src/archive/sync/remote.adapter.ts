@@ -1,8 +1,4 @@
-import type {
-  ArchiveEntity,
-  EntityType,
-  VersionSnapshot
-} from "../archive.types";
+import type { ArchiveEntity, EntityType, VersionSnapshot } from "../archive.types";
 import { generateId, generateVersionId } from "../archive.types";
 import type {
   IRemoteAdapter,

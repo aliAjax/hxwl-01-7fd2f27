@@ -38,18 +38,13 @@ export default function SyncStatusBar() {
         />
         <span className="sync-status-text">
           {syncState.isOnline ? "☁ 在线" : "📴 离线"}
-          {isSyncing && (
-            <span className="sync-phase"> · {phaseLabel(syncState.phase)}</span>
-          )}
+          {isSyncing && <span className="sync-phase"> · {phaseLabel(syncState.phase)}</span>}
         </span>
       </div>
 
       {isSyncing && syncState.total > 0 && (
         <div className="sync-progress">
-          <div
-            className="sync-progress-bar"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="sync-progress-bar" style={{ width: `${progress}%` }} />
           <span className="sync-progress-text">
             {syncState.progress}/{syncState.total}
           </span>

@@ -13,7 +13,7 @@ import {
   renameFilterView,
   deleteFilterView,
   type FilterView,
-  type FilterState,
+  type FilterState
 } from "./filterView.storage";
 
 export default function ArchiveModule() {
@@ -91,15 +91,18 @@ export default function ArchiveModule() {
     setActiveViewId(newView.id);
   }, [savingViewName, filter, refreshViews]);
 
-  const handleDeleteView = useCallback((id: string) => {
-    deleteFilterView(id);
-    if (activeViewId === id) {
-      setActiveViewId(null);
-      setFilter({ keyword: "", hearingLossType: "all", gender: "all", syncStatus: "all" });
-    }
-    setViewMenuOpenId(null);
-    refreshViews();
-  }, [activeViewId, refreshViews]);
+  const handleDeleteView = useCallback(
+    (id: string) => {
+      deleteFilterView(id);
+      if (activeViewId === id) {
+        setActiveViewId(null);
+        setFilter({ keyword: "", hearingLossType: "all", gender: "all", syncStatus: "all" });
+      }
+      setViewMenuOpenId(null);
+      refreshViews();
+    },
+    [activeViewId, refreshViews]
+  );
 
   const handleStartRename = useCallback((view: FilterView) => {
     setRenamingViewId(view.id);
@@ -129,7 +132,8 @@ export default function ArchiveModule() {
           return false;
         }
       }
-      if (filter.hearingLossType !== "all" && c.hearingLossType !== filter.hearingLossType) return false;
+      if (filter.hearingLossType !== "all" && c.hearingLossType !== filter.hearingLossType)
+        return false;
       if (filter.gender !== "all" && c.gender !== filter.gender) return false;
       if (filter.syncStatus !== "all" && c.syncStatus !== filter.syncStatus) return false;
       return true;
@@ -247,11 +251,17 @@ export default function ArchiveModule() {
             className="archive-search"
             placeholder="搜索客户姓名/编号/电话..."
             value={filter.keyword}
-            onChange={(e) => { setFilter({ ...filter, keyword: e.target.value }); setActiveViewId(null); }}
+            onChange={(e) => {
+              setFilter({ ...filter, keyword: e.target.value });
+              setActiveViewId(null);
+            }}
           />
           <select
             value={filter.hearingLossType}
-            onChange={(e) => { setFilter({ ...filter, hearingLossType: e.target.value }); setActiveViewId(null); }}
+            onChange={(e) => {
+              setFilter({ ...filter, hearingLossType: e.target.value });
+              setActiveViewId(null);
+            }}
           >
             <option value="all">全部听损类型</option>
             <option value="感音神经性">感音神经性</option>
@@ -262,7 +272,10 @@ export default function ArchiveModule() {
           </select>
           <select
             value={filter.gender}
-            onChange={(e) => { setFilter({ ...filter, gender: e.target.value }); setActiveViewId(null); }}
+            onChange={(e) => {
+              setFilter({ ...filter, gender: e.target.value });
+              setActiveViewId(null);
+            }}
           >
             <option value="all">全部性别</option>
             <option value="male">男</option>
@@ -271,7 +284,10 @@ export default function ArchiveModule() {
           </select>
           <select
             value={filter.syncStatus}
-            onChange={(e) => { setFilter({ ...filter, syncStatus: e.target.value }); setActiveViewId(null); }}
+            onChange={(e) => {
+              setFilter({ ...filter, syncStatus: e.target.value });
+              setActiveViewId(null);
+            }}
           >
             <option value="all">全部同步状态</option>
             <option value="local">仅本地</option>
@@ -321,8 +337,12 @@ export default function ArchiveModule() {
                     }}
                     autoFocus
                   />
-                  <button className="fv-rename-ok" onClick={handleConfirmRename}>✓</button>
-                  <button className="fv-rename-cancel" onClick={() => setRenamingViewId(null)}>✕</button>
+                  <button className="fv-rename-ok" onClick={handleConfirmRename}>
+                    ✓
+                  </button>
+                  <button className="fv-rename-cancel" onClick={() => setRenamingViewId(null)}>
+                    ✕
+                  </button>
                 </div>
               ) : (
                 <>
@@ -345,10 +365,7 @@ export default function ArchiveModule() {
               )}
               {viewMenuOpenId === v.id && renamingViewId !== v.id && (
                 <div className="fv-menu">
-                  <button
-                    className="fv-menu-item"
-                    onClick={() => handleStartRename(v)}
-                  >
+                  <button className="fv-menu-item" onClick={() => handleStartRename(v)}>
                     ✎ 重命名
                   </button>
                   <button
@@ -372,23 +389,28 @@ export default function ArchiveModule() {
                 placeholder="输入视图名称..."
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSaveView();
-                  if (e.key === "Escape") { setShowSaveInput(false); setSavingViewName(""); }
+                  if (e.key === "Escape") {
+                    setShowSaveInput(false);
+                    setSavingViewName("");
+                  }
                 }}
                 autoFocus
               />
-              <button className="fv-save-ok" onClick={handleSaveView}>保存</button>
+              <button className="fv-save-ok" onClick={handleSaveView}>
+                保存
+              </button>
               <button
                 className="fv-save-cancel"
-                onClick={() => { setShowSaveInput(false); setSavingViewName(""); }}
+                onClick={() => {
+                  setShowSaveInput(false);
+                  setSavingViewName("");
+                }}
               >
                 取消
               </button>
             </div>
           ) : (
-            <button
-              className="ghost-btn"
-              onClick={() => setShowSaveInput(true)}
-            >
+            <button className="ghost-btn" onClick={() => setShowSaveInput(true)}>
               💾 保存为视图
             </button>
           )}
@@ -433,7 +455,9 @@ export default function ArchiveModule() {
                         {c.age ? ` ${c.age}岁` : ""} · {c.hearingLossType} · {c.phone}
                       </div>
                       <div className="cust-foot">
-                        <span className="muted">v{c.version} · {formatDate(c.editedAt)}</span>
+                        <span className="muted">
+                          v{c.version} · {formatDate(c.editedAt)}
+                        </span>
                         {priorityBadge(c)}
                       </div>
                     </div>
@@ -448,7 +472,11 @@ export default function ArchiveModule() {
                       >
                         ⚡
                       </button>
-                      <button className="row-btn danger" title="删除" onClick={() => handleDelete(c)}>
+                      <button
+                        className="row-btn danger"
+                        title="删除"
+                        onClick={() => handleDelete(c)}
+                      >
                         🗑
                       </button>
                     </div>
@@ -534,7 +562,10 @@ export default function ArchiveModule() {
       )}
 
       {conflictModalOpen && selectedCustomerId && (
-        <ConflictResolver customerId={selectedCustomerId} onClose={() => setConflictModalOpen(false)} />
+        <ConflictResolver
+          customerId={selectedCustomerId}
+          onClose={() => setConflictModalOpen(false)}
+        />
       )}
     </div>
   );
@@ -725,9 +756,7 @@ function CustomerFormModal({
               <span>听损类型</span>
               <select
                 value={editingCustomer.hearingLossType}
-                onChange={(e) =>
-                  setField("hearingLossType", e.target.value as HearingLossType)
-                }
+                onChange={(e) => setField("hearingLossType", e.target.value as HearingLossType)}
               >
                 <option value="未知">未知</option>
                 <option value="感音神经性">感音神经性</option>

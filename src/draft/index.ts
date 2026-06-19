@@ -1,8 +1,4 @@
-export {
-  getDraftStorage,
-  createDraftData,
-  STORAGE_VERSION
-} from "./draftStorage";
+export { getDraftStorage, createDraftData, STORAGE_VERSION } from "./draftStorage";
 export type { DraftData, DraftStorage, StorageType } from "./draftStorage";
 export { useDraft, useHearingDraft, formatLastSaved } from "./useDraft";
 export type {

@@ -36,26 +36,28 @@ export default function AssistantView() {
 
     switch (activeFilter) {
       case "overdue":
-        return filtered.filter(r => {
+        return filtered.filter((r) => {
           const nextDate = new Date(r.nextFollowUpDate);
           nextDate.setHours(0, 0, 0, 0);
           return nextDate.getTime() < today.getTime() && r.status !== "completed";
         });
       case "today":
-        return filtered.filter(r => {
+        return filtered.filter((r) => {
           const nextDate = new Date(r.nextFollowUpDate);
           nextDate.setHours(0, 0, 0, 0);
           return nextDate.getTime() === today.getTime();
         });
       case "week":
-        return filtered.filter(r => {
+        return filtered.filter((r) => {
           const nextDate = new Date(r.nextFollowUpDate);
           nextDate.setHours(0, 0, 0, 0);
-          const diffDays = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          const diffDays = Math.ceil(
+            (nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+          );
           return diffDays > 0 && diffDays <= 7;
         });
       case "completed":
-        return filtered.filter(r => r.status === "completed");
+        return filtered.filter((r) => r.status === "completed");
       default:
         return filtered;
     }
@@ -70,7 +72,7 @@ export default function AssistantView() {
   }, [records]);
 
   const selectedRecord = useMemo(() => {
-    return state.records.find(r => r.id === state.selectedRecordId) || null;
+    return state.records.find((r) => r.id === state.selectedRecordId) || null;
   }, [state.records, state.selectedRecordId]);
 
   const counts = useMemo(() => {
@@ -82,23 +84,23 @@ export default function AssistantView() {
 
     return {
       all: all.length,
-      overdue: all.filter(r => {
+      overdue: all.filter((r) => {
         const d = new Date(r.nextFollowUpDate);
         d.setHours(0, 0, 0, 0);
         return d.getTime() < todayStart.getTime() && r.status !== "completed";
       }).length,
-      today: all.filter(r => {
+      today: all.filter((r) => {
         const d = new Date(r.nextFollowUpDate);
         d.setHours(0, 0, 0, 0);
         return d.getTime() === todayStart.getTime();
       }).length,
-      week: all.filter(r => {
+      week: all.filter((r) => {
         const d = new Date(r.nextFollowUpDate);
         d.setHours(0, 0, 0, 0);
         const diff = Math.ceil((d.getTime() - todayStart.getTime()) / 86400000);
         return diff > 0 && diff <= 7;
       }).length,
-      completed: all.filter(r => r.status === "completed").length
+      completed: all.filter((r) => r.status === "completed").length
     };
   }, [getFilteredRecords]);
 
@@ -180,7 +182,7 @@ export default function AssistantView() {
         </div>
 
         <div className="followup-filters">
-          {filterOptions.map(opt => (
+          {filterOptions.map((opt) => (
             <button
               key={opt.key}
               className={`filter-chip ${activeFilter === opt.key ? "filter-active" : ""}`}
@@ -200,7 +202,7 @@ export default function AssistantView() {
               <p>当前筛选条件下没有需要跟进的客户</p>
             </div>
           ) : (
-            sortedRecords.map(record => {
+            sortedRecords.map((record) => {
               const daysInfo = getDaysInfo(record);
               return (
                 <article
@@ -209,9 +211,7 @@ export default function AssistantView() {
                   onClick={() => handleRecordClick(record)}
                 >
                   <div className="followup-days">
-                    <span className={`days-badge ${daysInfo.className}`}>
-                      {daysInfo.text}
-                    </span>
+                    <span className={`days-badge ${daysInfo.className}`}>{daysInfo.text}</span>
                     <span className="followup-date">下次复诊：{record.nextFollowUpDate}</span>
                   </div>
 
@@ -227,13 +227,15 @@ export default function AssistantView() {
                     <p className="followup-notes">
                       {record.followUpNote || "请及时联系客户确认复诊时间"}
                     </p>
-                    {record.reviewFields.some(f => f.hasAbnormality) && (
+                    {record.reviewFields.some((f) => f.hasAbnormality) && (
                       <div className="abnormality-tags">
-                        {record.reviewFields.filter(f => f.hasAbnormality).map(f => (
-                          <span key={f.fieldName} className="abnormality-tag">
-                            ⚠️ {f.fieldLabel}异常
-                          </span>
-                        ))}
+                        {record.reviewFields
+                          .filter((f) => f.hasAbnormality)
+                          .map((f) => (
+                            <span key={f.fieldName} className="abnormality-tag">
+                              ⚠️ {f.fieldLabel}异常
+                            </span>
+                          ))}
                       </div>
                     )}
                   </div>
@@ -246,25 +248,31 @@ export default function AssistantView() {
                   </div>
 
                   <div className="followup-actions">
-                    {record.status === "pending_followup" && canPerformAction("canStartFollowUp") && (
-                      <button
-                        className="followup-btn primary"
-                        onClick={(e) => { e.stopPropagation(); handleStartFollowUp(record.id); }}
-                      >
-                        📞 开始跟进
-                      </button>
-                    )}
-                    {record.status === "followup_in_progress" && canPerformAction("canCompleteFollowUp") && (
-                      <button
-                        className="followup-btn success"
-                        onClick={(e) => { e.stopPropagation(); openCompleteModal(record); }}
-                      >
-                        ✅ 完成跟进
-                      </button>
-                    )}
-                    <button className="followup-btn secondary">
-                      📱 发送短信
-                    </button>
+                    {record.status === "pending_followup" &&
+                      canPerformAction("canStartFollowUp") && (
+                        <button
+                          className="followup-btn primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartFollowUp(record.id);
+                          }}
+                        >
+                          📞 开始跟进
+                        </button>
+                      )}
+                    {record.status === "followup_in_progress" &&
+                      canPerformAction("canCompleteFollowUp") && (
+                        <button
+                          className="followup-btn success"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openCompleteModal(record);
+                          }}
+                        >
+                          ✅ 完成跟进
+                        </button>
+                      )}
+                    <button className="followup-btn secondary">📱 发送短信</button>
                   </div>
                 </article>
               );
@@ -339,7 +347,9 @@ export default function AssistantView() {
               <div className="detail-items">
                 <div className="detail-item">
                   <span className="detail-label">助听器型号</span>
-                  <span className="detail-value strong">{selectedRecord.hearingAidModel || "-"}</span>
+                  <span className="detail-value strong">
+                    {selectedRecord.hearingAidModel || "-"}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">言语识别率</span>
@@ -356,19 +366,21 @@ export default function AssistantView() {
               </div>
             </div>
 
-            {selectedRecord.reviewFields.some(f => f.hasAbnormality) && (
+            {selectedRecord.reviewFields.some((f) => f.hasAbnormality) && (
               <div className="detail-group">
                 <h3>异常字段（需关注）</h3>
                 <div className="abnormality-list">
-                  {selectedRecord.reviewFields.filter(f => f.hasAbnormality).map(field => (
-                    <div key={field.fieldName} className="abnormality-item">
-                      <span className="abnormality-icon">⚠️</span>
-                      <div>
-                        <strong>{field.fieldLabel}</strong>
-                        <p>{field.abnormalityNote}</p>
+                  {selectedRecord.reviewFields
+                    .filter((f) => f.hasAbnormality)
+                    .map((field) => (
+                      <div key={field.fieldName} className="abnormality-item">
+                        <span className="abnormality-icon">⚠️</span>
+                        <div>
+                          <strong>{field.fieldLabel}</strong>
+                          <p>{field.abnormalityNote}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             )}
@@ -402,24 +414,36 @@ export default function AssistantView() {
 
       {showCompleteModal && completingRecord && (
         <div className="modal-overlay" onClick={() => setShowCompleteModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>完成跟进 - {completingRecord.customerName}</h2>
-              <button className="modal-close" onClick={() => setShowCompleteModal(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowCompleteModal(false)}>
+                ×
+              </button>
             </div>
-            <form className="modal-form" onSubmit={(e) => { e.preventDefault(); handleCompleteSubmit(); }}>
+            <form
+              className="modal-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCompleteSubmit();
+              }}
+            >
               <label className="form-field full-width">
                 <span>跟进结果 *</span>
                 <textarea
                   rows={5}
                   value={completeNote}
-                  onChange={e => setCompleteNote(e.target.value)}
+                  onChange={(e) => setCompleteNote(e.target.value)}
                   placeholder="请详细记录跟进结果，包括客户反馈、预约情况等..."
                   required
                 />
               </label>
               <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowCompleteModal(false)}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowCompleteModal(false)}
+                >
                   取消
                 </button>
                 <button type="submit" className="btn-primary success">

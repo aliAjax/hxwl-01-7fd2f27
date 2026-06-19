@@ -1,9 +1,4 @@
-import type {
-  IRetryQueue,
-  RetryItem,
-  RetryQueueStats,
-  SyncChangeSet
-} from "./sync.types";
+import type { IRetryQueue, RetryItem, RetryQueueStats, SyncChangeSet } from "./sync.types";
 
 const RETRY_STORE_KEY = "sync_retry_queue";
 const DEFAULT_MAX_ATTEMPTS = 5;
@@ -20,11 +15,7 @@ export class RetryQueue implements IRetryQueue {
   private initialBackoffMs: number;
   private persist: boolean;
 
-  constructor(options?: {
-    maxAttempts?: number;
-    initialBackoffMs?: number;
-    persist?: boolean;
-  }) {
+  constructor(options?: { maxAttempts?: number; initialBackoffMs?: number; persist?: boolean }) {
     this.maxAttempts = options?.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
     this.initialBackoffMs = options?.initialBackoffMs ?? DEFAULT_INITIAL_BACKOFF_MS;
     this.persist = options?.persist ?? true;
@@ -33,9 +24,7 @@ export class RetryQueue implements IRetryQueue {
 
   async enqueue(change: SyncChangeSet, error?: string): Promise<RetryItem> {
     const existing = Array.from(this.items.values()).find(
-      (i) =>
-        i.change.entityType === change.entityType &&
-        i.change.entityId === change.entityId
+      (i) => i.change.entityType === change.entityType && i.change.entityId === change.entityId
     );
 
     if (existing) {
@@ -134,9 +123,7 @@ export class RetryQueue implements IRetryQueue {
   }
 
   getFailed(): RetryItem[] {
-    return Array.from(this.items.values()).filter(
-      (i) => i.attempts >= i.maxAttempts
-    );
+    return Array.from(this.items.values()).filter((i) => i.attempts >= i.maxAttempts);
   }
 
   private calculateNextRetry(attempts: number): number {

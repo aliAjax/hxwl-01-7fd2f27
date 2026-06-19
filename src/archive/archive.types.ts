@@ -2,12 +2,7 @@ export type Gender = "male" | "female" | "other";
 
 export type FittingStage = "初配" | "复调" | "复诊" | "随访";
 
-export type HearingLossType =
-  | "感音神经性"
-  | "传导性"
-  | "混合性"
-  | "中枢性"
-  | "未知";
+export type HearingLossType = "感音神经性" | "传导性" | "混合性" | "中枢性" | "未知";
 
 export type FollowUpPriority = "high" | "medium" | "low";
 

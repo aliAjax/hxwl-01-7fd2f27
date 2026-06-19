@@ -8,19 +8,17 @@ import {
   EarSide,
   ConductionType
 } from "./hearing.types";
-import type {
-  AudiogramRecord,
-  EarAudiogram,
-  CustomerProfile
-} from "../archive/archive.types";
+import type { AudiogramRecord, EarAudiogram, CustomerProfile } from "../archive/archive.types";
 import { createEmptyAudiogram, calcPta as archiveCalcPta } from "../archive/archive.types";
 
 export function createEmptyThresholds(): ThresholdPoint[] {
-  return FREQUENCIES.map((freq): ThresholdPoint => ({
-    frequency: freq,
-    value: null,
-    valid: true
-  }));
+  return FREQUENCIES.map(
+    (freq): ThresholdPoint => ({
+      frequency: freq,
+      value: null,
+      valid: true
+    })
+  );
 }
 
 export function createEmptyRecord(): HearingRecord {
@@ -72,7 +70,7 @@ export function updateThreshold(
   const result = validateThreshold(rawValue);
   const next = JSON.parse(JSON.stringify(record)) as HearingRecord;
   const arr = next[side][conduction];
-  const idx = arr.findIndex(p => p.frequency === frequency);
+  const idx = arr.findIndex((p) => p.frequency === frequency);
   if (idx >= 0) {
     arr[idx] = {
       frequency,
@@ -89,8 +87,8 @@ export function computePTA(
   freqs: Frequency[] = [500, 1000, 2000]
 ): number | null {
   const vals = ear.air
-    .filter(p => freqs.includes(p.frequency) && p.value !== null && p.valid)
-    .map(p => p.value as number);
+    .filter((p) => freqs.includes(p.frequency) && p.value !== null && p.valid)
+    .map((p) => p.value as number);
   if (vals.length < freqs.length) return null;
   const sum = vals.reduce((a, b) => a + b, 0);
   return Math.round((sum / vals.length) * 10) / 10;
@@ -108,9 +106,9 @@ export function classifySeverity(pta: number | null): string {
 
 export function findAnomalies(record: HearingRecord): string[] {
   const msgs: string[] = [];
-  (["left", "right"] as EarSide[]).forEach(side => {
-    (["air", "bone"] as ConductionType[]).forEach(cond => {
-      record[side][cond].forEach(p => {
+  (["left", "right"] as EarSide[]).forEach((side) => {
+    (["air", "bone"] as ConductionType[]).forEach((cond) => {
+      record[side][cond].forEach((p) => {
         if (!p.valid && p.warning) {
           msgs.push(
             `${side === "left" ? "左耳" : "右耳"}·${cond === "air" ? "气导" : "骨导"}·${p.frequency}Hz：${p.warning}`
@@ -119,12 +117,12 @@ export function findAnomalies(record: HearingRecord): string[] {
       });
     });
   });
-  (["left", "right"] as EarSide[]).forEach(side => {
-    const air = record[side].air.filter(p => p.value !== null);
-    const bone = record[side].bone.filter(p => p.value !== null);
+  (["left", "right"] as EarSide[]).forEach((side) => {
+    const air = record[side].air.filter((p) => p.value !== null);
+    const bone = record[side].bone.filter((p) => p.value !== null);
     const freqMap = new Map<Frequency, number>();
-    bone.forEach(p => freqMap.set(p.frequency, p.value as number));
-    air.forEach(p => {
+    bone.forEach((p) => freqMap.set(p.frequency, p.value as number));
+    air.forEach((p) => {
       const b = freqMap.get(p.frequency);
       if (b !== undefined && (p.value as number) < b - 5) {
         msgs.push(
@@ -137,7 +135,9 @@ export function findAnomalies(record: HearingRecord): string[] {
 }
 
 export function audiogramToHearingRecord(audiogram: AudiogramRecord): HearingRecord {
-  const convertPoints = (points: { frequency: Frequency; value: number | null; valid?: boolean }[]): ThresholdPoint[] => {
+  const convertPoints = (
+    points: { frequency: Frequency; value: number | null; valid?: boolean }[]
+  ): ThresholdPoint[] => {
     return FREQUENCIES.map((freq) => {
       const p = points.find((x) => x.frequency === freq);
       return {
@@ -180,7 +180,9 @@ export function hearingRecordToAudiogram(
   customerId: string,
   existingAudiogram?: AudiogramRecord
 ): AudiogramRecord {
-  const convertPoints = (points: ThresholdPoint[]): { frequency: Frequency; value: number | null; valid: boolean }[] => {
+  const convertPoints = (
+    points: ThresholdPoint[]
+  ): { frequency: Frequency; value: number | null; valid: boolean }[] => {
     return points.map((p) => ({
       frequency: p.frequency,
       value: p.value,

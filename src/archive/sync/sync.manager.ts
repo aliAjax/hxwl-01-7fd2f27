@@ -8,11 +8,7 @@ import type {
   VersionSnapshot
 } from "../archive.types";
 import { generateVersionId } from "../archive.types";
-import {
-  ArchiveDatabase,
-  ENTITY_STORES,
-  getArchiveDB
-} from "../archive.storage";
+import { ArchiveDatabase, ENTITY_STORES, getArchiveDB } from "../archive.storage";
 import type {
   ChangeLogEntry,
   IConflictResolver,
@@ -69,7 +65,10 @@ export class SyncManager implements ISyncManager {
   }) {
     this.db = options?.db || getArchiveDB();
     this.dbTx = (this.db as unknown as { tx: DBTxFn }).tx.bind(this.db);
-    this.remote = (options?.remoteAdapter as IRemoteAdapter & { seedRemoteEntity?: (e: ArchiveEntity) => Promise<void> }) || getMockRemoteAdapter();
+    this.remote =
+      (options?.remoteAdapter as IRemoteAdapter & {
+        seedRemoteEntity?: (e: ArchiveEntity) => Promise<void>;
+      }) || getMockRemoteAdapter();
     this.conflictResolver = options?.conflictResolver || getConflictResolver();
     this.retryQueue = options?.retryQueue || getRetryQueue();
     this.cursor = this.loadCursor();
@@ -718,14 +717,16 @@ export class SyncManager implements ISyncManager {
 
   private async collectPendingChanges(): Promise<SyncChangeSet[]> {
     const entries = await this.db.getPendingChanges(50);
-    return entries.map((entry: ChangeLogEntry): SyncChangeSet => ({
-      entityType: entry.entityType,
-      entityId: entry.entityId,
-      operation: entry.operation,
-      entity: entry.entity,
-      baseVersionId: entry.baseVersionId,
-      timestamp: entry.timestamp
-    }));
+    return entries.map(
+      (entry: ChangeLogEntry): SyncChangeSet => ({
+        entityType: entry.entityType,
+        entityId: entry.entityId,
+        operation: entry.operation,
+        entity: entry.entity,
+        baseVersionId: entry.baseVersionId,
+        timestamp: entry.timestamp
+      })
+    );
   }
 
   private async doPushVersions(): Promise<number> {
@@ -918,7 +919,10 @@ export class SyncManager implements ISyncManager {
     }
   }
 
-  private getDefaultRemoteEdits(entityType: EntityType, local: ArchiveEntity): Partial<ArchiveEntity> {
+  private getDefaultRemoteEdits(
+    entityType: EntityType,
+    local: ArchiveEntity
+  ): Partial<ArchiveEntity> {
     const now = Date.now() + 5000;
     const base: Partial<ArchiveEntity> = {
       editedAt: now,
@@ -940,18 +944,14 @@ export class SyncManager implements ISyncManager {
         const aud = local as { remark?: string };
         return {
           ...base,
-          remark: aud.remark
-            ? aud.remark + "\n[远程] 复测确认阈值"
-            : "[远程] 复测确认阈值"
+          remark: aud.remark ? aud.remark + "\n[远程] 复测确认阈值" : "[远程] 复测确认阈值"
         } as Partial<ArchiveEntity>;
       }
       case "fitting": {
         const fit = local as { remark?: string };
         return {
           ...base,
-          remark: fit.remark
-            ? fit.remark + "\n[远程] 调整增益参数"
-            : "[远程] 调整增益参数"
+          remark: fit.remark ? fit.remark + "\n[远程] 调整增益参数" : "[远程] 调整增益参数"
         } as Partial<ArchiveEntity>;
       }
       case "followup": {

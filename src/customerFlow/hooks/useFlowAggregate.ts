@@ -43,6 +43,6 @@ export function useFlowAggregate({ activeCustomerId, isConsistent }: UseFlowAggr
     activeCustomerProfile,
     activeWorkflowRecords,
     activeLatestWorkflowRecord,
-    workflowRecords: workflowState.records,
+    workflowRecords: workflowState.records
   };
 }

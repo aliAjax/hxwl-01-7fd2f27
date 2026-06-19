@@ -91,7 +91,18 @@ export interface OperationLog {
   operatorRole: RoleType;
   operatorName: string;
   action: string;
-  actionType: "create" | "update" | "submit" | "approve" | "reject" | "assign" | "followup" | "complete" | "status_change" | "resubmit" | "correct";
+  actionType:
+    | "create"
+    | "update"
+    | "submit"
+    | "approve"
+    | "reject"
+    | "assign"
+    | "followup"
+    | "complete"
+    | "status_change"
+    | "resubmit"
+    | "correct";
   oldStatus?: RecordStatus;
   newStatus?: RecordStatus;
   detail?: string;
@@ -222,14 +233,19 @@ export function generateId(prefix = "wf"): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function canTransition(status: RecordStatus, targetStatus: RecordStatus, role: RoleType): boolean {
+export function canTransition(
+  status: RecordStatus,
+  targetStatus: RecordStatus,
+  role: RoleType
+): boolean {
   const allowedTransitions = STATUS_TRANSITIONS[status];
   if (!allowedTransitions.includes(targetStatus)) return false;
 
   const permissions = ROLE_PERMISSIONS[role];
 
   if (targetStatus === "pending_review") return permissions.canSubmitForReview;
-  if (targetStatus === "review_approved" || targetStatus === "review_rejected") return permissions.canReview;
+  if (targetStatus === "review_approved" || targetStatus === "review_rejected")
+    return permissions.canReview;
   if (targetStatus === "pending_followup") return permissions.canAssignFollowUp;
   if (targetStatus === "followup_in_progress") return permissions.canStartFollowUp;
   if (targetStatus === "completed") {

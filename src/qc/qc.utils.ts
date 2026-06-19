@@ -24,7 +24,7 @@ const REQUIRED_FIELD_LABELS: Record<string, string> = {
 const FREQUENCY_POINTS = ["250Hz", "500Hz", "1kHz", "2kHz", "4kHz", "8kHz"];
 
 function buildRequiredFields(record: WorkflowFittingRecord): RequiredField[] {
-  return REQUIRED_FIELD_KEYS.map(key => {
+  return REQUIRED_FIELD_KEYS.map((key) => {
     let value = "";
     switch (key) {
       case "hearingLossType":
@@ -60,7 +60,7 @@ function buildRequiredFields(record: WorkflowFittingRecord): RequiredField[] {
 
 function calcFieldCompleteness(fields: RequiredField[]): number {
   if (fields.length === 0) return 0;
-  const completed = fields.filter(f => f.completed).length;
+  const completed = fields.filter((f) => f.completed).length;
   return Math.round((completed / fields.length) * 100);
 }
 
@@ -72,18 +72,18 @@ function parseGainAdjustment(record: WorkflowFittingRecord): GainAdjustmentDetai
   const adjustmentText = record.gainAdjustment || "";
 
   const patterns = [
-    { freq: "250Hz", regex: /(?:低频|250Hz)[^0-9\-+]*([\-+]?\d+)/ },
-    { freq: "500Hz", regex: /(?:500Hz)[^0-9\-+]*([\-+]?\d+)/ },
-    { freq: "1kHz", regex: /(?:1kHz|中频)[^0-9\-+]*([\-+]?\d+)/ },
-    { freq: "2kHz", regex: /(?:2kHz)[^0-9\-+]*([\-+]?\d+)/ },
-    { freq: "4kHz", regex: /(?:4kHz|高频)[^0-9\-+]*([\-+]?\d+)/ },
-    { freq: "8kHz", regex: /(?:8kHz)[^0-9\-+]*([\-+]?\d+)/ }
+    { freq: "250Hz", regex: /(?:低频|250Hz)[^0-9+]*([-+]?\d+)/ },
+    { freq: "500Hz", regex: /(?:500Hz)[^0-9+]*([-+]?\d+)/ },
+    { freq: "1kHz", regex: /(?:1kHz|中频)[^0-9+]*([-+]?\d+)/ },
+    { freq: "2kHz", regex: /(?:2kHz)[^0-9+]*([-+]?\d+)/ },
+    { freq: "4kHz", regex: /(?:4kHz|高频)[^0-9+]*([-+]?\d+)/ },
+    { freq: "8kHz", regex: /(?:8kHz)[^0-9+]*([-+]?\d+)/ }
   ];
 
   const foundFreqs = new Set<string>();
   let foundAny = false;
 
-  patterns.forEach(p => {
+  patterns.forEach((p) => {
     const match = adjustmentText.match(p.regex);
     if (match) {
       foundAny = true;
@@ -117,8 +117,12 @@ function parseGainAdjustment(record: WorkflowFittingRecord): GainAdjustmentDetai
     const baseDeviation = hasAbnormalField ? 7 : 3;
     FREQUENCY_POINTS.forEach((freq, idx) => {
       const deviation = hasAbnormalField
-        ? (idx % 2 === 0 ? baseDeviation : baseDeviation - 2)
-        : (idx % 3 === 0 ? baseDeviation : Math.max(0, baseDeviation - 1));
+        ? idx % 2 === 0
+          ? baseDeviation
+          : baseDeviation - 2
+        : idx % 3 === 0
+          ? baseDeviation
+          : Math.max(0, baseDeviation - 1);
       const baseline = Math.round((record.leftPta + record.rightPta) / 8) + idx;
       const adjusted = baseline + deviation;
       const isAbnormal = Math.abs(deviation) > 5;
@@ -135,7 +139,7 @@ function parseGainAdjustment(record: WorkflowFittingRecord): GainAdjustmentDetai
       });
     });
   } else if (foundFreqs.size > 0 && foundFreqs.size < FREQUENCY_POINTS.length) {
-    FREQUENCY_POINTS.forEach(freq => {
+    FREQUENCY_POINTS.forEach((freq) => {
       if (!foundFreqs.has(freq)) {
         result.push({
           frequency: freq,
@@ -217,7 +221,7 @@ export function convertWorkflowRecordToQc(record: WorkflowFittingRecord): QcReco
   const requiredFields = buildRequiredFields(record);
   const fieldCompleteness = calcFieldCompleteness(requiredFields);
   const gainAdjustments = parseGainAdjustment(record);
-  const hasAbnormalGain = gainAdjustments.some(g => g.isAbnormal);
+  const hasAbnormalGain = gainAdjustments.some((g) => g.isAbnormal);
   const { missing: feedbackMissing, reason: feedbackMissingReason } = checkFeedbackMissing(record);
   const reviewStatus = mapWorkflowStatusToQcStatus(record);
 
@@ -243,7 +247,8 @@ export function convertWorkflowRecordToQc(record: WorkflowFittingRecord): QcReco
     reviewedBy: record.reviewedBy,
     reviewedAt: record.reviewedAt ? formatDate(record.reviewedAt) : undefined,
     reviewComment: record.reviewComment,
-    rejectReason: record.reviewComment && reviewStatus === "rejected" ? record.reviewComment : undefined
+    rejectReason:
+      record.reviewComment && reviewStatus === "rejected" ? record.reviewComment : undefined
   };
 }
 
@@ -255,7 +260,7 @@ export function getReviewableRecords(records: WorkflowFittingRecord[]): QcRecord
   ];
 
   return records
-    .filter(r => reviewableStatuses.includes(r.status))
+    .filter((r) => reviewableStatuses.includes(r.status))
     .map(convertWorkflowRecordToQc);
 }
 

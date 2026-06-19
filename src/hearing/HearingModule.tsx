@@ -32,12 +32,9 @@ export default function HearingModule({
   const { createAudiogram, updateAudiogram, aggregate, selectedCustomerId } = useArchive();
 
   const effectiveCustomerId = customerId || selectedCustomerId;
-  const customerProfile: CustomerProfile | null =
-    aggregate?.profile || null;
+  const customerProfile: CustomerProfile | null = aggregate?.profile || null;
 
-  const draftKey = effectiveCustomerId
-    ? `hearing_record_${effectiveCustomerId}`
-    : "hearing_record";
+  const draftKey = effectiveCustomerId ? `hearing_record_${effectiveCustomerId}` : "hearing_record";
 
   const effectiveCustomerIdRef = useRef(effectiveCustomerId);
   effectiveCustomerIdRef.current = effectiveCustomerId;
@@ -86,8 +83,7 @@ export default function HearingModule({
   useEffect(() => {
     const prevCustomerId = prevCustomerIdRef.current;
     const hasCustomerSwitched =
-      prevCustomerId !== undefined &&
-      prevCustomerId !== effectiveCustomerId;
+      prevCustomerId !== undefined && prevCustomerId !== effectiveCustomerId;
 
     if (hasCustomerSwitched) {
       setEditingAudiogramId(null);
@@ -231,9 +227,7 @@ export default function HearingModule({
 
       {activeSample && showSamples && (
         <div className="sample-case-note">
-          <strong>
-            {SAMPLE_CASES.find((c) => c.id === activeSample)?.label}：
-          </strong>
+          <strong>{SAMPLE_CASES.find((c) => c.id === activeSample)?.label}：</strong>
           {SAMPLE_CASES.find((c) => c.id === activeSample)?.description}
         </div>
       )}
@@ -269,10 +263,10 @@ export default function HearingModule({
             {savingStatus === "saving"
               ? "保存中..."
               : savingStatus === "saved"
-              ? "✓ 已保存"
-              : editingAudiogramId
-              ? "💾 更新到档案"
-              : "💾 保存到档案"}
+                ? "✓ 已保存"
+                : editingAudiogramId
+                  ? "💾 更新到档案"
+                  : "💾 保存到档案"}
           </button>
         </div>
       </div>

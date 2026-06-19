@@ -26,7 +26,7 @@ function WorkflowContent() {
 
   const getStatusCounts = () => {
     const counts: Record<string, number> = {};
-    state.records.forEach(r => {
+    state.records.forEach((r) => {
       counts[r.status] = (counts[r.status] || 0) + 1;
     });
     return counts;
@@ -62,7 +62,9 @@ function WorkflowContent() {
             <span className="status-label">已通过</span>
           </div>
           <div className="status-summary-item">
-            <span className="status-count followup">{statusCounts.pending_followup || 0} + {statusCounts.followup_in_progress || 0}</span>
+            <span className="status-count followup">
+              {statusCounts.pending_followup || 0} + {statusCounts.followup_in_progress || 0}
+            </span>
             <span className="status-label">跟进中</span>
           </div>
           <div className="status-summary-item">
@@ -130,9 +132,7 @@ function WorkflowContent() {
 
       <RoleSwitcher />
 
-      {showLogs && (
-        <OperationLog limit={30} />
-      )}
+      {showLogs && <OperationLog limit={30} />}
 
       {state.selectedRecordId && showLogs && (
         <OperationLog recordId={state.selectedRecordId} limit={20} />

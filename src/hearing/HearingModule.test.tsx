@@ -69,7 +69,10 @@ function buildMockAudiogram(customerId: string, id = "aud-test-001"): AudiogramR
   };
 }
 
-function buildMockAggregate(customer: CustomerProfile, audiograms: AudiogramRecord[] = []): CustomerAggregate {
+function buildMockAggregate(
+  customer: CustomerProfile,
+  audiograms: AudiogramRecord[] = []
+): CustomerAggregate {
   return {
     profile: customer,
     audiograms,
@@ -91,25 +94,28 @@ interface DraftState {
 
 function createMockUseHearingDraft(initialState?: Partial<DraftState>) {
   const currentRecord: HearingRecord = initialState?.record ?? createEmptyRecord();
-  const currentStatus: UseHearingDraftResult<HearingRecord>["status"] = initialState?.status ?? "idle";
+  const currentStatus: UseHearingDraftResult<HearingRecord>["status"] =
+    initialState?.status ?? "idle";
   const currentLastSavedAt = initialState?.lastSavedAt ?? null;
   const currentHasDraft = initialState?.hasDraft ?? false;
 
   return {
-    mock: vi.fn().mockImplementation((_options: Parameters<typeof draftModule.useHearingDraft>[0]) => {
-      return {
-        record: currentRecord,
-        status: currentStatus,
-        lastSavedAt: currentLastSavedAt,
-        isSupported: initialState?.isSupported ?? true,
-        storageType: initialState?.storageType ?? "localstorage",
-        hasDraft: currentHasDraft,
-        saveNow: vi.fn().mockResolvedValue(undefined),
-        updateRecord: vi.fn(),
-        clearDraft: vi.fn().mockResolvedValue(undefined),
-        loadDraft: vi.fn().mockResolvedValue(undefined)
-      } satisfies UseHearingDraftResult<HearingRecord>;
-    })
+    mock: vi
+      .fn()
+      .mockImplementation((_options: Parameters<typeof draftModule.useHearingDraft>[0]) => {
+        return {
+          record: currentRecord,
+          status: currentStatus,
+          lastSavedAt: currentLastSavedAt,
+          isSupported: initialState?.isSupported ?? true,
+          storageType: initialState?.storageType ?? "localstorage",
+          hasDraft: currentHasDraft,
+          saveNow: vi.fn().mockResolvedValue(undefined),
+          updateRecord: vi.fn(),
+          clearDraft: vi.fn().mockResolvedValue(undefined),
+          loadDraft: vi.fn().mockResolvedValue(undefined)
+        } satisfies UseHearingDraftResult<HearingRecord>;
+      })
   };
 }
 
@@ -117,19 +123,23 @@ function createMockUseArchive() {
   let selectedCustomerId: string | null = null;
   let aggregate: CustomerAggregate | null = null;
 
-  const createAudiogram = vi.fn().mockImplementation(async (a: Partial<AudiogramRecord>): Promise<AudiogramRecord> => {
-    const saved: AudiogramRecord = {
-      ...createEmptyAudiogram(a.customerId || ""),
-      ...a,
-      id: a.id || `aud-${Date.now()}`,
-      entityType: "audiogram"
-    } as AudiogramRecord;
-    return saved;
-  });
+  const createAudiogram = vi
+    .fn()
+    .mockImplementation(async (a: Partial<AudiogramRecord>): Promise<AudiogramRecord> => {
+      const saved: AudiogramRecord = {
+        ...createEmptyAudiogram(a.customerId || ""),
+        ...a,
+        id: a.id || `aud-${Date.now()}`,
+        entityType: "audiogram"
+      } as AudiogramRecord;
+      return saved;
+    });
 
-  const updateAudiogram = vi.fn().mockImplementation(async (a: AudiogramRecord): Promise<AudiogramRecord> => {
-    return { ...a, updatedAt: Date.now() };
-  });
+  const updateAudiogram = vi
+    .fn()
+    .mockImplementation(async (a: AudiogramRecord): Promise<AudiogramRecord> => {
+      return { ...a, updatedAt: Date.now() };
+    });
 
   return {
     setCustomer: (customer: CustomerProfile | null, audiograms: AudiogramRecord[] = []) => {
@@ -216,18 +226,14 @@ describe("HearingModule - 数据转换与保存流程", () => {
     const customer = buildMockCustomer();
     mockArchive.setCustomer(customer, []);
 
-    render(
-      <HearingModule
-        customerId={customer.id}
-        showSamples={false}
-      />
-    );
+    render(<HearingModule customerId={customer.id} showSamples={false} />);
 
     await waitFor(() => {
       expect(draftModule.useHearingDraft).toHaveBeenCalled();
     });
 
-    const draftCallArgs = (draftModule.useHearingDraft as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const draftCallArgs = (draftModule.useHearingDraft as ReturnType<typeof vi.fn>).mock
+      .calls[0][0];
     expect(draftCallArgs.key).toBe(`hearing_record_${customer.id}`);
   });
 
@@ -240,7 +246,8 @@ describe("HearingModule - 数据转换与保存流程", () => {
       expect(draftModule.useHearingDraft).toHaveBeenCalled();
     });
 
-    const draftCallArgs = (draftModule.useHearingDraft as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const draftCallArgs = (draftModule.useHearingDraft as ReturnType<typeof vi.fn>).mock
+      .calls[0][0];
     expect(draftCallArgs.key).toBe("hearing_record");
   });
 
@@ -283,13 +290,7 @@ describe("HearingModule - 数据转换与保存流程", () => {
     mockDraft = createMockUseHearingDraft({ record: hearingRecord, hasDraft: true });
     (draftModule.useHearingDraft as ReturnType<typeof vi.fn>).mockImplementation(mockDraft.mock);
 
-    render(
-      <HearingModule
-        customerId={customer.id}
-        audiogramId={null}
-        showSamples={false}
-      />
-    );
+    render(<HearingModule customerId={customer.id} audiogramId={null} showSamples={false} />);
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /保存到档案/ })).toBeInTheDocument();
@@ -319,9 +320,7 @@ describe("HearingModule - 数据转换与保存流程", () => {
     mockDraft = createMockUseHearingDraft({ record: hearingRecord, hasDraft: true });
     (draftModule.useHearingDraft as ReturnType<typeof vi.fn>).mockImplementation(mockDraft.mock);
 
-    render(
-      <HearingModule customerId={customer.id} showSamples={false} />
-    );
+    render(<HearingModule customerId={customer.id} showSamples={false} />);
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /保存到档案/ })).toBeInTheDocument();
@@ -452,9 +451,7 @@ describe("HearingModule - 数据转换与保存流程", () => {
     mockDraft = createMockUseHearingDraft({ record: createEmptyRecord(), hasDraft: false });
     (draftModule.useHearingDraft as ReturnType<typeof vi.fn>).mockImplementation(mockDraft.mock);
 
-    render(
-      <HearingModule customerId={customer.id} showSamples={false} />
-    );
+    render(<HearingModule customerId={customer.id} showSamples={false} />);
 
     await waitFor(() => {
       const saveBtn = screen.queryByRole("button", { name: /保存到档案|更新到档案/ });
@@ -508,9 +505,7 @@ describe("HearingModule - 切换客户后取消误保存", () => {
       loadDraft: vi.fn().mockResolvedValue(undefined)
     }));
 
-    const { rerender } = render(
-      <HearingModule customerId={customerA.id} showSamples={false} />
-    );
+    const { rerender } = render(<HearingModule customerId={customerA.id} showSamples={false} />);
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /保存到档案/ })).toBeInTheDocument();
@@ -530,9 +525,7 @@ describe("HearingModule - 切换客户后取消误保存", () => {
     });
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith(
-        expect.stringContaining("客户已切换")
-      );
+      expect(window.alert).toHaveBeenCalledWith(expect.stringContaining("客户已切换"));
     });
 
     expect(mockArchive.getCalls().createAudiogram).not.toHaveBeenCalled();
@@ -583,9 +576,7 @@ describe("HearingModule - 切换客户后取消误保存", () => {
     await waitFor(() => expect(saveNowSpy).toHaveBeenCalled());
 
     mockArchive.setCustomer(customerB, []);
-    rerender(
-      <HearingModule customerId={customerB.id} onSaved={onSaved} showSamples={false} />
-    );
+    rerender(<HearingModule customerId={customerB.id} onSaved={onSaved} showSamples={false} />);
 
     await act(async () => {
       saveNowResolve?.();
@@ -632,9 +623,7 @@ describe("HearingModule - 切换客户后取消误保存", () => {
       loadDraft: vi.fn().mockResolvedValue(undefined)
     }));
 
-    const { rerender } = render(
-      <HearingModule customerId={customerA.id} showSamples={false} />
-    );
+    const { rerender } = render(<HearingModule customerId={customerA.id} showSamples={false} />);
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /保存到档案/ })).toBeInTheDocument();

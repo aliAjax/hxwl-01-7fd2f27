@@ -17,7 +17,9 @@ export default function RoleSwitcher() {
       <div className="section-heading">
         <div>
           <p className="eyebrow">角色管理</p>
-          <h2>当前角色：{roleIcons[state.currentRole]} {ROLE_LABELS[state.currentRole]}</h2>
+          <h2>
+            当前角色：{roleIcons[state.currentRole]} {ROLE_LABELS[state.currentRole]}
+          </h2>
         </div>
         <div className="role-user-badge">
           <span className="user-avatar">👤</span>
@@ -26,7 +28,7 @@ export default function RoleSwitcher() {
       </div>
 
       <div className="role-cards">
-        {roles.map(role => (
+        {roles.map((role) => (
           <button
             key={role}
             className={`role-card ${state.currentRole === role ? "role-card-active" : ""}`}
@@ -58,7 +60,7 @@ export default function RoleSwitcher() {
         <div className="info-item">
           <span className="info-label">可见状态</span>
           <div className="info-tags">
-            {ROLE_PERMISSIONS[state.currentRole].visibleStatuses.map(status => (
+            {ROLE_PERMISSIONS[state.currentRole].visibleStatuses.map((status) => (
               <span key={status} className={`status-tag status-${status}`}>
                 {formatStatus(status)}
               </span>

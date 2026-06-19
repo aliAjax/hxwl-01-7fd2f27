@@ -145,8 +145,7 @@ export default function VersionHistoryModal({ entityId, entityType, onClose }: P
           <div>
             <h2>版本历史</h2>
             <p className="muted small">
-              {entityName} · {ENTITY_TYPE_LABELS[entityType]} · 共{" "}
-              {versions.length} 个历史版本
+              {entityName} · {ENTITY_TYPE_LABELS[entityType]} · 共 {versions.length} 个历史版本
             </p>
           </div>
           <button className="modal-close" onClick={onClose}>
@@ -213,9 +212,7 @@ export default function VersionHistoryModal({ entityId, entityType, onClose }: P
                   <div>
                     <h3>
                       v{selectedVersion.version}
-                      {selectedVersion.isCurrent && (
-                        <span className="current-badge">当前版本</span>
-                      )}
+                      {selectedVersion.isCurrent && <span className="current-badge">当前版本</span>}
                     </h3>
                     <p className="muted">
                       {fmt(selectedVersion.editedAt)} · 编辑者 {selectedVersion.editedBy}
@@ -231,10 +228,7 @@ export default function VersionHistoryModal({ entityId, entityType, onClose }: P
                   </div>
                   <div className="version-head-actions">
                     {compareVersion && compareVersion.versionId !== selectedVersion.versionId && (
-                      <button
-                        className="ghost-btn"
-                        onClick={() => setCompareVersion(null)}
-                      >
+                      <button className="ghost-btn" onClick={() => setCompareVersion(null)}>
                         清除对比
                       </button>
                     )}
@@ -242,7 +236,9 @@ export default function VersionHistoryModal({ entityId, entityType, onClose }: P
                 </div>
 
                 <div className="version-panels">
-                  {compareVersion && compareVersion.versionId !== selectedVersion.versionId && diffResult ? (
+                  {compareVersion &&
+                  compareVersion.versionId !== selectedVersion.versionId &&
+                  diffResult ? (
                     <div className="version-panel version-panel-full">
                       <div className="diff-panel-head">
                         <h5>
@@ -262,7 +258,11 @@ export default function VersionHistoryModal({ entityId, entityType, onClose }: P
                             className={`diff-tab ${filterMode === "changed" ? "active" : ""}`}
                             onClick={() => setFilterMode("changed")}
                           >
-                            仅显示变更 ({diffResult.addedCount + diffResult.removedCount + diffResult.modifiedCount}项)
+                            仅显示变更 (
+                            {diffResult.addedCount +
+                              diffResult.removedCount +
+                              diffResult.modifiedCount}
+                            项)
                           </button>
                         </div>
                       </div>
@@ -315,32 +315,33 @@ export default function VersionHistoryModal({ entityId, entityType, onClose }: P
                           disabled={reverting}
                           onClick={handleRevertClick}
                         >
-                          {reverting ? "回滚中..." : `↺ 回滚到此版本（生成 v${currentVersion?.version ? currentVersion.version + 1 : "?"}）`}
+                          {reverting
+                            ? "回滚中..."
+                            : `↺ 回滚到此版本（生成 v${currentVersion?.version ? currentVersion.version + 1 : "?"}）`}
                         </button>
                       </>
                     ) : (
                       <div className="revert-preview-box">
                         <div className="revert-preview-header">
                           <h5>⚠️ 回滚预览</h5>
-                          <p className="muted small">
-                            以下字段将被旧版本覆盖，请仔细确认
-                          </p>
+                          <p className="muted small">以下字段将被旧版本覆盖，请仔细确认</p>
                         </div>
                         {revertPreviewDiff && (
                           <div className="revert-preview-content">
                             <div className="diff-stats-bar compact">
                               <span className="diff-stat diff-modified">
-                                共 {revertPreviewDiff.addedCount + revertPreviewDiff.removedCount + revertPreviewDiff.modifiedCount} 个字段将被变更
+                                共{" "}
+                                {revertPreviewDiff.addedCount +
+                                  revertPreviewDiff.removedCount +
+                                  revertPreviewDiff.modifiedCount}{" "}
+                                个字段将被变更
                               </span>
                             </div>
                             <RevertPreviewTable diffResult={revertPreviewDiff} />
                           </div>
                         )}
                         <div className="revert-preview-actions">
-                          <button
-                            className="ghost-btn"
-                            onClick={() => setShowRevertPreview(false)}
-                          >
+                          <button className="ghost-btn" onClick={() => setShowRevertPreview(false)}>
                             取消
                           </button>
                           <button
@@ -375,9 +376,10 @@ function VersionDiffTable({
   oldVersion: string;
   newVersion: string;
 }) {
-  const filteredFields = filterMode === "changed"
-    ? diffResult.fields.filter((f) => f.changeType !== "unchanged")
-    : diffResult.fields;
+  const filteredFields =
+    filterMode === "changed"
+      ? diffResult.fields.filter((f) => f.changeType !== "unchanged")
+      : diffResult.fields;
 
   const filteredGroups = groupByGroup(filteredFields);
   const groupKeys = Object.keys(filteredGroups);
@@ -405,10 +407,7 @@ function VersionDiffTable({
             </thead>
             <tbody>
               {filteredGroups[groupName].map((item) => (
-                <tr
-                  key={item.field}
-                  className={`diff-row diff-${item.changeType}`}
-                >
+                <tr key={item.field} className={`diff-row diff-${item.changeType}`}>
                   <td className="diff-field">
                     <span className={`diff-badge diff-badge-${item.changeType}`}>
                       {getChangeTypeLabel(item.changeType)}
@@ -419,7 +418,13 @@ function VersionDiffTable({
                     {item.changeType === "added" ? (
                       <span className="diff-empty">—</span>
                     ) : (
-                      <span className={item.changeType === "removed" || item.changeType === "modified" ? "diff-strike" : ""}>
+                      <span
+                        className={
+                          item.changeType === "removed" || item.changeType === "modified"
+                            ? "diff-strike"
+                            : ""
+                        }
+                      >
                         {formatDiffValue(item.oldValue)}
                       </span>
                     )}
@@ -428,7 +433,13 @@ function VersionDiffTable({
                     {item.changeType === "removed" ? (
                       <span className="diff-empty">—</span>
                     ) : (
-                      <span className={item.changeType === "added" || item.changeType === "modified" ? "diff-highlight" : ""}>
+                      <span
+                        className={
+                          item.changeType === "added" || item.changeType === "modified"
+                            ? "diff-highlight"
+                            : ""
+                        }
+                      >
                         {formatDiffValue(item.newValue)}
                       </span>
                     )}
@@ -471,10 +482,7 @@ function RevertPreviewTable({ diffResult }: { diffResult: DiffResult }) {
             </thead>
             <tbody>
               {groups[groupName].map((item) => (
-                <tr
-                  key={item.field}
-                  className={`diff-row diff-${item.changeType}`}
-                >
+                <tr key={item.field} className={`diff-row diff-${item.changeType}`}>
                   <td className="diff-field">
                     <span className={`diff-badge diff-badge-${item.changeType}`}>
                       {getRevertChangeLabel(item.changeType)}
@@ -482,14 +490,10 @@ function RevertPreviewTable({ diffResult }: { diffResult: DiffResult }) {
                     {item.label}
                   </td>
                   <td className="diff-value diff-old">
-                    <span className="diff-warning">
-                      {formatDiffValue(item.newValue)}
-                    </span>
+                    <span className="diff-warning">{formatDiffValue(item.newValue)}</span>
                   </td>
                   <td className="diff-value diff-new">
-                    <span className="diff-highlight">
-                      {formatDiffValue(item.oldValue)}
-                    </span>
+                    <span className="diff-highlight">{formatDiffValue(item.oldValue)}</span>
                   </td>
                 </tr>
               ))}
@@ -503,18 +507,26 @@ function RevertPreviewTable({ diffResult }: { diffResult: DiffResult }) {
 
 function getChangeTypeLabel(type: string): string {
   switch (type) {
-    case "added": return "新增";
-    case "removed": return "删除";
-    case "modified": return "修改";
-    default: return "未变";
+    case "added":
+      return "新增";
+    case "removed":
+      return "删除";
+    case "modified":
+      return "修改";
+    default:
+      return "未变";
   }
 }
 
 function getRevertChangeLabel(type: string): string {
   switch (type) {
-    case "added": return "将被删除";
-    case "removed": return "将恢复";
-    case "modified": return "将变更";
-    default: return "不变";
+    case "added":
+      return "将被删除";
+    case "removed":
+      return "将恢复";
+    case "modified":
+      return "将变更";
+    default:
+      return "不变";
   }
 }

@@ -22,9 +22,7 @@ export function syncWorkflowWithArchive(
 ): void {
   if (!aggregate || !customerId) return;
 
-  const hasWorkflowRecord = workflowRecords.some(
-    (r) => r.customerId === customerId
-  );
+  const hasWorkflowRecord = workflowRecords.some((r) => r.customerId === customerId);
 
   if (hasWorkflowRecord) return;
 
@@ -41,12 +39,20 @@ export function syncWorkflowWithArchive(
   const latestFitting = aggregate.fittings[0];
   const latestAudiogram = aggregate.audiograms[0];
 
-  const hearingAidModel = latestFitting.hearingAid?.left?.model || latestFitting.hearingAid?.right?.model || "";
-  const gainAdjustment = latestFitting.gainAdjustment?.binaural || latestFitting.gainAdjustment?.left || latestFitting.gainAdjustment?.right || "";
+  const hearingAidModel =
+    latestFitting.hearingAid?.left?.model || latestFitting.hearingAid?.right?.model || "";
+  const gainAdjustment =
+    latestFitting.gainAdjustment?.binaural ||
+    latestFitting.gainAdjustment?.left ||
+    latestFitting.gainAdjustment?.right ||
+    "";
 
   const leftPta = latestAudiogram?.pta?.left || 0;
   const rightPta = latestAudiogram?.pta?.right || 0;
-  const speechRecognitionRate = latestAudiogram?.speechRecognitionScore?.binaural || latestAudiogram?.speechRecognitionScore?.left || 0;
+  const speechRecognitionRate =
+    latestAudiogram?.speechRecognitionScore?.binaural ||
+    latestAudiogram?.speechRecognitionScore?.left ||
+    0;
 
   const workflowData: Partial<WorkflowFittingRecord> = {
     customerId,
@@ -57,11 +63,11 @@ export function syncWorkflowWithArchive(
     hearingAidModel,
     gainAdjustment,
     userFeedback: latestFitting.userFeedback || "",
-    speechRecognitionRate: typeof speechRecognitionRate === 'number' ? speechRecognitionRate : 0,
-    leftPta: typeof leftPta === 'number' ? leftPta : 0,
-    rightPta: typeof rightPta === 'number' ? rightPta : 0,
+    speechRecognitionRate: typeof speechRecognitionRate === "number" ? speechRecognitionRate : 0,
+    leftPta: typeof leftPta === "number" ? leftPta : 0,
+    rightPta: typeof rightPta === "number" ? rightPta : 0,
     status: "draft",
-    createdBy: latestFitting.fitter || "数据同步",
+    createdBy: latestFitting.fitter || "数据同步"
   };
 
   createRecord(workflowData);
@@ -80,7 +86,11 @@ export function convertFittingToWorkflow(
   }
 ): Partial<WorkflowFittingRecord> {
   const hearingAidModel = fitting.hearingAid?.left?.model || fitting.hearingAid?.right?.model || "";
-  const gainAdjustment = fitting.gainAdjustment?.binaural || fitting.gainAdjustment?.left || fitting.gainAdjustment?.right || "";
+  const gainAdjustment =
+    fitting.gainAdjustment?.binaural ||
+    fitting.gainAdjustment?.left ||
+    fitting.gainAdjustment?.right ||
+    "";
 
   return {
     customerId: fitting.customerId,
@@ -96,7 +106,7 @@ export function convertFittingToWorkflow(
     rightPta: audiogramData?.rightPta || 0,
     status: "draft",
     createdBy: fitting.fitter || "听力师",
-    createdAt: fitting.createdAt,
+    createdAt: fitting.createdAt
   };
 }
 

@@ -15,7 +15,7 @@ function FittingSummary({
   open,
   onClose,
   config = DEFAULT_SUMMARY_CONFIG,
-  onOpenConfig,
+  onOpenConfig
 }: FittingSummaryProps) {
   const summaryRef = useRef<HTMLDivElement>(null);
 
@@ -77,11 +77,7 @@ function FittingSummary({
             <button className="summary-btn summary-btn-print" onClick={handlePrint}>
               🖨️ 打印摘要
             </button>
-            <button
-              className="summary-modal-close"
-              onClick={onClose}
-              aria-label="关闭预览"
-            >
+            <button className="summary-modal-close" onClick={onClose} aria-label="关闭预览">
               ×
             </button>
           </div>
@@ -94,9 +90,7 @@ function FittingSummary({
                 <div>
                   <h1 className="summary-doc-title">听力验配摘要报告</h1>
                   {config.showEnglishSubtitle && (
-                    <p className="summary-doc-subtitle">
-                      Hearing Fitting Summary Report
-                    </p>
+                    <p className="summary-doc-subtitle">Hearing Fitting Summary Report</p>
                   )}
                 </div>
                 <div className="summary-doc-meta">
@@ -123,9 +117,7 @@ function FittingSummary({
                   </div>
                   <div className="summary-info-item">
                     <span className="summary-info-label">客户姓名</span>
-                    <span className="summary-info-value">
-                      {data.customerName || "-"}
-                    </span>
+                    <span className="summary-info-value">{data.customerName || "-"}</span>
                   </div>
                 </div>
               </section>
@@ -136,9 +128,7 @@ function FittingSummary({
                     <span className="summary-section-num">02</span>
                     听损描述
                   </h3>
-                  <div className="summary-text-block">
-                    {data.hearingLossDescription}
-                  </div>
+                  <div className="summary-text-block">{data.hearingLossDescription}</div>
                 </section>
               )}
 
@@ -148,9 +138,7 @@ function FittingSummary({
                     <span className="summary-section-num">03</span>
                     助听器型号
                   </h3>
-                  <div className="summary-text-block summary-highlight">
-                    {data.hearingAidModel}
-                  </div>
+                  <div className="summary-text-block summary-highlight">{data.hearingAidModel}</div>
                 </section>
               )}
 
@@ -165,19 +153,13 @@ function FittingSummary({
                       <div key={index} className="summary-metric-card">
                         <span className="summary-metric-label">{metric.label}</span>
                         <div className="summary-metric-value-wrap">
-                          <strong className="summary-metric-value">
-                            {metric.value}
-                          </strong>
+                          <strong className="summary-metric-value">{metric.value}</strong>
                           {metric.unit && (
-                            <span className="summary-metric-unit">
-                              {metric.unit}
-                            </span>
+                            <span className="summary-metric-unit">{metric.unit}</span>
                           )}
                         </div>
                         {metric.trend && (
-                          <span
-                            className={`summary-metric-trend trend-${metric.trend}`}
-                          >
+                          <span className={`summary-metric-trend trend-${metric.trend}`}>
                             {metric.trend === "up" && "↑ 改善"}
                             {metric.trend === "down" && "↓ 关注"}
                             {metric.trend === "stable" && "— 稳定"}
@@ -201,20 +183,12 @@ function FittingSummary({
                         <div className="summary-timeline-marker" />
                         <div className="summary-timeline-content">
                           <div className="summary-timeline-header">
-                            <span className="summary-timeline-date">
-                              {adj.date}
-                            </span>
-                            <span className="summary-timeline-stage">
-                              {adj.stage}
-                            </span>
+                            <span className="summary-timeline-date">{adj.date}</span>
+                            <span className="summary-timeline-stage">{adj.stage}</span>
                           </div>
-                          <p className="summary-timeline-desc">
-                            {adj.description}
-                          </p>
+                          <p className="summary-timeline-desc">{adj.description}</p>
                           {adj.operator && (
-                            <p className="summary-timeline-operator">
-                              操作人：{adj.operator}
-                            </p>
+                            <p className="summary-timeline-operator">操作人：{adj.operator}</p>
                           )}
                         </div>
                       </div>
@@ -229,16 +203,12 @@ function FittingSummary({
                     <span className="summary-section-num">06</span>
                     复诊建议
                   </h3>
-                  <div className="summary-advice-block">
-                    {data.followUpAdvice}
-                  </div>
+                  <div className="summary-advice-block">{data.followUpAdvice}</div>
                 </section>
               )}
 
               <div className="summary-doc-footer">
-                <p>
-                  — 本报告由听力验配系统自动生成，仅供参考 —
-                </p>
+                <p>— 本报告由听力验配系统自动生成，仅供参考 —</p>
                 <p className="summary-footer-meta">
                   打印时间：{new Date().toLocaleString("zh-CN")}
                 </p>

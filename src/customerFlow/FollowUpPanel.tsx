@@ -6,12 +6,16 @@ import type { FollowUpRecord } from "../archive/archive.types";
 type FollowUpPriority = "high" | "medium" | "low";
 type FollowUpFilter = "all" | "today" | "week" | "overdue";
 
-const priorityLabel: Record<FollowUpPriority, string> = { high: "高优先级", medium: "中优先级", low: "低优先级" };
+const priorityLabel: Record<FollowUpPriority, string> = {
+  high: "高优先级",
+  medium: "中优先级",
+  low: "低优先级"
+};
 const filterOptions: { key: FollowUpFilter; label: string }[] = [
   { key: "all", label: "全部" },
   { key: "today", label: "今日到期" },
   { key: "week", label: "本周到期" },
-  { key: "overdue", label: "已逾期" },
+  { key: "overdue", label: "已逾期" }
 ];
 
 export function FollowUpPanel({ customerId }: { customerId: string | null }) {
@@ -23,7 +27,7 @@ export function FollowUpPanel({ customerId }: { customerId: string | null }) {
   const [newFollowUp, setNewFollowUp] = useState({
     scheduledDate: new Date().toISOString().slice(0, 10),
     priority: "medium" as FollowUpPriority,
-    purpose: "",
+    purpose: ""
   });
 
   const followUps = aggregate?.followUps || [];
@@ -32,18 +36,20 @@ export function FollowUpPanel({ customerId }: { customerId: string | null }) {
     const today = new Date().toISOString().slice(0, 10);
     const weekFromNow = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
 
-    return followUps.filter((fu) => {
-      switch (filter) {
-        case "today":
-          return fu.scheduledDate === today;
-        case "week":
-          return fu.scheduledDate >= today && fu.scheduledDate <= weekFromNow;
-        case "overdue":
-          return fu.scheduledDate < today && fu.status !== "completed";
-        default:
-          return true;
-      }
-    }).sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
+    return followUps
+      .filter((fu) => {
+        switch (filter) {
+          case "today":
+            return fu.scheduledDate === today;
+          case "week":
+            return fu.scheduledDate >= today && fu.scheduledDate <= weekFromNow;
+          case "overdue":
+            return fu.scheduledDate < today && fu.status !== "completed";
+          default:
+            return true;
+        }
+      })
+      .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
   }, [followUps, filter]);
 
   const handleCreate = async () => {
@@ -54,13 +60,13 @@ export function FollowUpPanel({ customerId }: { customerId: string | null }) {
         scheduledDate: newFollowUp.scheduledDate,
         priority: newFollowUp.priority,
         purpose: newFollowUp.purpose,
-        status: "pending",
+        status: "pending"
       });
       setShowNewForm(false);
       setNewFollowUp({
         scheduledDate: new Date().toISOString().slice(0, 10),
         priority: "medium",
-        purpose: "",
+        purpose: ""
       });
     } catch (e) {
       alert(`创建复诊记录失败: ${(e as Error).message}`);
@@ -69,10 +75,13 @@ export function FollowUpPanel({ customerId }: { customerId: string | null }) {
 
   const handleMarkContacted = async (fu: FollowUpRecord) => {
     try {
-      await updateFollowUp({
-        ...fu,
-        status: "completed",
-      } as FollowUpRecord, "标记已联系");
+      await updateFollowUp(
+        {
+          ...fu,
+          status: "completed"
+        } as FollowUpRecord,
+        "标记已联系"
+      );
     } catch (e) {
       alert(`更新失败: ${(e as Error).message}`);
     }
@@ -105,14 +114,21 @@ export function FollowUpPanel({ customerId }: { customerId: string | null }) {
               <input
                 type="date"
                 value={newFollowUp.scheduledDate}
-                onChange={(e) => setNewFollowUp((prev) => ({ ...prev, scheduledDate: e.target.value }))}
+                onChange={(e) =>
+                  setNewFollowUp((prev) => ({ ...prev, scheduledDate: e.target.value }))
+                }
               />
             </label>
             <label>
               <span>优先级</span>
               <select
                 value={newFollowUp.priority}
-                onChange={(e) => setNewFollowUp((prev) => ({ ...prev, priority: e.target.value as FollowUpPriority }))}
+                onChange={(e) =>
+                  setNewFollowUp((prev) => ({
+                    ...prev,
+                    priority: e.target.value as FollowUpPriority
+                  }))
+                }
               >
                 <option value="high">高</option>
                 <option value="medium">中</option>
@@ -130,8 +146,16 @@ export function FollowUpPanel({ customerId }: { customerId: string | null }) {
             </label>
           </div>
           <div className="followup-form-actions">
-            <button className="ghost-btn" onClick={() => setShowNewForm(false)}>取消</button>
-            <button className="primary-action" onClick={handleCreate} disabled={!newFollowUp.purpose.trim()}>💾 保存</button>
+            <button className="ghost-btn" onClick={() => setShowNewForm(false)}>
+              取消
+            </button>
+            <button
+              className="primary-action"
+              onClick={handleCreate}
+              disabled={!newFollowUp.purpose.trim()}
+            >
+              💾 保存
+            </button>
           </div>
         </div>
       )}
@@ -149,14 +173,25 @@ export function FollowUpPanel({ customerId }: { customerId: string | null }) {
             const isOverdue = fu.scheduledDate < today && fu.status !== "completed";
             const isToday = fu.scheduledDate === today;
             return (
-              <article key={fu.id} className={`followup-card ${isOverdue ? "followup-overdue" : ""} priority-${fu.priority}`}>
+              <article
+                key={fu.id}
+                className={`followup-card ${isOverdue ? "followup-overdue" : ""} priority-${fu.priority}`}
+              >
                 <div className="followup-card-header">
-                  <span className={`followup-date-badge ${isOverdue ? "overdue" : isToday ? "today" : ""}`}>
+                  <span
+                    className={`followup-date-badge ${isOverdue ? "overdue" : isToday ? "today" : ""}`}
+                  >
                     {isOverdue ? `逾期` : isToday ? "今日" : fu.scheduledDate}
                   </span>
-                  <span className={`priority-tag priority-${fu.priority}`}>{priorityLabel[fu.priority]}</span>
+                  <span className={`priority-tag priority-${fu.priority}`}>
+                    {priorityLabel[fu.priority]}
+                  </span>
                   <span className={`followup-status status-${fu.status}`}>
-                    {fu.status === "pending" ? "待联系" : fu.status === "completed" ? "已完成" : fu.status}
+                    {fu.status === "pending"
+                      ? "待联系"
+                      : fu.status === "completed"
+                        ? "已完成"
+                        : fu.status}
                   </span>
                 </div>
                 <div className="followup-card-body">

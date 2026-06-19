@@ -7,17 +7,10 @@ import {
   useState,
   ReactNode
 } from "react";
-import type {
-  ArchiveEntity,
-  EntityType
-} from "../archive.types";
+import type { ArchiveEntity, EntityType } from "../archive.types";
 import { getSyncManager } from "./sync.manager";
 import type { SyncManager } from "./sync.manager";
-import type {
-  RetryQueueStats,
-  SyncDirection,
-  SyncState
-} from "./sync.types";
+import type { RetryQueueStats, SyncDirection, SyncState } from "./sync.types";
 
 interface SyncContextValue {
   syncManager: SyncManager;
@@ -164,10 +157,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     refreshState();
   }, [syncManager, refreshState]);
 
-  const isSyncing = useMemo(
-    () => !["idle", "error"].includes(syncState.phase),
-    [syncState.phase]
-  );
+  const isSyncing = useMemo(() => !["idle", "error"].includes(syncState.phase), [syncState.phase]);
 
   const value: SyncContextValue = {
     syncManager,

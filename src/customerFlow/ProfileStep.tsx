@@ -3,7 +3,13 @@ import { useCustomerFlow } from "./CustomerFlowContext";
 import { useArchive } from "../archive/ArchiveContext";
 import type { CustomerAggregate, CustomerProfile } from "../archive/archive.types";
 
-export function ProfileStep({ profile, aggregate }: { profile: CustomerProfile; aggregate: CustomerAggregate | null }) {
+export function ProfileStep({
+  profile,
+  aggregate
+}: {
+  profile: CustomerProfile;
+  aggregate: CustomerAggregate | null;
+}) {
   const { refreshFlow } = useCustomerFlow();
   const { updateCustomer } = useArchive();
   const [editing, setEditing] = useState(false);
@@ -41,7 +47,13 @@ export function ProfileStep({ profile, aggregate }: { profile: CustomerProfile; 
               <h3>{profile.name}</h3>
               <span className="profile-no">{profile.customerNo}</span>
             </div>
-            <button className="ghost-btn" onClick={() => { setEditData(profile); setEditing(true); }}>
+            <button
+              className="ghost-btn"
+              onClick={() => {
+                setEditData(profile);
+                setEditing(true);
+              }}
+            >
               ✎ 编辑
             </button>
           </div>
@@ -49,7 +61,9 @@ export function ProfileStep({ profile, aggregate }: { profile: CustomerProfile; 
           <div className="profile-info-grid">
             <div className="profile-info-item">
               <span className="profile-info-label">性别</span>
-              <span className="profile-info-value">{profile.gender === "male" ? "男" : profile.gender === "female" ? "女" : "其他"}</span>
+              <span className="profile-info-value">
+                {profile.gender === "male" ? "男" : profile.gender === "female" ? "女" : "其他"}
+              </span>
             </div>
             <div className="profile-info-item">
               <span className="profile-info-label">年龄</span>
@@ -131,7 +145,10 @@ export function ProfileStep({ profile, aggregate }: { profile: CustomerProfile; 
             </label>
             <label>
               <span>性别</span>
-              <select value={editData.gender} onChange={(e) => setField("gender", e.target.value as CustomerProfile["gender"])}>
+              <select
+                value={editData.gender}
+                onChange={(e) => setField("gender", e.target.value as CustomerProfile["gender"])}
+              >
                 <option value="male">男</option>
                 <option value="female">女</option>
                 <option value="other">其他</option>
@@ -139,7 +156,16 @@ export function ProfileStep({ profile, aggregate }: { profile: CustomerProfile; 
             </label>
             <label>
               <span>年龄</span>
-              <input type="number" value={editData.age ?? ""} onChange={(e) => setField("age", e.target.value ? Number(e.target.value) as CustomerProfile["age"] : undefined)} />
+              <input
+                type="number"
+                value={editData.age ?? ""}
+                onChange={(e) =>
+                  setField(
+                    "age",
+                    e.target.value ? (Number(e.target.value) as CustomerProfile["age"]) : undefined
+                  )
+                }
+              />
             </label>
             <label>
               <span>电话 *</span>
@@ -147,7 +173,12 @@ export function ProfileStep({ profile, aggregate }: { profile: CustomerProfile; 
             </label>
             <label>
               <span>听损类型</span>
-              <select value={editData.hearingLossType} onChange={(e) => setField("hearingLossType", e.target.value as CustomerProfile["hearingLossType"])}>
+              <select
+                value={editData.hearingLossType}
+                onChange={(e) =>
+                  setField("hearingLossType", e.target.value as CustomerProfile["hearingLossType"])
+                }
+              >
                 <option value="未知">未知</option>
                 <option value="感音神经性">感音神经性</option>
                 <option value="传导性">传导性</option>
@@ -157,16 +188,27 @@ export function ProfileStep({ profile, aggregate }: { profile: CustomerProfile; 
             </label>
             <label>
               <span>职业</span>
-              <input value={editData.occupation || ""} onChange={(e) => setField("occupation", e.target.value)} />
+              <input
+                value={editData.occupation || ""}
+                onChange={(e) => setField("occupation", e.target.value)}
+              />
             </label>
             <label className="span-2">
               <span>备注</span>
-              <textarea rows={3} value={editData.remark || ""} onChange={(e) => setField("remark", e.target.value)} />
+              <textarea
+                rows={3}
+                value={editData.remark || ""}
+                onChange={(e) => setField("remark", e.target.value)}
+              />
             </label>
           </div>
           <div className="profile-edit-actions">
-            <button className="ghost-btn" onClick={() => setEditing(false)}>取消</button>
-            <button className="primary-action" onClick={handleSave}>💾 保存</button>
+            <button className="ghost-btn" onClick={() => setEditing(false)}>
+              取消
+            </button>
+            <button className="primary-action" onClick={handleSave}>
+              💾 保存
+            </button>
           </div>
         </div>
       )}
@@ -175,7 +217,16 @@ export function ProfileStep({ profile, aggregate }: { profile: CustomerProfile; 
 }
 
 function avatarColor(name: string): string {
-  const palette = ["#155e75", "#0369a1", "#7c3aed", "#be123c", "#c2410c", "#166534", "#3730a3", "#9a3412"];
+  const palette = [
+    "#155e75",
+    "#0369a1",
+    "#7c3aed",
+    "#be123c",
+    "#c2410c",
+    "#166534",
+    "#3730a3",
+    "#9a3412"
+  ];
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
   return palette[h % palette.length];

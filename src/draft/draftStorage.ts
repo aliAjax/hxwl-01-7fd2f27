@@ -142,9 +142,7 @@ class LocalStorageFallback implements DraftStorage {
   }
 
   async clearAll(): Promise<void> {
-    const keys = Object.keys(localStorage).filter((k) =>
-      k.startsWith(this.prefix)
-    );
+    const keys = Object.keys(localStorage).filter((k) => k.startsWith(this.prefix));
     keys.forEach((k) => localStorage.removeItem(k));
   }
 }
@@ -186,9 +184,7 @@ export function getDraftStorage(): DraftStorage {
   return storageInstance;
 }
 
-export function createDraftData(
-  data: Omit<DraftData, "savedAt" | "version">
-): DraftData {
+export function createDraftData(data: Omit<DraftData, "savedAt" | "version">): DraftData {
   return {
     ...data,
     savedAt: Date.now(),

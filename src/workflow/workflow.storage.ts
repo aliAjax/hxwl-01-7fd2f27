@@ -1,4 +1,10 @@
-import type { WorkflowState, WorkflowFittingRecord, OperationLog, RoleType, RejectionRecord } from "./workflow.types";
+import type {
+  WorkflowState,
+  WorkflowFittingRecord,
+  OperationLog,
+  RoleType,
+  RejectionRecord
+} from "./workflow.types";
 import { generateId } from "./workflow.types";
 
 const STORAGE_KEY = "hearing_workflow_state";
@@ -47,10 +53,31 @@ function getDefaultState(): WorkflowState {
       submittedAt: Date.now() - 86400000,
       version: 1,
       reviewFields: [
-        { fieldName: "hearingLossType", fieldLabel: "听损类型", isKey: true, hasAbnormality: false },
-        { fieldName: "hearingAidModel", fieldLabel: "助听器型号", isKey: true, hasAbnormality: false },
-        { fieldName: "gainAdjustment", fieldLabel: "增益调整", isKey: true, hasAbnormality: true, abnormalityNote: "高频增益提升幅度较大，需确认是否有反馈风险" },
-        { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
+        {
+          fieldName: "hearingLossType",
+          fieldLabel: "听损类型",
+          isKey: true,
+          hasAbnormality: false
+        },
+        {
+          fieldName: "hearingAidModel",
+          fieldLabel: "助听器型号",
+          isKey: true,
+          hasAbnormality: false
+        },
+        {
+          fieldName: "gainAdjustment",
+          fieldLabel: "增益调整",
+          isKey: true,
+          hasAbnormality: true,
+          abnormalityNote: "高频增益提升幅度较大，需确认是否有反馈风险"
+        },
+        {
+          fieldName: "speechRecognitionRate",
+          fieldLabel: "言语识别率",
+          isKey: true,
+          hasAbnormality: false
+        },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: false },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: false }
       ],
@@ -82,10 +109,25 @@ function getDefaultState(): WorkflowState {
       reviewComment: "审核通过，反馈抑制调整合理，建议定期跟踪",
       version: 2,
       reviewFields: [
-        { fieldName: "hearingLossType", fieldLabel: "听损类型", isKey: true, hasAbnormality: false },
-        { fieldName: "hearingAidModel", fieldLabel: "助听器型号", isKey: true, hasAbnormality: false },
+        {
+          fieldName: "hearingLossType",
+          fieldLabel: "听损类型",
+          isKey: true,
+          hasAbnormality: false
+        },
+        {
+          fieldName: "hearingAidModel",
+          fieldLabel: "助听器型号",
+          isKey: true,
+          hasAbnormality: false
+        },
         { fieldName: "gainAdjustment", fieldLabel: "增益调整", isKey: true, hasAbnormality: false },
-        { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
+        {
+          fieldName: "speechRecognitionRate",
+          fieldLabel: "言语识别率",
+          isKey: true,
+          hasAbnormality: false
+        },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: false },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: false }
       ],
@@ -118,10 +160,31 @@ function getDefaultState(): WorkflowState {
       followUpAssignedTo: "王助理",
       version: 2,
       reviewFields: [
-        { fieldName: "hearingLossType", fieldLabel: "听损类型", isKey: true, hasAbnormality: false },
-        { fieldName: "hearingAidModel", fieldLabel: "助听器型号", isKey: true, hasAbnormality: false },
-        { fieldName: "gainAdjustment", fieldLabel: "增益调整", isKey: true, hasAbnormality: true, abnormalityNote: "整体增益提升，需关注患者适应情况" },
-        { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
+        {
+          fieldName: "hearingLossType",
+          fieldLabel: "听损类型",
+          isKey: true,
+          hasAbnormality: false
+        },
+        {
+          fieldName: "hearingAidModel",
+          fieldLabel: "助听器型号",
+          isKey: true,
+          hasAbnormality: false
+        },
+        {
+          fieldName: "gainAdjustment",
+          fieldLabel: "增益调整",
+          isKey: true,
+          hasAbnormality: true,
+          abnormalityNote: "整体增益提升，需关注患者适应情况"
+        },
+        {
+          fieldName: "speechRecognitionRate",
+          fieldLabel: "言语识别率",
+          isKey: true,
+          hasAbnormality: false
+        },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: false },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: false }
       ],
@@ -156,12 +219,40 @@ function getDefaultState(): WorkflowState {
       followUpNote: "已电话联系家长，预约明日到店复查",
       version: 3,
       reviewFields: [
-        { fieldName: "hearingLossType", fieldLabel: "听损类型", isKey: true, hasAbnormality: true, abnormalityNote: "先天性听损，需长期跟踪" },
-        { fieldName: "hearingAidModel", fieldLabel: "助听器型号", isKey: true, hasAbnormality: false },
+        {
+          fieldName: "hearingLossType",
+          fieldLabel: "听损类型",
+          isKey: true,
+          hasAbnormality: true,
+          abnormalityNote: "先天性听损，需长期跟踪"
+        },
+        {
+          fieldName: "hearingAidModel",
+          fieldLabel: "助听器型号",
+          isKey: true,
+          hasAbnormality: false
+        },
         { fieldName: "gainAdjustment", fieldLabel: "增益调整", isKey: true, hasAbnormality: false },
-        { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
-        { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: true, abnormalityNote: "重度听损，需关注助听效果" },
-        { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: true, abnormalityNote: "重度听损，需关注助听效果" }
+        {
+          fieldName: "speechRecognitionRate",
+          fieldLabel: "言语识别率",
+          isKey: true,
+          hasAbnormality: false
+        },
+        {
+          fieldName: "leftPta",
+          fieldLabel: "左耳PTA",
+          isKey: true,
+          hasAbnormality: true,
+          abnormalityNote: "重度听损，需关注助听效果"
+        },
+        {
+          fieldName: "rightPta",
+          fieldLabel: "右耳PTA",
+          isKey: true,
+          hasAbnormality: true,
+          abnormalityNote: "重度听损，需关注助听效果"
+        }
       ],
       rejectionHistory: []
     },
@@ -187,10 +278,25 @@ function getDefaultState(): WorkflowState {
       updatedAt: Date.now() - 43200000,
       version: 1,
       reviewFields: [
-        { fieldName: "hearingLossType", fieldLabel: "听损类型", isKey: true, hasAbnormality: false },
-        { fieldName: "hearingAidModel", fieldLabel: "助听器型号", isKey: true, hasAbnormality: false },
+        {
+          fieldName: "hearingLossType",
+          fieldLabel: "听损类型",
+          isKey: true,
+          hasAbnormality: false
+        },
+        {
+          fieldName: "hearingAidModel",
+          fieldLabel: "助听器型号",
+          isKey: true,
+          hasAbnormality: false
+        },
         { fieldName: "gainAdjustment", fieldLabel: "增益调整", isKey: true, hasAbnormality: false },
-        { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
+        {
+          fieldName: "speechRecognitionRate",
+          fieldLabel: "言语识别率",
+          isKey: true,
+          hasAbnormality: false
+        },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: false },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: false }
       ],
@@ -225,12 +331,41 @@ function getDefaultState(): WorkflowState {
       followUpNote: "患者到店复查，调试完成，效果满意",
       version: 4,
       reviewFields: [
-        { fieldName: "hearingLossType", fieldLabel: "听损类型", isKey: true, hasAbnormality: true, abnormalityNote: "极重度听损，需定期检查助听器状态" },
-        { fieldName: "hearingAidModel", fieldLabel: "助听器型号", isKey: true, hasAbnormality: false },
+        {
+          fieldName: "hearingLossType",
+          fieldLabel: "听损类型",
+          isKey: true,
+          hasAbnormality: true,
+          abnormalityNote: "极重度听损，需定期检查助听器状态"
+        },
+        {
+          fieldName: "hearingAidModel",
+          fieldLabel: "助听器型号",
+          isKey: true,
+          hasAbnormality: false
+        },
         { fieldName: "gainAdjustment", fieldLabel: "增益调整", isKey: true, hasAbnormality: false },
-        { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: true, abnormalityNote: "识别率较低，需家属配合康复训练" },
-        { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: true, abnormalityNote: "极重度听损" },
-        { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: true, abnormalityNote: "极重度听损" }
+        {
+          fieldName: "speechRecognitionRate",
+          fieldLabel: "言语识别率",
+          isKey: true,
+          hasAbnormality: true,
+          abnormalityNote: "识别率较低，需家属配合康复训练"
+        },
+        {
+          fieldName: "leftPta",
+          fieldLabel: "左耳PTA",
+          isKey: true,
+          hasAbnormality: true,
+          abnormalityNote: "极重度听损"
+        },
+        {
+          fieldName: "rightPta",
+          fieldLabel: "右耳PTA",
+          isKey: true,
+          hasAbnormality: true,
+          abnormalityNote: "极重度听损"
+        }
       ],
       rejectionHistory: []
     },
@@ -257,13 +392,30 @@ function getDefaultState(): WorkflowState {
       submittedAt: Date.now() - 86400000 * 3,
       reviewedAt: Date.now() - 86400000 * 2,
       reviewedBy: "李主管",
-      reviewComment: "驳回：突发性耳聋处于恢复期，建议观察一个月后再考虑验配。如患者坚持，需签署知情同意书。",
+      reviewComment:
+        "驳回：突发性耳聋处于恢复期，建议观察一个月后再考虑验配。如患者坚持，需签署知情同意书。",
       version: 1,
       reviewFields: [
-        { fieldName: "hearingLossType", fieldLabel: "听损类型", isKey: true, hasAbnormality: true, abnormalityNote: "突发性耳聋，建议先医学观察" },
-        { fieldName: "hearingAidModel", fieldLabel: "助听器型号", isKey: true, hasAbnormality: false },
+        {
+          fieldName: "hearingLossType",
+          fieldLabel: "听损类型",
+          isKey: true,
+          hasAbnormality: true,
+          abnormalityNote: "突发性耳聋，建议先医学观察"
+        },
+        {
+          fieldName: "hearingAidModel",
+          fieldLabel: "助听器型号",
+          isKey: true,
+          hasAbnormality: false
+        },
         { fieldName: "gainAdjustment", fieldLabel: "增益调整", isKey: true, hasAbnormality: false },
-        { fieldName: "speechRecognitionRate", fieldLabel: "言语识别率", isKey: true, hasAbnormality: false },
+        {
+          fieldName: "speechRecognitionRate",
+          fieldLabel: "言语识别率",
+          isKey: true,
+          hasAbnormality: false
+        },
         { fieldName: "leftPta", fieldLabel: "左耳PTA", isKey: true, hasAbnormality: false },
         { fieldName: "rightPta", fieldLabel: "右耳PTA", isKey: true, hasAbnormality: false }
       ],
@@ -273,19 +425,22 @@ function getDefaultState(): WorkflowState {
           rejectionId: "rej-sample-001",
           rejectedBy: "李主管",
           rejectedAt: Date.now() - 86400000 * 2,
-          overallComment: "突发性耳聋处于恢复期，建议观察一个月后再考虑验配。如患者坚持，需签署知情同意书。",
+          overallComment:
+            "突发性耳聋处于恢复期，建议观察一个月后再考虑验配。如患者坚持，需签署知情同意书。",
           rejectedFields: [
             {
               fieldName: "hearingLossType",
               fieldLabel: "听损类型",
               oldValue: "突发性耳聋恢复期",
-              rejectReason: "突发性耳聋，建议先医学观察一个月确认听力稳定后再验配，目前不建议急于选配"
+              rejectReason:
+                "突发性耳聋，建议先医学观察一个月确认听力稳定后再验配，目前不建议急于选配"
             },
             {
               fieldName: "gainAdjustment",
               fieldLabel: "增益调整",
               oldValue: "保守验配，增益设置较低，预留调整空间",
-              rejectReason: "增益描述过于笼统，未说明具体频段和调整参数，需补充具体处方公式和增益数值"
+              rejectReason:
+                "增益描述过于笼统，未说明具体频段和调整参数，需补充具体处方公式和增益数值"
             }
           ]
         }

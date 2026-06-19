@@ -7,13 +7,16 @@ export function useCustomerSelection() {
   const [activeCustomerId, setActiveCustomerIdState] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<FlowStep>("profile");
 
-  const setActiveCustomerId = useCallback(async (id: string | null) => {
-    setActiveCustomerIdState(id);
-    if (id) {
-      await selectCustomer(id);
-    }
-    setActiveStep("profile");
-  }, [selectCustomer]);
+  const setActiveCustomerId = useCallback(
+    async (id: string | null) => {
+      setActiveCustomerIdState(id);
+      if (id) {
+        await selectCustomer(id);
+      }
+      setActiveStep("profile");
+    },
+    [selectCustomer]
+  );
 
   const refreshFlow = useCallback(async () => {
     if (activeCustomerId) {
@@ -30,6 +33,6 @@ export function useCustomerSelection() {
     setActiveStep,
     refreshFlow,
     selectedCustomerId,
-    isConsistent,
+    isConsistent
   };
 }

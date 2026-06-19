@@ -1,7 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useWorkflow } from "./WorkflowContext";
 import { STATUS_LABELS, PRIORITY_LABELS, canTransition, KEY_REVIEW_FIELDS } from "./workflow.types";
-import type { WorkflowFittingRecord, RecordStatus, FieldChange, RejectionRecord } from "./workflow.types";
+import type {
+  WorkflowFittingRecord,
+  RecordStatus,
+  FieldChange,
+  RejectionRecord
+} from "./workflow.types";
 
 const statusFilterOptions: { key: RecordStatus | "all"; label: string }[] = [
   { key: "all", label: "全部" },
@@ -61,15 +66,16 @@ export default function AudiologistView() {
   const records = useMemo(() => {
     const filtered = getFilteredRecords();
     if (statusFilter === "all") return filtered;
-    return filtered.filter(r => r.status === statusFilter);
+    return filtered.filter((r) => r.status === statusFilter);
   }, [getFilteredRecords, statusFilter]);
 
   const selectedRecord = useMemo(() => {
-    return state.records.find(r => r.id === state.selectedRecordId) || null;
+    return state.records.find((r) => r.id === state.selectedRecordId) || null;
   }, [state.records, state.selectedRecordId]);
 
   const latestRejection = useMemo(() => {
-    if (!editingRecord?.rejectionHistory || editingRecord.rejectionHistory.length === 0) return null;
+    if (!editingRecord?.rejectionHistory || editingRecord.rejectionHistory.length === 0)
+      return null;
     const rejections = editingRecord.rejectionHistory;
     return rejections[rejections.length - 1];
   }, [editingRecord]);
@@ -77,7 +83,7 @@ export default function AudiologistView() {
   const modifiedRejectedFields = useMemo(() => {
     if (!activeRejection) return {} as Record<string, boolean>;
     const result: Record<string, boolean> = {};
-    activeRejection.rejectedFields.forEach(rf => {
+    activeRejection.rejectedFields.forEach((rf) => {
       const current = formData[rf.fieldName as keyof WorkflowFittingRecord];
       if (current !== undefined && rf.oldValue !== undefined) {
         result[rf.fieldName] = String(current).trim() !== String(rf.oldValue).trim();
@@ -88,7 +94,7 @@ export default function AudiologistView() {
 
   const allRejectedFieldsModified = useMemo(() => {
     if (!activeRejection) return true;
-    return activeRejection.rejectedFields.every(rf => modifiedRejectedFields[rf.fieldName]);
+    return activeRejection.rejectedFields.every((rf) => modifiedRejectedFields[rf.fieldName]);
   }, [activeRejection, modifiedRejectedFields]);
 
   const modifiedCount = useMemo(() => {
@@ -104,16 +110,24 @@ export default function AudiologistView() {
   };
 
   const handleEdit = (record: WorkflowFittingRecord) => {
-    if (!canPerformAction("canEditRecord") || record.status !== "draft" && record.status !== "review_rejected") return;
+    if (
+      !canPerformAction("canEditRecord") ||
+      (record.status !== "draft" && record.status !== "review_rejected")
+    )
+      return;
     setEditingRecord(record);
     setFormData({ ...record });
     const orig: Record<string, string | number> = {};
-    KEY_REVIEW_FIELDS.forEach(fn => {
+    KEY_REVIEW_FIELDS.forEach((fn) => {
       orig[fn] = getRawFieldValue(record, fn);
     });
     setOriginalValues(orig);
 
-    if (record.status === "review_rejected" && record.rejectionHistory && record.rejectionHistory.length > 0) {
+    if (
+      record.status === "review_rejected" &&
+      record.rejectionHistory &&
+      record.rejectionHistory.length > 0
+    ) {
       setActiveRejection(record.rejectionHistory[record.rejectionHistory.length - 1]);
     } else {
       setActiveRejection(null);
@@ -125,10 +139,14 @@ export default function AudiologistView() {
     e.preventDefault();
     if (editingRecord) {
       const fieldChanges: FieldChange[] = [];
-      KEY_REVIEW_FIELDS.forEach(fn => {
+      KEY_REVIEW_FIELDS.forEach((fn) => {
         const orig = originalValues[fn];
         const current = formData[fn as keyof WorkflowFittingRecord];
-        if (orig !== undefined && current !== undefined && String(orig).trim() !== String(current).trim()) {
+        if (
+          orig !== undefined &&
+          current !== undefined &&
+          String(orig).trim() !== String(current).trim()
+        ) {
           fieldChanges.push({
             fieldName: fn,
             fieldLabel: FIELD_LABELS[fn] || fn,
@@ -158,7 +176,7 @@ export default function AudiologistView() {
     if (!allRejectedFieldsModified) return;
 
     const fieldChanges: FieldChange[] = [];
-    activeRejection.rejectedFields.forEach(rf => {
+    activeRejection.rejectedFields.forEach((rf) => {
       const current = formData[rf.fieldName as keyof WorkflowFittingRecord] as string | number;
       if (String(rf.oldValue).trim() !== String(current).trim()) {
         fieldChanges.push({
@@ -191,14 +209,18 @@ export default function AudiologistView() {
   };
 
   const canEdit = (record: WorkflowFittingRecord) => {
-    return canPerformAction("canEditRecord") &&
-           (record.status === "draft" || record.status === "review_rejected");
+    return (
+      canPerformAction("canEditRecord") &&
+      (record.status === "draft" || record.status === "review_rejected")
+    );
   };
 
   const canSubmit = (record: WorkflowFittingRecord) => {
-    return canPerformAction("canSubmitForReview") &&
-           canTransition(record.status, "pending_review", state.currentRole) &&
-           record.status !== "review_rejected";
+    return (
+      canPerformAction("canSubmitForReview") &&
+      canTransition(record.status, "pending_review", state.currentRole) &&
+      record.status !== "review_rejected"
+    );
   };
 
   useEffect(() => {
@@ -225,7 +247,7 @@ export default function AudiologistView() {
         </div>
 
         <div className="record-filters">
-          {statusFilterOptions.map(opt => (
+          {statusFilterOptions.map((opt) => (
             <button
               key={opt.key}
               className={`filter-chip ${statusFilter === opt.key ? "filter-active" : ""}`}
@@ -235,7 +257,7 @@ export default function AudiologistView() {
               <span className="filter-count">
                 {opt.key === "all"
                   ? records.length
-                  : records.filter(r => r.status === opt.key).length}
+                  : records.filter((r) => r.status === opt.key).length}
               </span>
             </button>
           ))}
@@ -246,10 +268,10 @@ export default function AudiologistView() {
             <div className="empty-state">
               <div className="empty-icon">📋</div>
               <h3>暂无记录</h3>
-              <p>点击"新增记录"创建第一条验配记录</p>
+              <p>点击&ldquo;新增记录&rdquo;创建第一条验配记录</p>
             </div>
           ) : (
-            records.map(record => (
+            records.map((record) => (
               <article
                 key={record.id}
                 className={`record-card ${state.selectedRecordId === record.id ? "record-card-active" : ""}`}
@@ -270,31 +292,41 @@ export default function AudiologistView() {
                   </div>
                 </div>
                 <div className="record-details">
-                  <p>{record.hearingLossType} · {record.fittingStage}</p>
+                  <p>
+                    {record.hearingLossType} · {record.fittingStage}
+                  </p>
                   <p className="record-model">{record.hearingAidModel || "未指定助听器型号"}</p>
                   <p className="record-meta">
                     创建于 {new Date(record.createdAt).toLocaleDateString("zh-CN")}
                   </p>
-                  {record.status === "review_rejected" && record.rejectionHistory && record.rejectionHistory.length > 0 && (
-                    <div className="rejection-alert">
-                      <span className="rejection-alert-icon">⚠️</span>
-                      <span className="rejection-alert-text">
-                        已被驳回 {record.rejectionHistory.length} 次，请根据整改意见修改后重新提交
-                      </span>
-                      <button
-                        className="rejection-alert-btn"
-                        onClick={(e) => { e.stopPropagation(); handleEdit(record); }}
-                      >
-                        立即整改 ✏️
-                      </button>
-                    </div>
-                  )}
+                  {record.status === "review_rejected" &&
+                    record.rejectionHistory &&
+                    record.rejectionHistory.length > 0 && (
+                      <div className="rejection-alert">
+                        <span className="rejection-alert-icon">⚠️</span>
+                        <span className="rejection-alert-text">
+                          已被驳回 {record.rejectionHistory.length} 次，请根据整改意见修改后重新提交
+                        </span>
+                        <button
+                          className="rejection-alert-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(record);
+                          }}
+                        >
+                          立即整改 ✏️
+                        </button>
+                      </div>
+                    )}
                 </div>
                 <div className="record-actions">
                   {canEdit(record) && (
                     <button
                       className="record-btn"
-                      onClick={(e) => { e.stopPropagation(); handleEdit(record); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(record);
+                      }}
                     >
                       {record.status === "review_rejected" ? "✏️ 整改" : "✏️ 编辑"}
                     </button>
@@ -302,7 +334,10 @@ export default function AudiologistView() {
                   {canSubmit(record) && (
                     <button
                       className="record-btn primary"
-                      onClick={(e) => { e.stopPropagation(); handleSubmitForReview(record.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSubmitForReview(record.id);
+                      }}
                     >
                       📤 提交审核
                     </button>
@@ -310,7 +345,10 @@ export default function AudiologistView() {
                   {record.status === "draft" && canPerformAction("canDeleteRecord") && (
                     <button
                       className="record-btn danger"
-                      onClick={(e) => { e.stopPropagation(); handleDelete(record.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(record.id);
+                      }}
                     >
                       🗑️ 删除
                     </button>
@@ -334,43 +372,55 @@ export default function AudiologistView() {
             </div>
           </div>
 
-          {selectedRecord.status === "review_rejected" && selectedRecord.rejectionHistory && selectedRecord.rejectionHistory.length > 0 && (
-            <div className="detail-group full-width current-rejection-section">
-              <div className="current-rejection-header">
-                <h3>⚠️ 当前整改要求 <span className="hint">（最新驳回）</span></h3>
-                <button className="rectify-btn" onClick={() => handleEdit(selectedRecord)}>
-                  ✏️ 开始整改
-                </button>
+          {selectedRecord.status === "review_rejected" &&
+            selectedRecord.rejectionHistory &&
+            selectedRecord.rejectionHistory.length > 0 && (
+              <div className="detail-group full-width current-rejection-section">
+                <div className="current-rejection-header">
+                  <h3>
+                    ⚠️ 当前整改要求 <span className="hint">（最新驳回）</span>
+                  </h3>
+                  <button className="rectify-btn" onClick={() => handleEdit(selectedRecord)}>
+                    ✏️ 开始整改
+                  </button>
+                </div>
+                {(() => {
+                  const latest =
+                    selectedRecord.rejectionHistory[selectedRecord.rejectionHistory.length - 1];
+                  return (
+                    <div className="current-rejection-content">
+                      <div className="current-rejection-meta">
+                        由 <strong>{latest.rejectedBy}</strong> 于{" "}
+                        {new Date(latest.rejectedAt).toLocaleString("zh-CN")} 驳回
+                      </div>
+                      <div className="current-rejection-comment">
+                        <strong>总体意见：</strong>
+                        {latest.overallComment}
+                      </div>
+                      <div className="current-rejection-fields">
+                        <h4>需要整改的字段（{latest.rejectedFields.length} 项）：</h4>
+                        {latest.rejectedFields.map((rf) => (
+                          <div key={rf.fieldName} className="current-rejection-field">
+                            <span className="crf-label">📍 {rf.fieldLabel}</span>
+                            <span className="crf-old">
+                              原值：{formatFieldValue(rf.fieldName, rf.oldValue)}
+                            </span>
+                            <span className="crf-reason">问题：{rf.rejectReason}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
-              {(() => {
-                const latest = selectedRecord.rejectionHistory[selectedRecord.rejectionHistory.length - 1];
-                return (
-                  <div className="current-rejection-content">
-                    <div className="current-rejection-meta">
-                      由 <strong>{latest.rejectedBy}</strong> 于 {new Date(latest.rejectedAt).toLocaleString("zh-CN")} 驳回
-                    </div>
-                    <div className="current-rejection-comment">
-                      <strong>总体意见：</strong>{latest.overallComment}
-                    </div>
-                    <div className="current-rejection-fields">
-                      <h4>需要整改的字段（{latest.rejectedFields.length} 项）：</h4>
-                      {latest.rejectedFields.map(rf => (
-                        <div key={rf.fieldName} className="current-rejection-field">
-                          <span className="crf-label">📍 {rf.fieldLabel}</span>
-                          <span className="crf-old">原值：{formatFieldValue(rf.fieldName, rf.oldValue)}</span>
-                          <span className="crf-reason">问题：{rf.rejectReason}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          )}
+            )}
 
           {selectedRecord.rejectionHistory && selectedRecord.rejectionHistory.length > 0 && (
             <div className="detail-group full-width rejection-history-section">
-              <h3>驳回历史 <span className="hint">（共 {selectedRecord.rejectionHistory.length} 次）</span></h3>
+              <h3>
+                驳回历史{" "}
+                <span className="hint">（共 {selectedRecord.rejectionHistory.length} 次）</span>
+              </h3>
               {selectedRecord.rejectionHistory.map((rh, idx) => (
                 <div key={rh.rejectionId} className="rejection-history-item">
                   <div className="rejection-history-header">
@@ -380,7 +430,8 @@ export default function AudiologistView() {
                     </span>
                     {rh.resubmittedAt && (
                       <span className="resubmit-tag">
-                        ✅ {rh.correctedBy} 于 {new Date(rh.resubmittedAt).toLocaleString("zh-CN")} 整改后重新提交
+                        ✅ {rh.correctedBy} 于 {new Date(rh.resubmittedAt).toLocaleString("zh-CN")}{" "}
+                        整改后重新提交
                       </span>
                     )}
                     {!rh.resubmittedAt && idx === selectedRecord.rejectionHistory!.length - 1 && (
@@ -388,13 +439,16 @@ export default function AudiologistView() {
                     )}
                   </div>
                   <div className="rejection-overall-comment">
-                    <strong>总体意见：</strong>{rh.overallComment}
+                    <strong>总体意见：</strong>
+                    {rh.overallComment}
                   </div>
                   <div className="rejection-fields-list">
-                    {rh.rejectedFields.map(rf => (
+                    {rh.rejectedFields.map((rf) => (
                       <div key={rf.fieldName} className="rejection-field-row">
                         <span className="rejection-field-label">{rf.fieldLabel}</span>
-                        <span className="rejection-field-old">原值：{formatFieldValue(rf.fieldName, rf.oldValue)}</span>
+                        <span className="rejection-field-old">
+                          原值：{formatFieldValue(rf.fieldName, rf.oldValue)}
+                        </span>
                         <span className="rejection-field-reason">问题：{rf.rejectReason}</span>
                       </div>
                     ))}
@@ -402,7 +456,12 @@ export default function AudiologistView() {
                   {rh.correctionFields && rh.correctionFields.length > 0 && (
                     <div className="correction-summary">
                       <strong>✅ 整改修改内容：</strong>
-                      {rh.correctionFields.map(cf => `${cf.fieldLabel}: ${formatFieldValue(cf.fieldName, cf.oldValue)} → ${formatFieldValue(cf.fieldName, cf.newValue)}`).join("；")}
+                      {rh.correctionFields
+                        .map(
+                          (cf) =>
+                            `${cf.fieldLabel}: ${formatFieldValue(cf.fieldName, cf.oldValue)} → ${formatFieldValue(cf.fieldName, cf.newValue)}`
+                        )
+                        .join("；")}
                     </div>
                   )}
                 </div>
@@ -438,7 +497,9 @@ export default function AudiologistView() {
               <div className="detail-items">
                 <div className="detail-item">
                   <span className="detail-label">助听器型号</span>
-                  <span className="detail-value strong">{selectedRecord.hearingAidModel || "-"}</span>
+                  <span className="detail-value strong">
+                    {selectedRecord.hearingAidModel || "-"}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">言语识别率</span>
@@ -470,7 +531,8 @@ export default function AudiologistView() {
                 <h3>审核意见</h3>
                 <p className="block-text">{selectedRecord.reviewComment}</p>
                 <p className="review-meta">
-                  由 {selectedRecord.reviewedBy} 于 {new Date(selectedRecord.reviewedAt!).toLocaleString("zh-CN")} 审核
+                  由 {selectedRecord.reviewedBy} 于{" "}
+                  {new Date(selectedRecord.reviewedAt!).toLocaleString("zh-CN")} 审核
                 </p>
               </div>
             )}
@@ -480,12 +542,21 @@ export default function AudiologistView() {
 
       {showCreateForm && (
         <div className="modal-overlay" onClick={() => setShowCreateForm(false)}>
-          <div className={`modal-content ${activeRejection ? "correction-modal" : ""}`} onClick={e => e.stopPropagation()}>
+          <div
+            className={`modal-content ${activeRejection ? "correction-modal" : ""}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>
-                {activeRejection ? "🔧 整改验配记录" : editingRecord ? "编辑验配记录" : "新增验配记录"}
+                {activeRejection
+                  ? "🔧 整改验配记录"
+                  : editingRecord
+                    ? "编辑验配记录"
+                    : "新增验配记录"}
               </h2>
-              <button className="modal-close" onClick={() => setShowCreateForm(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowCreateForm(false)}>
+                ×
+              </button>
             </div>
 
             {activeRejection && (
@@ -496,11 +567,13 @@ export default function AudiologistView() {
                 <div className="correction-banner-progress">
                   <div
                     className="correction-progress-bar"
-                    style={{ width: `${(modifiedCount / activeRejection.rejectedFields.length) * 100}%` }}
+                    style={{
+                      width: `${(modifiedCount / activeRejection.rejectedFields.length) * 100}%`
+                    }}
                   />
                 </div>
                 <div className="correction-fields-summary">
-                  {activeRejection.rejectedFields.map(rf => {
+                  {activeRejection.rejectedFields.map((rf) => {
                     const isModified = modifiedRejectedFields[rf.fieldName];
                     return (
                       <div
@@ -514,7 +587,8 @@ export default function AudiologistView() {
                   })}
                 </div>
                 <div className="correction-overall-comment">
-                  <strong>主管意见：</strong>{activeRejection.overallComment}
+                  <strong>主管意见：</strong>
+                  {activeRejection.overallComment}
                 </div>
               </div>
             )}
@@ -523,14 +597,16 @@ export default function AudiologistView() {
               <div className="form-grid">
                 <label
                   className={`form-field ${
-                    activeRejection?.rejectedFields.some(rf => rf.fieldName === "customerName") ? "needs-correction" : ""
+                    activeRejection?.rejectedFields.some((rf) => rf.fieldName === "customerName")
+                      ? "needs-correction"
+                      : ""
                   }`}
                 >
                   <span>客户姓名 *</span>
                   <input
                     type="text"
                     value={formData.customerName || ""}
-                    onChange={e => setFormData({ ...formData, customerName: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
                     placeholder="请输入客户姓名"
                     required
                   />
@@ -540,22 +616,23 @@ export default function AudiologistView() {
                   <input
                     type="tel"
                     value={formData.phone || ""}
-                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="请输入联系电话"
                   />
                 </label>
                 {(() => {
-                  const rejField = activeRejection?.rejectedFields.find(rf => rf.fieldName === "hearingLossType");
+                  const rejField = activeRejection?.rejectedFields.find(
+                    (rf) => rf.fieldName === "hearingLossType"
+                  );
                   return (
                     <label className={`form-field ${rejField ? "needs-correction" : ""}`}>
-                      <span>
-                        听损类型 *
-                        {rejField && <em className="rej-badge">需整改</em>}
-                      </span>
+                      <span>听损类型 *{rejField && <em className="rej-badge">需整改</em>}</span>
                       <input
                         type="text"
                         value={formData.hearingLossType || ""}
-                        onChange={e => setFormData({ ...formData, hearingLossType: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, hearingLossType: e.target.value })
+                        }
                         placeholder="如：双耳高频下降"
                         required
                       />
@@ -564,7 +641,9 @@ export default function AudiologistView() {
                           <span className="rej-hint-label">问题：</span>
                           <span className="rej-hint-text">{rejField.rejectReason}</span>
                           {rejField.oldValue !== undefined && rejField.oldValue !== "" && (
-                            <span className="rej-hint-old">（原值：{formatFieldValue("hearingLossType", rejField.oldValue)}）</span>
+                            <span className="rej-hint-old">
+                              （原值：{formatFieldValue("hearingLossType", rejField.oldValue)}）
+                            </span>
                           )}
                           {modifiedRejectedFields["hearingLossType"] && (
                             <span className="rej-hint-modified">✅ 已修改</span>
@@ -578,7 +657,12 @@ export default function AudiologistView() {
                   <span>验配阶段</span>
                   <select
                     value={formData.fittingStage || "初配"}
-                    onChange={e => setFormData({ ...formData, fittingStage: e.target.value as "初配" | "复调" | "复诊" })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        fittingStage: e.target.value as "初配" | "复调" | "复诊"
+                      })
+                    }
                   >
                     <option value="初配">初配</option>
                     <option value="复调">复调</option>
@@ -586,7 +670,9 @@ export default function AudiologistView() {
                   </select>
                 </label>
                 {(() => {
-                  const rejField = activeRejection?.rejectedFields.find(rf => rf.fieldName === "hearingAidModel");
+                  const rejField = activeRejection?.rejectedFields.find(
+                    (rf) => rf.fieldName === "hearingAidModel"
+                  );
                   return (
                     <label className={`form-field ${rejField ? "needs-correction" : ""}`}>
                       <span>
@@ -596,7 +682,9 @@ export default function AudiologistView() {
                       <input
                         type="text"
                         value={formData.hearingAidModel || ""}
-                        onChange={e => setFormData({ ...formData, hearingAidModel: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, hearingAidModel: e.target.value })
+                        }
                         placeholder="如：Phonak Audeo Paradise P90"
                       />
                       {rejField && (
@@ -604,7 +692,9 @@ export default function AudiologistView() {
                           <span className="rej-hint-label">问题：</span>
                           <span className="rej-hint-text">{rejField.rejectReason}</span>
                           {rejField.oldValue !== undefined && rejField.oldValue !== "" && (
-                            <span className="rej-hint-old">（原值：{formatFieldValue("hearingAidModel", rejField.oldValue)}）</span>
+                            <span className="rej-hint-old">
+                              （原值：{formatFieldValue("hearingAidModel", rejField.oldValue)}）
+                            </span>
                           )}
                           {modifiedRejectedFields["hearingAidModel"] && (
                             <span className="rej-hint-modified">✅ 已修改</span>
@@ -618,7 +708,12 @@ export default function AudiologistView() {
                   <span>优先级</span>
                   <select
                     value={formData.priority || "medium"}
-                    onChange={e => setFormData({ ...formData, priority: e.target.value as "high" | "medium" | "low" })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        priority: e.target.value as "high" | "medium" | "low"
+                      })
+                    }
                   >
                     <option value="high">高优先级</option>
                     <option value="medium">中优先级</option>
@@ -626,7 +721,9 @@ export default function AudiologistView() {
                   </select>
                 </label>
                 {(() => {
-                  const rejField = activeRejection?.rejectedFields.find(rf => rf.fieldName === "speechRecognitionRate");
+                  const rejField = activeRejection?.rejectedFields.find(
+                    (rf) => rf.fieldName === "speechRecognitionRate"
+                  );
                   return (
                     <label className={`form-field ${rejField ? "needs-correction" : ""}`}>
                       <span>
@@ -638,14 +735,22 @@ export default function AudiologistView() {
                         min="0"
                         max="100"
                         value={formData.speechRecognitionRate || 0}
-                        onChange={e => setFormData({ ...formData, speechRecognitionRate: Number(e.target.value) })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            speechRecognitionRate: Number(e.target.value)
+                          })
+                        }
                       />
                       {rejField && (
                         <div className="rej-hint">
                           <span className="rej-hint-label">问题：</span>
                           <span className="rej-hint-text">{rejField.rejectReason}</span>
                           {rejField.oldValue !== undefined && (
-                            <span className="rej-hint-old">（原值：{formatFieldValue("speechRecognitionRate", rejField.oldValue)}）</span>
+                            <span className="rej-hint-old">
+                              （原值：{formatFieldValue("speechRecognitionRate", rejField.oldValue)}
+                              ）
+                            </span>
                           )}
                           {modifiedRejectedFields["speechRecognitionRate"] && (
                             <span className="rej-hint-modified">✅ 已修改</span>
@@ -661,11 +766,15 @@ export default function AudiologistView() {
                     type="number"
                     min="1"
                     value={formData.followUpDays || 7}
-                    onChange={e => setFormData({ ...formData, followUpDays: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, followUpDays: Number(e.target.value) })
+                    }
                   />
                 </label>
                 {(() => {
-                  const rejField = activeRejection?.rejectedFields.find(rf => rf.fieldName === "leftPta");
+                  const rejField = activeRejection?.rejectedFields.find(
+                    (rf) => rf.fieldName === "leftPta"
+                  );
                   return (
                     <label className={`form-field small ${rejField ? "needs-correction" : ""}`}>
                       <span>
@@ -677,19 +786,25 @@ export default function AudiologistView() {
                         min="0"
                         max="120"
                         value={formData.leftPta || 0}
-                        onChange={e => setFormData({ ...formData, leftPta: Number(e.target.value) })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, leftPta: Number(e.target.value) })
+                        }
                       />
                       {rejField && (
                         <div className="rej-hint compact">
                           <span className="rej-hint-text">{rejField.rejectReason}</span>
-                          {modifiedRejectedFields["leftPta"] && <span className="rej-hint-modified">✅</span>}
+                          {modifiedRejectedFields["leftPta"] && (
+                            <span className="rej-hint-modified">✅</span>
+                          )}
                         </div>
                       )}
                     </label>
                   );
                 })()}
                 {(() => {
-                  const rejField = activeRejection?.rejectedFields.find(rf => rf.fieldName === "rightPta");
+                  const rejField = activeRejection?.rejectedFields.find(
+                    (rf) => rf.fieldName === "rightPta"
+                  );
                   return (
                     <label className={`form-field small ${rejField ? "needs-correction" : ""}`}>
                       <span>
@@ -701,21 +816,29 @@ export default function AudiologistView() {
                         min="0"
                         max="120"
                         value={formData.rightPta || 0}
-                        onChange={e => setFormData({ ...formData, rightPta: Number(e.target.value) })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, rightPta: Number(e.target.value) })
+                        }
                       />
                       {rejField && (
                         <div className="rej-hint compact">
                           <span className="rej-hint-text">{rejField.rejectReason}</span>
-                          {modifiedRejectedFields["rightPta"] && <span className="rej-hint-modified">✅</span>}
+                          {modifiedRejectedFields["rightPta"] && (
+                            <span className="rej-hint-modified">✅</span>
+                          )}
                         </div>
                       )}
                     </label>
                   );
                 })()}
                 {(() => {
-                  const rejField = activeRejection?.rejectedFields.find(rf => rf.fieldName === "gainAdjustment");
+                  const rejField = activeRejection?.rejectedFields.find(
+                    (rf) => rf.fieldName === "gainAdjustment"
+                  );
                   return (
-                    <label className={`form-field full-width ${rejField ? "needs-correction" : ""}`}>
+                    <label
+                      className={`form-field full-width ${rejField ? "needs-correction" : ""}`}
+                    >
                       <span>
                         增益调整
                         {rejField && <em className="rej-badge">需整改</em>}
@@ -723,7 +846,9 @@ export default function AudiologistView() {
                       <textarea
                         rows={3}
                         value={formData.gainAdjustment || ""}
-                        onChange={e => setFormData({ ...formData, gainAdjustment: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, gainAdjustment: e.target.value })
+                        }
                         placeholder="详细描述增益调整方案..."
                       />
                       {rejField && (
@@ -731,7 +856,9 @@ export default function AudiologistView() {
                           <span className="rej-hint-label">问题：</span>
                           <span className="rej-hint-text">{rejField.rejectReason}</span>
                           {rejField.oldValue !== undefined && rejField.oldValue !== "" && (
-                            <span className="rej-hint-old">（原值：{String(rejField.oldValue) || "-"}）</span>
+                            <span className="rej-hint-old">
+                              （原值：{String(rejField.oldValue) || "-"}）
+                            </span>
                           )}
                           {modifiedRejectedFields["gainAdjustment"] && (
                             <span className="rej-hint-modified">✅ 已修改</span>
@@ -746,13 +873,17 @@ export default function AudiologistView() {
                   <textarea
                     rows={3}
                     value={formData.userFeedback || ""}
-                    onChange={e => setFormData({ ...formData, userFeedback: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, userFeedback: e.target.value })}
                     placeholder="记录用户佩戴感受和反馈..."
                   />
                 </label>
               </div>
               <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowCreateForm(false)}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowCreateForm(false)}
+                >
                   取消
                 </button>
                 {activeRejection ? (

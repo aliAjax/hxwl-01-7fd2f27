@@ -35,5 +35,5 @@ export const DEFAULT_SUMMARY_CONFIG: SummaryPreviewConfig = {
   showKeyMetrics: true,
   showAdjustments: true,
   showFollowUpAdvice: true,
-  showEnglishSubtitle: true,
+  showEnglishSubtitle: true
 };

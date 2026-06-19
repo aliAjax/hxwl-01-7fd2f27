@@ -1,16 +1,5 @@
-import {
-  FREQUENCIES,
-  HearingRecord,
-  Frequency,
-  EarSide,
-  ConductionType
-} from "./hearing.types";
-import {
-  computePTA,
-  classifySeverity,
-  findAnomalies,
-  updateThreshold
-} from "./hearing.utils";
+import { FREQUENCIES, HearingRecord, Frequency, EarSide, ConductionType } from "./hearing.types";
+import { computePTA, classifySeverity, findAnomalies, updateThreshold } from "./hearing.utils";
 
 interface Props {
   record: HearingRecord;
@@ -29,17 +18,15 @@ export default function HearingForm({ record, onChange, onClear, showMetaFields 
   const ptaLeft = computePTA(record.left);
   const ptaRight = computePTA(record.right);
 
-  const handleInput = (
-    side: EarSide,
-    cond: ConductionType,
-    freq: Frequency,
-    val: string
-  ) => {
+  const handleInput = (side: EarSide, cond: ConductionType, freq: Frequency, val: string) => {
     const raw = val.trim() === "" ? null : val;
     onChange(updateThreshold(record, side, cond, freq, raw));
   };
 
-  const handleMetaChange = (field: "testDate" | "tester" | "testEnvironment" | "notes", value: string) => {
+  const handleMetaChange = (
+    field: "testDate" | "tester" | "testEnvironment" | "notes",
+    value: string
+  ) => {
     onChange({
       ...record,
       meta: {
@@ -103,13 +90,13 @@ export default function HearingForm({ record, onChange, onClear, showMetaFields 
       )}
 
       <div className="ear-grid">
-        {(["left", "right"] as EarSide[]).map(side => (
+        {(["left", "right"] as EarSide[]).map((side) => (
           <div key={side} className={`ear-card ear-${side}`}>
             <div className="ear-card-title">
               <span className="ear-dot" style={{ background: SIDE_COLOR[side] }} />
               {SIDE_LABEL[side]}
             </div>
-            {(["air", "bone"] as ConductionType[]).map(cond => (
+            {(["air", "bone"] as ConductionType[]).map((cond) => (
               <div key={cond} className="cond-block">
                 <div className="cond-header">
                   <span className="cond-name">
@@ -118,8 +105,8 @@ export default function HearingForm({ record, onChange, onClear, showMetaFields 
                   </span>
                 </div>
                 <div className="freq-row">
-                  {FREQUENCIES.map(freq => {
-                    const pt = record[side][cond].find(p => p.frequency === freq)!;
+                  {FREQUENCIES.map((freq) => {
+                    const pt = record[side][cond].find((p) => p.frequency === freq)!;
                     return (
                       <label
                         key={freq}
@@ -133,7 +120,7 @@ export default function HearingForm({ record, onChange, onClear, showMetaFields 
                           inputMode="numeric"
                           placeholder="--"
                           value={pt.value === null ? "" : String(pt.value)}
-                          onChange={e => handleInput(side, cond, freq, e.target.value)}
+                          onChange={(e) => handleInput(side, cond, freq, e.target.value)}
                         />
                         {pt.warning && (
                           <span className="freq-warn" title={pt.warning}>
@@ -167,9 +154,7 @@ export default function HearingForm({ record, onChange, onClear, showMetaFields 
           <span className="legend-sym legend-right-bone">]</span>
           右耳骨导
         </div>
-        <div className="legend-item legend-gray">
-          ┈ 虚线 = 有缺失频点
-        </div>
+        <div className="legend-item legend-gray">┈ 虚线 = 有缺失频点</div>
       </div>
 
       {showMetaFields && (

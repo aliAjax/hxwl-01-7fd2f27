@@ -358,9 +358,7 @@ describe("hearing.utils - round-trip consistency", () => {
     const asHearing = audiogramToHearingRecord(original);
     const asAudiogram = hearingRecordToAudiogram(asHearing, "cust-001");
 
-    expect(asAudiogram.left.air.map((p) => p.value)).toEqual(
-      original.left.air.map((p) => p.value)
-    );
+    expect(asAudiogram.left.air.map((p) => p.value)).toEqual(original.left.air.map((p) => p.value));
     expect(asAudiogram.right.bone.map((p) => p.value)).toEqual(
       original.right.bone.map((p) => p.value)
     );

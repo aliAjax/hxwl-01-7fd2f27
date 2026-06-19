@@ -61,7 +61,9 @@ export default function CustomerDetail({
     deleteFollowUp,
     simulateConflict
   } = useArchive();
-  const [tab, setTab] = useState<"overview" | "audiogram" | "fitting" | "followup" | "comparison">("overview");
+  const [tab, setTab] = useState<"overview" | "audiogram" | "fitting" | "followup" | "comparison">(
+    "overview"
+  );
   const [modal, setModal] = useState<ModalState>(null);
   const [changeNote, setChangeNote] = useState("");
   const [showWorkbench, setShowWorkbench] = useState(false);
@@ -202,8 +204,8 @@ export default function CustomerDetail({
                 profile.gender === "female"
                   ? "#be123c"
                   : profile.gender === "male"
-                  ? "#155e75"
-                  : "#7c3aed"
+                    ? "#155e75"
+                    : "#7c3aed"
             }}
           >
             {profile.name.slice(0, 1) || "?"}
@@ -270,7 +272,11 @@ export default function CustomerDetail({
             comparison: `📊 验配对比 (${countMap.comparison})`
           };
           return (
-            <button key={k} className={`tab ${tab === k ? "tab-active" : ""}`} onClick={() => setTab(k)}>
+            <button
+              key={k}
+              className={`tab ${tab === k ? "tab-active" : ""}`}
+              onClick={() => setTab(k)}
+            >
               {labelMap[k]}
             </button>
           );
@@ -299,463 +305,469 @@ export default function CustomerDetail({
           </div>
         ) : (
           <>
-        {tab === "overview" && (
-          <div className="overview-grid">
-            <section className="info-card">
-              <h4>基本信息</h4>
-              <div className="info-list">
-                <InfoRow label="职业" value={profile.occupation} />
-                <InfoRow label="地址" value={profile.address} />
-                <InfoRow label="发病日期" value={profile.hearingLossOnsetDate} />
-                <InfoRow label="创建时间" value={fmt(profile.createdAt)} />
-              </div>
-            </section>
-
-            <section className="info-card">
-              <h4>健康情况</h4>
-              <div className="info-list">
-                <InfoRow label="既往病史" value={profile.medicalHistory} />
-                <InfoRow label="耳部手术史" value={profile.earSurgeryHistory} />
-                <InfoRow label="过敏史" value={profile.allergies} />
-                <div className="checks-row">
-                  <Check ok={profile.tinnitus} label="耳鸣" />
-                  <Check ok={profile.vertigo} label="眩晕" />
-                  <Check ok={profile.otorrhea} label="耳漏" />
-                </div>
-              </div>
-            </section>
-
-            <section className="info-card wide">
-              <div className="info-card-head">
-                <h4>最近的听力</h4>
-                <button className="ghost-btn small" onClick={() => setTab("audiogram")}>
-                  查看全部 →
-                </button>
-              </div>
-              {latestAudiogram ? (
-                <div className="latest-audiogram-wrap">
-                  <div className="latest-aud-meta">
-                    <span className="aud-date">📅 {latestAudiogram.testDate}</span>
-                    {latestAudiogram.tester && (
-                      <span className="aud-tester">👤 {latestAudiogram.tester}</span>
-                    )}
-                    {latestAudiogram.speechRecognitionScore?.binaural !== undefined && (
-                      <span className="aud-speech">
-                        🗣️ 言语识别率 {latestAudiogram.speechRecognitionScore.binaural}%
-                      </span>
-                    )}
+            {tab === "overview" && (
+              <div className="overview-grid">
+                <section className="info-card">
+                  <h4>基本信息</h4>
+                  <div className="info-list">
+                    <InfoRow label="职业" value={profile.occupation} />
+                    <InfoRow label="地址" value={profile.address} />
+                    <InfoRow label="发病日期" value={profile.hearingLossOnsetDate} />
+                    <InfoRow label="创建时间" value={fmt(profile.createdAt)} />
                   </div>
-                  <AudiogramChart
-                    record={audiogramToHearingRecord(latestAudiogram)}
-                    width={560}
-                  />
-                </div>
-              ) : (
-                <EmptyHint text="暂无听力曲线" action="切换到听力曲线标签添加" />
-              )}
-            </section>
+                </section>
 
-            <section className="info-card wide">
-              <h4>最近的验配</h4>
-              {fittings.length === 0 ? (
-                <EmptyHint text="暂无验配记录" action="切换到验配记录标签添加" />
-              ) : (
-                <div className="mini-fitting">
-                  {fittings.slice(0, 3).map((f) => (
-                    <article key={f.id} className="mini-fit-row">
-                      <div>
-                        <div className={`stage-pill ${stageColor[f.stage]}`}>{f.stage}</div>
-                        <strong>{f.fittingDate}</strong>
-                        {f.fitter && <span className="muted"> · {f.fitter}</span>}
-                      </div>
-                      <div className="ha-row">
-                        {f.hearingAid.left?.model && (
-                          <span className="ha-tag">左耳: {f.hearingAid.left.model}</span>
+                <section className="info-card">
+                  <h4>健康情况</h4>
+                  <div className="info-list">
+                    <InfoRow label="既往病史" value={profile.medicalHistory} />
+                    <InfoRow label="耳部手术史" value={profile.earSurgeryHistory} />
+                    <InfoRow label="过敏史" value={profile.allergies} />
+                    <div className="checks-row">
+                      <Check ok={profile.tinnitus} label="耳鸣" />
+                      <Check ok={profile.vertigo} label="眩晕" />
+                      <Check ok={profile.otorrhea} label="耳漏" />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="info-card wide">
+                  <div className="info-card-head">
+                    <h4>最近的听力</h4>
+                    <button className="ghost-btn small" onClick={() => setTab("audiogram")}>
+                      查看全部 →
+                    </button>
+                  </div>
+                  {latestAudiogram ? (
+                    <div className="latest-audiogram-wrap">
+                      <div className="latest-aud-meta">
+                        <span className="aud-date">📅 {latestAudiogram.testDate}</span>
+                        {latestAudiogram.tester && (
+                          <span className="aud-tester">👤 {latestAudiogram.tester}</span>
                         )}
-                        {f.hearingAid.right?.model && (
-                          <span className="ha-tag">右耳: {f.hearingAid.right.model}</span>
+                        {latestAudiogram.speechRecognitionScore?.binaural !== undefined && (
+                          <span className="aud-speech">
+                            🗣️ 言语识别率 {latestAudiogram.speechRecognitionScore.binaural}%
+                          </span>
                         )}
                       </div>
-                      {f.userFeedback && <p className="muted small">{f.userFeedback}</p>}
-                    </article>
-                  ))}
-                </div>
-              )}
-            </section>
+                      <AudiogramChart
+                        record={audiogramToHearingRecord(latestAudiogram)}
+                        width={560}
+                      />
+                    </div>
+                  ) : (
+                    <EmptyHint text="暂无听力曲线" action="切换到听力曲线标签添加" />
+                  )}
+                </section>
 
-            <section className="info-card wide">
-              <h4>备注</h4>
-              {profile.remark ? (
-                <p className="remark-text">{profile.remark}</p>
-              ) : (
-                <span className="muted">暂无备注</span>
-              )}
-            </section>
-          </div>
-        )}
-
-        {tab === "audiogram" && (
-          <div className="tab-section">
-            <div className="tab-section-head">
-              <h3>听力曲线记录</h3>
-              <div className="tab-section-actions">
-                <button className="ghost-btn" onClick={addAudiogram}>
-                  + 快速录入
-                </button>
-                <button className="primary-action" onClick={openWorkbenchNew}>
-                  🎯 听力曲线工作台
-                </button>
-              </div>
-            </div>
-
-            {audiograms.length === 0 ? (
-              <div className="empty-audiogram-state">
-                <EmptyHint
-                  text="暂无听力曲线"
-                  action="使用听力曲线工作台录入第一条完整的听力图"
-                />
-                <button className="primary-action large" onClick={openWorkbenchNew}>
-                  🎯 开始录入听力图
-                </button>
-              </div>
-            ) : (
-              <div className="entity-list audiogram-list">
-                {audiograms.map((a) => {
-                  const lp = calcPta(a.left.air);
-                  const rp = calcPta(a.right.air);
-                  const isExpanded = expandedAudiogramId === a.id;
-                  return (
-                    <article
-                      key={a.id}
-                      className={`entity-card audiogram-card ${isExpanded ? "expanded" : ""}`}
-                    >
-                      <div className="entity-head" onClick={() => toggleExpandAudiogram(a.id)}>
-                        <div className="entity-head-left">
-                          <span className="expand-icon">{isExpanded ? "▼" : "▶"}</span>
-                          <strong>{a.testDate}</strong>
-                          <span className="meta-pill muted">v{a.version}</span>
-                        </div>
-                        <div className="entity-head-right">
-                          {a.speechRecognitionScore?.binaural !== undefined && (
-                            <span className="pta-tag small">
-                              言语 {a.speechRecognitionScore.binaural}%
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {!isExpanded && (
-                        <>
-                          <div className="entity-sub">
-                            测试者: {a.tester || "未指定"} · 环境: {a.testEnvironment || "未指定"}
+                <section className="info-card wide">
+                  <h4>最近的验配</h4>
+                  {fittings.length === 0 ? (
+                    <EmptyHint text="暂无验配记录" action="切换到验配记录标签添加" />
+                  ) : (
+                    <div className="mini-fitting">
+                      {fittings.slice(0, 3).map((f) => (
+                        <article key={f.id} className="mini-fit-row">
+                          <div>
+                            <div className={`stage-pill ${stageColor[f.stage]}`}>{f.stage}</div>
+                            <strong>{f.fittingDate}</strong>
+                            {f.fitter && <span className="muted"> · {f.fitter}</span>}
                           </div>
-                          <div className="pta-row">
-                            <PtaBadge side="左耳 PTA" value={lp} />
-                            <PtaBadge side="右耳 PTA" value={rp} />
-                          </div>
-                        </>
-                      )}
-
-                      {isExpanded && (
-                        <div className="audiogram-expanded">
-                          <div className="aud-detail-meta">
-                            <div className="aud-meta-row">
-                              <span className="meta-label">测试日期</span>
-                              <span>{a.testDate}</span>
-                            </div>
-                            <div className="aud-meta-row">
-                              <span className="meta-label">测试者</span>
-                              <span>{a.tester || "未指定"}</span>
-                            </div>
-                            <div className="aud-meta-row">
-                              <span className="meta-label">测试环境</span>
-                              <span>{a.testEnvironment || "未指定"}</span>
-                            </div>
-                            {a.speechRecognitionScore && (
-                              <>
-                                <div className="aud-meta-row">
-                                  <span className="meta-label">左耳言语识别率</span>
-                                  <span>
-                                    {a.speechRecognitionScore.left !== undefined
-                                      ? `${a.speechRecognitionScore.left}%`
-                                      : "—"}
-                                  </span>
-                                </div>
-                                <div className="aud-meta-row">
-                                  <span className="meta-label">右耳言语识别率</span>
-                                  <span>
-                                    {a.speechRecognitionScore.right !== undefined
-                                      ? `${a.speechRecognitionScore.right}%`
-                                      : "—"}
-                                  </span>
-                                </div>
-                                <div className="aud-meta-row">
-                                  <span className="meta-label">双耳言语识别率</span>
-                                  <span>
-                                    {a.speechRecognitionScore.binaural !== undefined
-                                      ? `${a.speechRecognitionScore.binaural}%`
-                                      : "—"}
-                                  </span>
-                                </div>
-                              </>
+                          <div className="ha-row">
+                            {f.hearingAid.left?.model && (
+                              <span className="ha-tag">左耳: {f.hearingAid.left.model}</span>
+                            )}
+                            {f.hearingAid.right?.model && (
+                              <span className="ha-tag">右耳: {f.hearingAid.right.model}</span>
                             )}
                           </div>
-                          <div className="aud-chart-wrap">
-                            <AudiogramChart
-                              record={audiogramToHearingRecord(a)}
-                              width={640}
-                            />
+                          {f.userFeedback && <p className="muted small">{f.userFeedback}</p>}
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section className="info-card wide">
+                  <h4>备注</h4>
+                  {profile.remark ? (
+                    <p className="remark-text">{profile.remark}</p>
+                  ) : (
+                    <span className="muted">暂无备注</span>
+                  )}
+                </section>
+              </div>
+            )}
+
+            {tab === "audiogram" && (
+              <div className="tab-section">
+                <div className="tab-section-head">
+                  <h3>听力曲线记录</h3>
+                  <div className="tab-section-actions">
+                    <button className="ghost-btn" onClick={addAudiogram}>
+                      + 快速录入
+                    </button>
+                    <button className="primary-action" onClick={openWorkbenchNew}>
+                      🎯 听力曲线工作台
+                    </button>
+                  </div>
+                </div>
+
+                {audiograms.length === 0 ? (
+                  <div className="empty-audiogram-state">
+                    <EmptyHint
+                      text="暂无听力曲线"
+                      action="使用听力曲线工作台录入第一条完整的听力图"
+                    />
+                    <button className="primary-action large" onClick={openWorkbenchNew}>
+                      🎯 开始录入听力图
+                    </button>
+                  </div>
+                ) : (
+                  <div className="entity-list audiogram-list">
+                    {audiograms.map((a) => {
+                      const lp = calcPta(a.left.air);
+                      const rp = calcPta(a.right.air);
+                      const isExpanded = expandedAudiogramId === a.id;
+                      return (
+                        <article
+                          key={a.id}
+                          className={`entity-card audiogram-card ${isExpanded ? "expanded" : ""}`}
+                        >
+                          <div className="entity-head" onClick={() => toggleExpandAudiogram(a.id)}>
+                            <div className="entity-head-left">
+                              <span className="expand-icon">{isExpanded ? "▼" : "▶"}</span>
+                              <strong>{a.testDate}</strong>
+                              <span className="meta-pill muted">v{a.version}</span>
+                            </div>
+                            <div className="entity-head-right">
+                              {a.speechRecognitionScore?.binaural !== undefined && (
+                                <span className="pta-tag small">
+                                  言语 {a.speechRecognitionScore.binaural}%
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {a.remark && (
-                            <div className="aud-remark">
-                              <span className="meta-label">备注</span>
-                              <p>{a.remark}</p>
+
+                          {!isExpanded && (
+                            <>
+                              <div className="entity-sub">
+                                测试者: {a.tester || "未指定"} · 环境:{" "}
+                                {a.testEnvironment || "未指定"}
+                              </div>
+                              <div className="pta-row">
+                                <PtaBadge side="左耳 PTA" value={lp} />
+                                <PtaBadge side="右耳 PTA" value={rp} />
+                              </div>
+                            </>
+                          )}
+
+                          {isExpanded && (
+                            <div className="audiogram-expanded">
+                              <div className="aud-detail-meta">
+                                <div className="aud-meta-row">
+                                  <span className="meta-label">测试日期</span>
+                                  <span>{a.testDate}</span>
+                                </div>
+                                <div className="aud-meta-row">
+                                  <span className="meta-label">测试者</span>
+                                  <span>{a.tester || "未指定"}</span>
+                                </div>
+                                <div className="aud-meta-row">
+                                  <span className="meta-label">测试环境</span>
+                                  <span>{a.testEnvironment || "未指定"}</span>
+                                </div>
+                                {a.speechRecognitionScore && (
+                                  <>
+                                    <div className="aud-meta-row">
+                                      <span className="meta-label">左耳言语识别率</span>
+                                      <span>
+                                        {a.speechRecognitionScore.left !== undefined
+                                          ? `${a.speechRecognitionScore.left}%`
+                                          : "—"}
+                                      </span>
+                                    </div>
+                                    <div className="aud-meta-row">
+                                      <span className="meta-label">右耳言语识别率</span>
+                                      <span>
+                                        {a.speechRecognitionScore.right !== undefined
+                                          ? `${a.speechRecognitionScore.right}%`
+                                          : "—"}
+                                      </span>
+                                    </div>
+                                    <div className="aud-meta-row">
+                                      <span className="meta-label">双耳言语识别率</span>
+                                      <span>
+                                        {a.speechRecognitionScore.binaural !== undefined
+                                          ? `${a.speechRecognitionScore.binaural}%`
+                                          : "—"}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              <div className="aud-chart-wrap">
+                                <AudiogramChart record={audiogramToHearingRecord(a)} width={640} />
+                              </div>
+                              {a.remark && (
+                                <div className="aud-remark">
+                                  <span className="meta-label">备注</span>
+                                  <p>{a.remark}</p>
+                                </div>
+                              )}
+                              <div className="aud-detail-footer">
+                                <span className="muted">
+                                  {fmt(a.editedAt)} 由 {a.editedBy}
+                                </span>
+                              </div>
                             </div>
                           )}
-                          <div className="aud-detail-footer">
-                            <span className="muted">{fmt(a.editedAt)} 由 {a.editedBy}</span>
+
+                          <div className="entity-foot" onClick={(e) => e.stopPropagation()}>
+                            <span className="muted">点击卡片展开查看听力图</span>
+                            <div className="entity-actions">
+                              <button
+                                className="row-btn"
+                                title="快速编辑"
+                                onClick={() => handleEditAudiogram(a)}
+                              >
+                                ✎ 快速编辑
+                              </button>
+                              <button
+                                className="row-btn primary"
+                                title="工作台编辑"
+                                onClick={() => openWorkbenchEdit(a)}
+                              >
+                                🎯 工作台
+                              </button>
+                              <button
+                                className="row-btn"
+                                title="版本历史"
+                                onClick={() =>
+                                  setVersionModal({ entityId: a.id, entityType: "audiogram" })
+                                }
+                              >
+                                🕘 历史
+                              </button>
+                              <button
+                                className="row-btn danger"
+                                title="删除"
+                                onClick={() => handleDeleteAudiogram(a.id)}
+                              >
+                                🗑
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === "fitting" && (
+              <div className="tab-section">
+                <div className="tab-section-head">
+                  <h3>验配记录</h3>
+                  <button className="primary-action" onClick={addFitting}>
+                    + 新增验配记录
+                  </button>
+                </div>
+                {fittings.length === 0 ? (
+                  <EmptyHint text="暂无验配记录" action="点击右上角按钮新增" />
+                ) : (
+                  <div className="entity-list">
+                    {fittings.map((f) => (
+                      <article key={f.id} className="entity-card">
+                        <div className="entity-head">
+                          <div>
+                            <div className={`stage-pill ${stageColor[f.stage]}`}>{f.stage}</div>
+                            <strong>{f.fittingDate}</strong>
+                            {f.fitter && <span className="muted"> · 验配师 {f.fitter}</span>}
+                          </div>
+                          <span className="meta-pill muted">v{f.version}</span>
+                        </div>
+                        <div className="ha-big-row">
+                          {f.hearingAid.left ? (
+                            <div className="ha-side">
+                              <div className="ha-side-label">左耳</div>
+                              <div className="ha-side-model">{f.hearingAid.left.model}</div>
+                              {f.hearingAid.left.type && (
+                                <div className="muted small">{f.hearingAid.left.type}</div>
+                              )}
+                              {f.hearingAid.left.serialNo && (
+                                <div className="muted small">SN: {f.hearingAid.left.serialNo}</div>
+                              )}
+                            </div>
+                          ) : null}
+                          {f.hearingAid.right ? (
+                            <div className="ha-side">
+                              <div className="ha-side-label">右耳</div>
+                              <div className="ha-side-model">{f.hearingAid.right.model}</div>
+                              {f.hearingAid.right.type && (
+                                <div className="muted small">{f.hearingAid.right.type}</div>
+                              )}
+                              {f.hearingAid.right.serialNo && (
+                                <div className="muted small">SN: {f.hearingAid.right.serialNo}</div>
+                              )}
+                            </div>
+                          ) : null}
+                          {!f.hearingAid.left && !f.hearingAid.right && (
+                            <span className="muted">未填写助听器型号</span>
+                          )}
+                        </div>
+                        {f.gainAdjustment?.binaural && (
+                          <Row label="增益调整" value={f.gainAdjustment.binaural} />
+                        )}
+                        {f.programSettings && <Row label="程序设置" value={f.programSettings} />}
+                        {f.noiseManagement && <Row label="噪声管理" value={f.noiseManagement} />}
+                        {f.feedbackSuppression && (
+                          <Row label="反馈抑制" value={f.feedbackSuppression} />
+                        )}
+                        {f.userFeedback && <div className="feedback-box">💬 {f.userFeedback}</div>}
+                        {f.nextFollowUpDate && (
+                          <div className="followup-hint">📅 下次复诊: {f.nextFollowUpDate}</div>
+                        )}
+                        {f.remark && <p className="muted small">📝 {f.remark}</p>}
+                        <div className="entity-foot">
+                          <span className="muted">
+                            {fmt(f.editedAt)} 由 {f.editedBy}
+                          </span>
+                          <div className="entity-actions" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className="row-btn"
+                              title="编辑"
+                              onClick={() => handleEditFitting(f)}
+                            >
+                              ✎
+                            </button>
+                            <button
+                              className="row-btn"
+                              title="版本历史"
+                              onClick={() =>
+                                setVersionModal({ entityId: f.id, entityType: "fitting" })
+                              }
+                            >
+                              🕘
+                            </button>
+                            <button
+                              className="row-btn danger"
+                              title="删除"
+                              onClick={() => handleDeleteFitting(f.id)}
+                            >
+                              🗑
+                            </button>
                           </div>
                         </div>
-                      )}
-
-                      <div className="entity-foot" onClick={(e) => e.stopPropagation()}>
-                        <span className="muted">点击卡片展开查看听力图</span>
-                        <div className="entity-actions">
-                          <button
-                            className="row-btn"
-                            title="快速编辑"
-                            onClick={() => handleEditAudiogram(a)}
-                          >
-                            ✎ 快速编辑
-                          </button>
-                          <button
-                            className="row-btn primary"
-                            title="工作台编辑"
-                            onClick={() => openWorkbenchEdit(a)}
-                          >
-                            🎯 工作台
-                          </button>
-                          <button
-                            className="row-btn"
-                            title="版本历史"
-                            onClick={() => setVersionModal({ entityId: a.id, entityType: "audiogram" })}
-                          >
-                            🕘 历史
-                          </button>
-                          <button
-                            className="row-btn danger"
-                            title="删除"
-                            onClick={() => handleDeleteAudiogram(a.id)}
-                          >
-                            🗑
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+                      </article>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {tab === "fitting" && (
-          <div className="tab-section">
-            <div className="tab-section-head">
-              <h3>验配记录</h3>
-              <button className="primary-action" onClick={addFitting}>
-                + 新增验配记录
-              </button>
-            </div>
-            {fittings.length === 0 ? (
-              <EmptyHint text="暂无验配记录" action="点击右上角按钮新增" />
-            ) : (
-              <div className="entity-list">
-                {fittings.map((f) => (
-                  <article key={f.id} className="entity-card">
-                    <div className="entity-head">
-                      <div>
-                        <div className={`stage-pill ${stageColor[f.stage]}`}>{f.stage}</div>
-                        <strong>{f.fittingDate}</strong>
-                        {f.fitter && <span className="muted"> · 验配师 {f.fitter}</span>}
-                      </div>
-                      <span className="meta-pill muted">v{f.version}</span>
-                    </div>
-                    <div className="ha-big-row">
-                      {f.hearingAid.left ? (
-                        <div className="ha-side">
-                          <div className="ha-side-label">左耳</div>
-                          <div className="ha-side-model">{f.hearingAid.left.model}</div>
-                          {f.hearingAid.left.type && (
-                            <div className="muted small">{f.hearingAid.left.type}</div>
-                          )}
-                          {f.hearingAid.left.serialNo && (
-                            <div className="muted small">SN: {f.hearingAid.left.serialNo}</div>
-                          )}
-                        </div>
-                      ) : null}
-                      {f.hearingAid.right ? (
-                        <div className="ha-side">
-                          <div className="ha-side-label">右耳</div>
-                          <div className="ha-side-model">{f.hearingAid.right.model}</div>
-                          {f.hearingAid.right.type && (
-                            <div className="muted small">{f.hearingAid.right.type}</div>
-                          )}
-                          {f.hearingAid.right.serialNo && (
-                            <div className="muted small">SN: {f.hearingAid.right.serialNo}</div>
-                          )}
-                        </div>
-                      ) : null}
-                      {!f.hearingAid.left && !f.hearingAid.right && (
-                        <span className="muted">未填写助听器型号</span>
-                      )}
-                    </div>
-                    {f.gainAdjustment?.binaural && (
-                      <Row label="增益调整" value={f.gainAdjustment.binaural} />
-                    )}
-                    {f.programSettings && <Row label="程序设置" value={f.programSettings} />}
-                    {f.noiseManagement && <Row label="噪声管理" value={f.noiseManagement} />}
-                    {f.feedbackSuppression && <Row label="反馈抑制" value={f.feedbackSuppression} />}
-                    {f.userFeedback && (
-                      <div className="feedback-box">💬 {f.userFeedback}</div>
-                    )}
-                    {f.nextFollowUpDate && (
-                      <div className="followup-hint">📅 下次复诊: {f.nextFollowUpDate}</div>
-                    )}
-                    {f.remark && <p className="muted small">📝 {f.remark}</p>}
-                    <div className="entity-foot">
-                      <span className="muted">{fmt(f.editedAt)} 由 {f.editedBy}</span>
-                      <div className="entity-actions" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          className="row-btn"
-                          title="编辑"
-                          onClick={() => handleEditFitting(f)}
+            {tab === "followup" && (
+              <div className="tab-section">
+                <div className="tab-section-head">
+                  <h3>复诊与随访</h3>
+                  <button className="primary-action" onClick={addFollowUp}>
+                    + 新增复诊计划
+                  </button>
+                </div>
+                {followUps.length === 0 ? (
+                  <EmptyHint text="暂无复诊计划" action="点击右上角按钮新增" />
+                ) : (
+                  <div className="entity-list">
+                    {followUps.map((f) => {
+                      const today = new Date().toISOString().slice(0, 10);
+                      const overdue = f.status !== "completed" && f.scheduledDate < today;
+                      const todayDue = f.status !== "completed" && f.scheduledDate === today;
+                      return (
+                        <article
+                          key={f.id}
+                          className={`entity-card ${overdue ? "overdue" : todayDue ? "today" : ""}`}
                         >
-                          ✎
-                        </button>
-                        <button
-                          className="row-btn"
-                          title="版本历史"
-                          onClick={() => setVersionModal({ entityId: f.id, entityType: "fitting" })}
-                        >
-                          🕘
-                        </button>
-                        <button
-                          className="row-btn danger"
-                          title="删除"
-                          onClick={() => handleDeleteFitting(f.id)}
-                        >
-                          🗑
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {tab === "followup" && (
-          <div className="tab-section">
-            <div className="tab-section-head">
-              <h3>复诊与随访</h3>
-              <button className="primary-action" onClick={addFollowUp}>
-                + 新增复诊计划
-              </button>
-            </div>
-            {followUps.length === 0 ? (
-              <EmptyHint text="暂无复诊计划" action="点击右上角按钮新增" />
-            ) : (
-              <div className="entity-list">
-                {followUps.map((f) => {
-                  const today = new Date().toISOString().slice(0, 10);
-                  const overdue = f.status !== "completed" && f.scheduledDate < today;
-                  const todayDue = f.status !== "completed" && f.scheduledDate === today;
-                  return (
-                    <article
-                      key={f.id}
-                      className={`entity-card ${overdue ? "overdue" : todayDue ? "today" : ""}`}
-                    >
-                      <div className="entity-head">
-                        <div>
-                          <span
-                            className={`fu-priority fu-${f.priority}`}
-                          >
-                            {f.priority === "high" ? "高" : f.priority === "medium" ? "中" : "低"}优先级
-                          </span>
-                          <strong>{f.scheduledDate}</strong>
-                          {overdue && <span className="fu-overdue">已逾期</span>}
-                          {todayDue && <span className="fu-today">今日</span>}
-                          {f.actualDate && f.status === "completed" && (
-                            <span className="muted">
-                              {" "}· 实际 {f.actualDate}
+                          <div className="entity-head">
+                            <div>
+                              <span className={`fu-priority fu-${f.priority}`}>
+                                {f.priority === "high"
+                                  ? "高"
+                                  : f.priority === "medium"
+                                    ? "中"
+                                    : "低"}
+                                优先级
+                              </span>
+                              <strong>{f.scheduledDate}</strong>
+                              {overdue && <span className="fu-overdue">已逾期</span>}
+                              {todayDue && <span className="fu-today">今日</span>}
+                              {f.actualDate && f.status === "completed" && (
+                                <span className="muted"> · 实际 {f.actualDate}</span>
+                              )}
+                            </div>
+                            <span className={`fu-status fu-${f.status}`}>
+                              {f.status === "pending"
+                                ? "待联系"
+                                : f.status === "contacted"
+                                  ? "已联系"
+                                  : f.status === "unreachable"
+                                    ? "无法联系"
+                                    : "已完成"}
                             </span>
+                          </div>
+                          {f.purpose && <Row label="目的" value={f.purpose} />}
+                          {f.contactMethod && <Row label="联系方式" value={f.contactMethod} />}
+                          {f.result && <Row label="结果" value={f.result} />}
+                          {f.actionsTaken && <Row label="采取措施" value={f.actionsTaken} />}
+                          {f.operator && <Row label="执行人" value={f.operator} />}
+                          {f.nextScheduledDate && (
+                            <div className="followup-hint">📅 下次计划: {f.nextScheduledDate}</div>
                           )}
-                        </div>
-                        <span className={`fu-status fu-${f.status}`}>
-                          {f.status === "pending"
-                            ? "待联系"
-                            : f.status === "contacted"
-                            ? "已联系"
-                            : f.status === "unreachable"
-                            ? "无法联系"
-                            : "已完成"}
-                        </span>
-                      </div>
-                      {f.purpose && <Row label="目的" value={f.purpose} />}
-                      {f.contactMethod && <Row label="联系方式" value={f.contactMethod} />}
-                      {f.result && <Row label="结果" value={f.result} />}
-                      {f.actionsTaken && <Row label="采取措施" value={f.actionsTaken} />}
-                      {f.operator && <Row label="执行人" value={f.operator} />}
-                      {f.nextScheduledDate && (
-                        <div className="followup-hint">📅 下次计划: {f.nextScheduledDate}</div>
-                      )}
-                      {f.remark && <p className="muted small">📝 {f.remark}</p>}
-                      <div className="entity-foot">
-                        <span className="muted">
-                          v{f.version} · {fmt(f.editedAt)}
-                        </span>
-                        <div className="entity-actions" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            className="row-btn"
-                            title="编辑"
-                            onClick={() => handleEditFollowUp(f)}
-                          >
-                            ✎
-                          </button>
-                          <button
-                            className="row-btn"
-                            title="版本历史"
-                            onClick={() => setVersionModal({ entityId: f.id, entityType: "followup" })}
-                          >
-                            🕘
-                          </button>
-                          <button
-                            className="row-btn danger"
-                            title="删除"
-                            onClick={() => handleDeleteFollowUp(f.id)}
-                          >
-                            🗑
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+                          {f.remark && <p className="muted small">📝 {f.remark}</p>}
+                          <div className="entity-foot">
+                            <span className="muted">
+                              v{f.version} · {fmt(f.editedAt)}
+                            </span>
+                            <div className="entity-actions" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                className="row-btn"
+                                title="编辑"
+                                onClick={() => handleEditFollowUp(f)}
+                              >
+                                ✎
+                              </button>
+                              <button
+                                className="row-btn"
+                                title="版本历史"
+                                onClick={() =>
+                                  setVersionModal({ entityId: f.id, entityType: "followup" })
+                                }
+                              >
+                                🕘
+                              </button>
+                              <button
+                                className="row-btn danger"
+                                title="删除"
+                                onClick={() => handleDeleteFollowUp(f.id)}
+                              >
+                                🗑
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {tab === "comparison" && (
-          <div className="tab-section">
-            <ComparisonModule
-              customerId={profile.id}
-              showCustomerSelector={false}
-            />
-          </div>
-        )}
+            {tab === "comparison" && (
+              <div className="tab-section">
+                <ComparisonModule customerId={profile.id} showCustomerSelector={false} />
+              </div>
+            )}
           </>
         )}
       </div>
@@ -821,7 +833,11 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function Check({ ok, label }: { ok: boolean; label: string }) {
-  return <span className={`check-pill ${ok ? "ok" : "no"}`}>{ok ? "✓" : "✗"} {label}</span>;
+  return (
+    <span className={`check-pill ${ok ? "ok" : "no"}`}>
+      {ok ? "✓" : "✗"} {label}
+    </span>
+  );
 }
 
 function PtaBadge({ side, value }: { side: string; value: number }) {
@@ -903,17 +919,11 @@ function AudiogramFormModal({
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const setThreshold = (
-    side: "left" | "right",
-    freq: Frequency,
-    value: string
-  ) => {
+  const setThreshold = (side: "left" | "right", freq: Frequency, value: string) => {
     const numVal = value === "" ? null : Number(value);
     setForm((prev) => {
       const ear = prev[side];
-      const air = ear.air.map((p) =>
-        p.frequency === freq ? { ...p, value: numVal } : p
-      );
+      const air = ear.air.map((p) => (p.frequency === freq ? { ...p, value: numVal } : p));
       return { ...prev, [side]: { ...ear, air } };
     });
   };
@@ -1139,10 +1149,7 @@ function FittingFormModal({
     });
   };
 
-  const setGain = (
-    side: "left" | "right" | "binaural",
-    value: string
-  ) => {
+  const setGain = (side: "left" | "right" | "binaural", value: string) => {
     setForm((prev) => ({
       ...prev,
       gainAdjustment: { ...prev.gainAdjustment, [side]: value || undefined }
@@ -1187,9 +1194,7 @@ function FittingFormModal({
               <span>验配阶段</span>
               <select
                 value={form.stage}
-                onChange={(e) =>
-                  setField("stage", e.target.value as FittingStage)
-                }
+                onChange={(e) => setField("stage", e.target.value as FittingStage)}
               >
                 <option value="初配">初配</option>
                 <option value="复调">复调</option>
@@ -1447,9 +1452,7 @@ function FollowUpFormModal({
               <span>优先级</span>
               <select
                 value={form.priority}
-                onChange={(e) =>
-                  setField("priority", e.target.value as FollowUpPriority)
-                }
+                onChange={(e) => setField("priority", e.target.value as FollowUpPriority)}
               >
                 <option value="high">高</option>
                 <option value="medium">中</option>
@@ -1460,9 +1463,7 @@ function FollowUpFormModal({
               <span>状态</span>
               <select
                 value={form.status}
-                onChange={(e) =>
-                  setField("status", e.target.value as FollowUpStatus)
-                }
+                onChange={(e) => setField("status", e.target.value as FollowUpStatus)}
               >
                 <option value="pending">待联系</option>
                 <option value="contacted">已联系</option>

@@ -74,9 +74,7 @@ export default function OperationLog({ recordId, limit = 50 }: OperationLogProps
             {displayLogs.map((log, index) => (
               <div key={log.id} className={`log-item log-type-${log.actionType}`}>
                 <div className="log-timeline-line">
-                  <div className="log-timeline-dot">
-                    {actionTypeIcons[log.actionType]}
-                  </div>
+                  <div className="log-timeline-dot">{actionTypeIcons[log.actionType]}</div>
                   {index < displayLogs.length - 1 && <div className="log-timeline-connector" />}
                 </div>
                 <div className="log-content">
@@ -95,16 +93,14 @@ export default function OperationLog({ recordId, limit = 50 }: OperationLogProps
                       </span>
                     )}
                   </div>
-                  {log.detail && (
-                    <p className="log-detail">{log.detail}</p>
-                  )}
+                  {log.detail && <p className="log-detail">{log.detail}</p>}
                   {log.fieldChanges && log.fieldChanges.length > 0 && (
                     <div className="log-field-changes">
                       <div className="log-field-changes-title">
                         📝 字段变更（{log.fieldChanges.length} 项）：
                       </div>
                       <div className="log-field-changes-list">
-                        {log.fieldChanges.map(fc => (
+                        {log.fieldChanges.map((fc) => (
                           <div key={fc.fieldName} className="log-field-change-item">
                             <span className="lfci-label">{fc.fieldLabel}：</span>
                             <span className="lfci-old">{formatFieldValue(fc.oldValue)}</span>

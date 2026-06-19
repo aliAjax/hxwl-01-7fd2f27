@@ -13,7 +13,7 @@ function SummaryConfigModal({
   open,
   initialConfig = DEFAULT_SUMMARY_CONFIG,
   onClose,
-  onConfirm,
+  onConfirm
 }: SummaryConfigModalProps) {
   const [config, setConfig] = useState<SummaryPreviewConfig>(initialConfig);
 
@@ -55,7 +55,7 @@ function SummaryConfigModal({
       showKeyMetrics: true,
       showAdjustments: true,
       showFollowUpAdvice: true,
-      showEnglishSubtitle: true,
+      showEnglishSubtitle: true
     });
   };
 
@@ -64,7 +64,7 @@ function SummaryConfigModal({
       showKeyMetrics: false,
       showAdjustments: false,
       showFollowUpAdvice: false,
-      showEnglishSubtitle: false,
+      showEnglishSubtitle: false
     });
   };
 
@@ -82,26 +82,26 @@ function SummaryConfigModal({
       key: "showKeyMetrics",
       label: "关键指标",
       description: "包含PTA、言语识别率、佩戴时长等核心数据指标",
-      icon: "📊",
+      icon: "📊"
     },
     {
       key: "showAdjustments",
       label: "调整记录",
       description: "包含初配、复调等各阶段的参数调整历史记录",
-      icon: "📝",
+      icon: "📝"
     },
     {
       key: "showFollowUpAdvice",
       label: "复诊建议",
       description: "包含后续佩戴建议、复诊时间及注意事项",
-      icon: "💡",
+      icon: "💡"
     },
     {
       key: "showEnglishSubtitle",
       label: "英文副标题",
       description: "显示报告标题下方的英文副标题",
-      icon: "🌐",
-    },
+      icon: "🌐"
+    }
   ];
 
   return (
@@ -115,29 +115,17 @@ function SummaryConfigModal({
             <p className="summary-config-eyebrow">摘要内容预览配置</p>
             <h2 className="summary-config-title">选择要包含的内容</h2>
           </div>
-          <button
-            className="summary-config-close"
-            onClick={onClose}
-            aria-label="关闭配置"
-          >
+          <button className="summary-config-close" onClick={onClose} aria-label="关闭配置">
             ×
           </button>
         </div>
 
         <div className="summary-config-body">
           <div className="summary-config-quick-actions">
-            <button
-              className="summary-config-quick-btn"
-              onClick={handleSelectAll}
-              type="button"
-            >
+            <button className="summary-config-quick-btn" onClick={handleSelectAll} type="button">
               全选
             </button>
-            <button
-              className="summary-config-quick-btn"
-              onClick={handleClearAll}
-              type="button"
-            >
+            <button className="summary-config-quick-btn" onClick={handleClearAll} type="button">
               清空
             </button>
           </div>
@@ -156,16 +144,12 @@ function SummaryConfigModal({
                     checked={config[option.key]}
                     onChange={() => toggleOption(option.key)}
                   />
-                  <span className="config-option-checkmark">
-                    {config[option.key] && "✓"}
-                  </span>
+                  <span className="config-option-checkmark">{config[option.key] && "✓"}</span>
                 </div>
                 <div className="config-option-icon">{option.icon}</div>
                 <div className="config-option-content">
                   <span className="config-option-label">{option.label}</span>
-                  <span className="config-option-description">
-                    {option.description}
-                  </span>
+                  <span className="config-option-description">{option.description}</span>
                 </div>
               </label>
             ))}

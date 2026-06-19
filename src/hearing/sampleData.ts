@@ -15,19 +15,19 @@ function buildFromMap(
   boneRight: Partial<Record<Frequency, number>>
 ): HearingRecord {
   let r = createEmptyRecord();
-  Object.keys(airLeft).forEach(k => {
+  Object.keys(airLeft).forEach((k) => {
     const f = Number(k) as Frequency;
     r = updateThreshold(r, "left", "air", f, airLeft[f]!);
   });
-  Object.keys(boneLeft).forEach(k => {
+  Object.keys(boneLeft).forEach((k) => {
     const f = Number(k) as Frequency;
     r = updateThreshold(r, "left", "bone", f, boneLeft[f]!);
   });
-  Object.keys(airRight).forEach(k => {
+  Object.keys(airRight).forEach((k) => {
     const f = Number(k) as Frequency;
     r = updateThreshold(r, "right", "air", f, airRight[f]!);
   });
-  Object.keys(boneRight).forEach(k => {
+  Object.keys(boneRight).forEach((k) => {
     const f = Number(k) as Frequency;
     r = updateThreshold(r, "right", "bone", f, boneRight[f]!);
   });
@@ -64,7 +64,7 @@ export const SAMPLE_CASES: SampleCase[] = [
     label: "单侧传导性损失",
     description: "右耳传导性聋，气骨导间距明显，左耳基本正常（陈女士案例）",
     build: () => {
-      let r = buildFromMap(
+      const r = buildFromMap(
         { 250: 10, 500: 8, 1000: 10, 2000: 12, 4000: 15, 8000: 20 },
         { 250: 8, 500: 6, 1000: 8, 2000: 10, 4000: 12, 8000: 16 },
         { 250: 55, 500: 52, 1000: 48, 2000: 40, 4000: 35, 8000: 30 },
@@ -109,6 +109,6 @@ export const SAMPLE_CASES: SampleCase[] = [
 ];
 
 export function loadSampleCase(id: string): HearingRecord | null {
-  const found = SAMPLE_CASES.find(c => c.id === id);
+  const found = SAMPLE_CASES.find((c) => c.id === id);
   return found ? found.build() : null;
 }

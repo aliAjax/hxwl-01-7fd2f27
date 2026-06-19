@@ -12,7 +12,9 @@ export default function ConflictResolver({ customerId, onClose }: Props) {
   const [diffs, setDiffs] = useState<ConflictDiff[]>([]);
   const [selections, setSelections] = useState<Record<string, "local" | "remote">>({});
   const [resolving, setResolving] = useState(false);
-  const [resolutionStrategy, setResolutionStrategy] = useState<"local" | "remote" | "merge">("merge");
+  const [resolutionStrategy, setResolutionStrategy] = useState<"local" | "remote" | "merge">(
+    "merge"
+  );
 
   useEffect(() => {
     computeConflictDiff(customerId).then(setDiffs);
@@ -70,7 +72,8 @@ export default function ConflictResolver({ customerId, onClose }: Props) {
           <div>
             <h2>⚡ 编辑冲突处理</h2>
             <p className="muted small">
-              {profile ? `${profile.name} · ${profile.customerNo}` : customerId} · 本地版本与远程版本存在 {diffs.length} 处差异
+              {profile ? `${profile.name} · ${profile.customerNo}` : customerId} ·
+              本地版本与远程版本存在 {diffs.length} 处差异
             </p>
           </div>
           <button className="modal-close" onClick={onClose}>
@@ -94,12 +97,14 @@ export default function ConflictResolver({ customerId, onClose }: Props) {
               <div className="conflict-version-box remote">
                 <div className="cv-label">☁ 远程版本</div>
                 <div className="cv-version">
-                  v{profile.version}{profile.conflict?.remoteVersionId ? "-远程" : ""}
+                  v{profile.version}
+                  {profile.conflict?.remoteVersionId ? "-远程" : ""}
                 </div>
                 <div className="cv-meta">
                   编辑者: {profile.conflict?.remoteEditedBy || "未知用户"}
                   <br />
-                  时间: {profile.conflict?.remoteEditedAt ? fmt(profile.conflict.remoteEditedAt) : "未知"}
+                  时间:{" "}
+                  {profile.conflict?.remoteEditedAt ? fmt(profile.conflict.remoteEditedAt) : "未知"}
                 </div>
               </div>
             </div>
@@ -180,12 +185,16 @@ export default function ConflictResolver({ customerId, onClose }: Props) {
                         )}
                       </div>
                       <div className="diff-compare">
-                        <div className={`diff-col ${resolutionStrategy === "merge" && choice === "local" ? "picked" : resolutionStrategy === "local" ? "picked" : ""}`}>
+                        <div
+                          className={`diff-col ${resolutionStrategy === "merge" && choice === "local" ? "picked" : resolutionStrategy === "local" ? "picked" : ""}`}
+                        >
                           <div className="diff-col-label">本地</div>
                           <div className="diff-col-value">{formatVal(d.localValue)}</div>
                         </div>
                         <div className="diff-col-divider">↔</div>
-                        <div className={`diff-col ${resolutionStrategy === "merge" && choice === "remote" ? "picked" : resolutionStrategy === "remote" ? "picked" : ""}`}>
+                        <div
+                          className={`diff-col ${resolutionStrategy === "merge" && choice === "remote" ? "picked" : resolutionStrategy === "remote" ? "picked" : ""}`}
+                        >
                           <div className="diff-col-label remote-label">远程</div>
                           <div className="diff-col-value">{formatVal(d.remoteValue)}</div>
                         </div>

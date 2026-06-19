@@ -20,7 +20,7 @@ export function useStepStatus({
   effectiveAggregate,
   activeWorkflowRecords,
   activeLatestWorkflowRecord,
-  summaryData,
+  summaryData
 }: UseStepStatusParams) {
   const getFlowProgress = useCallback(() => {
     const steps = FLOW_STEPS.map((s) => s.key);
@@ -36,42 +36,51 @@ export function useStepStatus({
     return { completed, current, remaining };
   }, [activeStep]);
 
-  const getStepStatus = useCallback((step: FlowStep): StepStatus => {
-    const steps = FLOW_STEPS.map((s) => s.key);
-    const currentIdx = steps.indexOf(activeStep);
-    const stepIdx = steps.indexOf(step);
+  const getStepStatus = useCallback(
+    (step: FlowStep): StepStatus => {
+      const steps = FLOW_STEPS.map((s) => s.key);
+      const currentIdx = steps.indexOf(activeStep);
+      const stepIdx = steps.indexOf(step);
 
-    if (stepIdx === currentIdx) return "current";
-    if (stepIdx < currentIdx) return "completed";
+      if (stepIdx === currentIdx) return "current";
+      if (stepIdx < currentIdx) return "completed";
 
-    if (!effectiveAggregate) return "unavailable";
+      if (!effectiveAggregate) return "unavailable";
 
-    if (step === "hearing") {
-      return effectiveAggregate.audiograms.length > 0 ? "completed" : "pending";
-    }
-    if (step === "fitting") {
-      return effectiveAggregate.fittings.length > 0 || activeWorkflowRecords.length > 0 ? "completed" : "pending";
-    }
-    if (step === "review") {
-      if (activeLatestWorkflowRecord) {
-        if (activeLatestWorkflowRecord.status === "review_approved" || activeLatestWorkflowRecord.status === "completed") return "completed";
-        if (activeLatestWorkflowRecord.status === "pending_review") return "current";
+      if (step === "hearing") {
+        return effectiveAggregate.audiograms.length > 0 ? "completed" : "pending";
       }
-      if (effectiveAggregate.fittings.length > 0) return "pending";
-      return "unavailable";
-    }
-    if (step === "comparison") {
-      return effectiveAggregate.comparisons.length > 0 ? "completed" : "pending";
-    }
-    if (step === "followup") {
-      return effectiveAggregate.followUps.length > 0 ? "completed" : "pending";
-    }
-    if (step === "summary") {
-      return summaryData ? "completed" : "pending";
-    }
+      if (step === "fitting") {
+        return effectiveAggregate.fittings.length > 0 || activeWorkflowRecords.length > 0
+          ? "completed"
+          : "pending";
+      }
+      if (step === "review") {
+        if (activeLatestWorkflowRecord) {
+          if (
+            activeLatestWorkflowRecord.status === "review_approved" ||
+            activeLatestWorkflowRecord.status === "completed"
+          )
+            return "completed";
+          if (activeLatestWorkflowRecord.status === "pending_review") return "current";
+        }
+        if (effectiveAggregate.fittings.length > 0) return "pending";
+        return "unavailable";
+      }
+      if (step === "comparison") {
+        return effectiveAggregate.comparisons.length > 0 ? "completed" : "pending";
+      }
+      if (step === "followup") {
+        return effectiveAggregate.followUps.length > 0 ? "completed" : "pending";
+      }
+      if (step === "summary") {
+        return summaryData ? "completed" : "pending";
+      }
 
-    return "pending";
-  }, [activeStep, effectiveAggregate, activeWorkflowRecords, activeLatestWorkflowRecord, summaryData]);
+      return "pending";
+    },
+    [activeStep, effectiveAggregate, activeWorkflowRecords, activeLatestWorkflowRecord, summaryData]
+  );
 
   return { getFlowProgress, getStepStatus };
 }

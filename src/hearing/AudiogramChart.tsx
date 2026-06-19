@@ -38,11 +38,9 @@ export default function AudiogramChart({ record, width = 720 }: Props) {
   const plotW = viewW - PAD.left - PAD.right;
   const plotH = viewH - PAD.top - PAD.bottom;
 
-  const yToPx = (val: number) =>
-    PAD.top + ((val - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
+  const yToPx = (val: number) => PAD.top + ((val - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
 
-  const xToPx = (idx: number) =>
-    PAD.left + (idx / (FREQUENCIES.length - 1)) * plotW;
+  const xToPx = (idx: number) => PAD.left + (idx / (FREQUENCIES.length - 1)) * plotW;
 
   const yTicks = useMemo(() => {
     const arr: number[] = [];
@@ -65,7 +63,7 @@ export default function AudiogramChart({ record, width = 720 }: Props) {
     const points = record[side][cond];
     const validPoints = points
       .map((p, i) => ({ ...p, idx: i }))
-      .filter(p => p.value !== null && p.valid);
+      .filter((p) => p.value !== null && p.valid);
 
     if (validPoints.length === 0) return { line: null, symbols: [] };
 
@@ -84,7 +82,7 @@ export default function AudiogramChart({ record, width = 720 }: Props) {
         dashed
       });
     }
-    pathD = segments.map(s => s.d).join(" ");
+    pathD = segments.map((s) => s.d).join(" ");
 
     const color = COLOR[side];
     const lineEl = (
@@ -105,7 +103,7 @@ export default function AudiogramChart({ record, width = 720 }: Props) {
       </g>
     );
 
-    const symbols: ReactElement[] = validPoints.map(p => {
+    const symbols: ReactElement[] = validPoints.map((p) => {
       const cx = xToPx(p.idx);
       const cy = yToPx(p.value as number);
       const size = cond === "air" ? 9 : 8;
@@ -136,15 +134,7 @@ export default function AudiogramChart({ record, width = 720 }: Props) {
       }
       if (side === "right" && cond === "air") {
         return (
-          <circle
-            key={key}
-            cx={cx}
-            cy={cy}
-            r={size}
-            fill="none"
-            stroke={color}
-            strokeWidth={2}
-          />
+          <circle key={key} cx={cx} cy={cy} r={size} fill="none" stroke={color} strokeWidth={2} />
         );
       }
       if (side === "left" && cond === "bone") {
@@ -222,14 +212,12 @@ export default function AudiogramChart({ record, width = 720 }: Props) {
   const rightBone = drawSeries("right", "bone");
 
   const invalidMarks: ReactElement[] = [];
-  (["left", "right"] as EarSide[]).forEach(side => {
-    (["air", "bone"] as ConductionType[]).forEach(cond => {
+  (["left", "right"] as EarSide[]).forEach((side) => {
+    (["air", "bone"] as ConductionType[]).forEach((cond) => {
       record[side][cond].forEach((p, i) => {
         if (!p.valid && p.value !== null) {
           const cx = xToPx(i);
-          const cy = yToPx(
-            Math.min(Y_MAX - 5, Math.max(Y_MIN + 10, p.value as number))
-          );
+          const cy = yToPx(Math.min(Y_MAX - 5, Math.max(Y_MIN + 10, p.value as number)));
           invalidMarks.push(
             <g key={`inv-${side}-${cond}-${p.frequency}`}>
               <circle
@@ -258,8 +246,7 @@ export default function AudiogramChart({ record, width = 720 }: Props) {
     });
   });
 
-  const xLabelFor = (f: Frequency) =>
-    f >= 1000 ? `${f / 1000}k` : String(f);
+  const xLabelFor = (f: Frequency) => (f >= 1000 ? `${f / 1000}k` : String(f));
 
   return (
     <div className="audiogram-wrap" ref={wrapRef}>
@@ -273,17 +260,8 @@ export default function AudiogramChart({ record, width = 720 }: Props) {
           aria-label="听力图"
         >
           <defs>
-            <pattern
-              id="audiogramNormalArea"
-              width="8"
-              height="8"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 0 8 L 8 0"
-                stroke={COLOR.areaBorderNormal}
-                strokeWidth="0.6"
-              />
+            <pattern id="audiogramNormalArea" width="8" height="8" patternUnits="userSpaceOnUse">
+              <path d="M 0 8 L 8 0" stroke={COLOR.areaBorderNormal} strokeWidth="0.6" />
             </pattern>
           </defs>
 
@@ -303,7 +281,7 @@ export default function AudiogramChart({ record, width = 720 }: Props) {
             opacity={0.4}
           />
 
-          {yTicks.map(v => {
+          {yTicks.map((v) => {
             const y = yToPx(v);
             const strong = v % 20 === 0;
             return (
@@ -439,13 +417,7 @@ export default function AudiogramChart({ record, width = 720 }: Props) {
               fill="rgba(255,255,255,0.85)"
               stroke={COLOR.grid}
             />
-            <text
-              x={PAD.left + 18}
-              y={PAD.top + 22}
-              fontSize={11}
-              fill="#172033"
-              fontWeight={600}
-            >
+            <text x={PAD.left + 18} y={PAD.top + 22} fontSize={11} fill="#172033" fontWeight={600}>
               基线: {THRESHOLD_MIN} ~ {THRESHOLD_MAX} dB HL
             </text>
           </g>

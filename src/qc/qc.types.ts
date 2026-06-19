@@ -1,5 +1,12 @@
 export type ReviewStatus = "pending" | "approved" | "rejected";
-export type QcFilter = "all" | "pending" | "approved" | "rejected" | "incomplete" | "abnormal" | "feedbackMissing";
+export type QcFilter =
+  | "all"
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "incomplete"
+  | "abnormal"
+  | "feedbackMissing";
 
 export interface RequiredField {
   key: string;

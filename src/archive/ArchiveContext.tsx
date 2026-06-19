@@ -21,12 +21,7 @@ import type {
   VersionSnapshot
 } from "./archive.types";
 import { generateVersionId } from "./archive.types";
-import {
-  SyncProvider,
-  useSync,
-  getSyncManager,
-  getConflictResolver
-} from "./sync";
+import { SyncProvider, useSync, getSyncManager, getConflictResolver } from "./sync";
 
 type LoadingState = "idle" | "loading" | "loaded" | "error";
 
@@ -369,8 +364,18 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       const merged: ComparisonRecord = {
         entityType: "comparison",
         customerId: c.customerId || "",
-        initial: c.initial || { speechRecognitionRate: null, feedbackWhistle: "", gainAdjustment: "", fittingStage: "初配" },
-        followUp: c.followUp || { speechRecognitionRate: null, feedbackWhistle: "", gainAdjustment: "", fittingStage: "复调" },
+        initial: c.initial || {
+          speechRecognitionRate: null,
+          feedbackWhistle: "",
+          gainAdjustment: "",
+          fittingStage: "初配"
+        },
+        followUp: c.followUp || {
+          speechRecognitionRate: null,
+          feedbackWhistle: "",
+          gainAdjustment: "",
+          fittingStage: "复调"
+        },
         id: c.id || `cmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
         createdAt: now,
         updatedAt: now,
@@ -469,13 +474,18 @@ export function ArchiveProvider({ children }: { children: ReactNode }) {
       if (!local) return [];
 
       if (local.conflict?.hasConflict && local.conflict.remoteEntity) {
-        const diff = conflictResolver.detectConflicts(local, local.conflict.remoteEntity as ArchiveEntity);
+        const diff = conflictResolver.detectConflicts(
+          local,
+          local.conflict.remoteEntity as ArchiveEntity
+        );
         setConflictDiffs(diff);
         return diff;
       }
 
       const allVersions = await db.getVersions(customerId);
-      const remoteSnapshot = allVersions.find((v) => v.editedBy !== "当前用户" && v.versionId !== local.versionId);
+      const remoteSnapshot = allVersions.find(
+        (v) => v.editedBy !== "当前用户" && v.versionId !== local.versionId
+      );
       if (!remoteSnapshot) {
         const simulated: CustomerProfile = {
           ...JSON.parse(JSON.stringify(local)),

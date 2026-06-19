@@ -1,6 +1,17 @@
 import { getArchiveDB } from "../archive/archive.storage";
-import type { CustomerProfile, AudiogramRecord, FittingRecord, FollowUpRecord, ComparisonRecord } from "../archive/archive.types";
-import { generateId, generateVersionId, FREQUENCIES, DEFAULT_EAR_AUDIOGRAM } from "../archive/archive.types";
+import type {
+  CustomerProfile,
+  AudiogramRecord,
+  FittingRecord,
+  FollowUpRecord,
+  ComparisonRecord
+} from "../archive/archive.types";
+import {
+  generateId,
+  generateVersionId,
+  FREQUENCIES,
+  DEFAULT_EAR_AUDIOGRAM
+} from "../archive/archive.types";
 
 const MIGRATION_KEY = "flow_sample_migrated_v2";
 
@@ -28,9 +39,9 @@ interface LegacyFollowUp {
 }
 
 const HEARING_LOSS_MAP: Record<string, CustomerProfile["hearingLossType"]> = {
-  "双耳高频下降": "感音神经性",
-  "单侧传导性损失": "传导性",
-  "老人语频区下降": "感音神经性",
+  双耳高频下降: "感音神经性",
+  单侧传导性损失: "传导性",
+  老人语频区下降: "感音神经性"
 };
 
 const CUSTOMER_NAME_MAP: Record<string, string> = {
@@ -42,7 +53,7 @@ const CUSTOMER_NAME_MAP: Record<string, string> = {
   "Li-132": "李先生",
   "Sun-045": "孙志强",
   "Zhou-088": "周丽娟",
-  "Wu-023": "吴明亮",
+  "Wu-023": "吴明亮"
 };
 
 const CUSTOMER_PHONE_MAP: Record<string, string> = {
@@ -54,22 +65,22 @@ const CUSTOMER_PHONE_MAP: Record<string, string> = {
   "Li-132": "13400134006",
   "Sun-045": "13300133007",
   "Zhou-088": "13200132008",
-  "Wu-023": "13100131009",
+  "Wu-023": "13100131009"
 };
 
 const SAMPLE_AUDIOGRAMS: Record<string, { left: number[]; right: number[] }> = {
   "Liu-024": {
     left: [15, 18, 22, 35, 58, 72],
-    right: [12, 16, 20, 32, 55, 68],
+    right: [12, 16, 20, 32, 55, 68]
   },
   "Chen-118": {
     left: [10, 8, 10, 12, 15, 20],
-    right: [55, 52, 48, 40, 35, 30],
+    right: [55, 52, 48, 40, 35, 30]
   },
   "Zhao-077": {
     left: [28, 42, 48, 52, 58, 62],
-    right: [26, 40, 46, 50, 54, 58],
-  },
+    right: [26, 40, 46, 50, 54, 58]
+  }
 };
 
 function now() {
@@ -97,7 +108,7 @@ function buildCustomerProfile(legacy: LegacyRecord, customerNo: string): Custome
     versionId: generateVersionId(),
     editedBy: "数据迁移",
     editedAt: t,
-    syncStatus: "local",
+    syncStatus: "local"
   };
 }
 
@@ -109,12 +120,12 @@ function buildAudiogram(customerId: string, legacyCustomerId: string): Audiogram
   const leftAir = FREQUENCIES.map((f, i) => ({
     frequency: f,
     value: sampleData.left[i],
-    valid: true,
+    valid: true
   }));
   const rightAir = FREQUENCIES.map((f, i) => ({
     frequency: f,
     value: sampleData.right[i],
-    valid: true,
+    valid: true
   }));
 
   return {
@@ -128,7 +139,7 @@ function buildAudiogram(customerId: string, legacyCustomerId: string): Audiogram
     right: { air: rightAir, bone: JSON.parse(JSON.stringify(DEFAULT_EAR_AUDIOGRAM.bone)) },
     pta: {
       left: Math.round(sampleData.left.slice(1, 4).reduce((a, b) => a + b, 0) / 3),
-      right: Math.round(sampleData.right.slice(1, 4).reduce((a, b) => a + b, 0) / 3),
+      right: Math.round(sampleData.right.slice(1, 4).reduce((a, b) => a + b, 0) / 3)
     },
     createdAt: t - 86400000 * 5,
     updatedAt: t,
@@ -136,7 +147,7 @@ function buildAudiogram(customerId: string, legacyCustomerId: string): Audiogram
     versionId: generateVersionId(),
     editedBy: "数据迁移",
     editedAt: t,
-    syncStatus: "local",
+    syncStatus: "local"
   };
 }
 
@@ -151,7 +162,7 @@ function buildFitting(customerId: string, legacy: LegacyRecord): FittingRecord {
     stage: legacy.fittingStage as FittingRecord["stage"],
     hearingAid: {
       left: { model: legacy.hearingAidModel },
-      right: { model: legacy.hearingAidModel },
+      right: { model: legacy.hearingAidModel }
     },
     gainAdjustment: { binaural: legacy.gainAdjustment },
     userFeedback: legacy.userFeedback,
@@ -162,7 +173,7 @@ function buildFitting(customerId: string, legacy: LegacyRecord): FittingRecord {
     versionId: generateVersionId(),
     editedBy: "数据迁移",
     editedAt: t,
-    syncStatus: "local",
+    syncStatus: "local"
   };
 }
 
@@ -186,7 +197,7 @@ function buildFollowUp(customerId: string, fu: LegacyFollowUp): FollowUpRecord {
     versionId: generateVersionId(),
     editedBy: "数据迁移",
     editedAt: t,
-    syncStatus: "local",
+    syncStatus: "local"
   };
 }
 
@@ -204,14 +215,14 @@ function buildComparison(customerId: string, legacy: LegacyRecord): ComparisonRe
       feedbackWhistle: "初配后偶有啸叫",
       gainAdjustment: legacy.gainAdjustment,
       fittingStage: "初配",
-      recordDate: new Date(t - 86400000 * 30).toISOString().slice(0, 10),
+      recordDate: new Date(t - 86400000 * 30).toISOString().slice(0, 10)
     },
     followUp: {
       speechRecognitionRate: 76,
       feedbackWhistle: "复调后啸叫消失",
       gainAdjustment: "优化后增益调整",
       fittingStage: legacy.fittingStage,
-      recordDate: new Date(t - 86400000 * 3).toISOString().slice(0, 10),
+      recordDate: new Date(t - 86400000 * 3).toISOString().slice(0, 10)
     },
     createdAt: t,
     updatedAt: t,
@@ -219,7 +230,7 @@ function buildComparison(customerId: string, legacy: LegacyRecord): ComparisonRe
     versionId: generateVersionId(),
     editedBy: "数据迁移",
     editedAt: t,
-    syncStatus: "local",
+    syncStatus: "local"
   };
 }
 
@@ -308,7 +319,7 @@ export async function migrateSampleDataToArchive(
       versionId: generateVersionId(),
       editedBy: "数据迁移",
       editedAt: now(),
-      syncStatus: "local",
+      syncStatus: "local"
     };
 
     try {

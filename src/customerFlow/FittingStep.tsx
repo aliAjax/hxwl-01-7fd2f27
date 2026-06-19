@@ -6,8 +6,21 @@ import type { CustomerProfile } from "../archive/archive.types";
 import type { WorkflowFittingRecord } from "../workflow/workflow.types";
 import { ROLE_LABELS, STATUS_LABELS } from "../workflow/workflow.types";
 
-export function FittingStep({ customerId, profile }: { customerId: string | null; profile: CustomerProfile }) {
-  const { createFittingAndWorkflow, activeWorkflowRecords, activeLatestWorkflowRecord, refreshFlow, submitForReviewFromFlow, goToNextStep } = useCustomerFlow();
+export function FittingStep({
+  customerId,
+  profile
+}: {
+  customerId: string | null;
+  profile: CustomerProfile;
+}) {
+  const {
+    createFittingAndWorkflow,
+    activeWorkflowRecords,
+    activeLatestWorkflowRecord,
+    refreshFlow,
+    submitForReviewFromFlow,
+    goToNextStep
+  } = useCustomerFlow();
   const { state, submitForReview, approveReview, rejectReview, canPerformAction } = useWorkflow();
   const { aggregate } = useArchive();
 
@@ -15,7 +28,7 @@ export function FittingStep({ customerId, profile }: { customerId: string | null
     fittingStage: "初配" as "初配" | "复调" | "复诊",
     hearingAidModel: "",
     gainAdjustment: "",
-    userFeedback: "",
+    userFeedback: ""
   });
 
   const [saving, setSaving] = useState(false);
@@ -26,7 +39,7 @@ export function FittingStep({ customerId, profile }: { customerId: string | null
         fittingStage: activeLatestWorkflowRecord.fittingStage as "初配" | "复调" | "复诊",
         hearingAidModel: activeLatestWorkflowRecord.hearingAidModel,
         gainAdjustment: activeLatestWorkflowRecord.gainAdjustment,
-        userFeedback: activeLatestWorkflowRecord.userFeedback,
+        userFeedback: activeLatestWorkflowRecord.userFeedback
       });
     }
   }, [activeLatestWorkflowRecord]);
@@ -40,11 +53,11 @@ export function FittingStep({ customerId, profile }: { customerId: string | null
         stage: fittingData.fittingStage,
         hearingAid: {
           left: { model: fittingData.hearingAidModel },
-          right: { model: fittingData.hearingAidModel },
+          right: { model: fittingData.hearingAidModel }
         },
         gainAdjustment: { binaural: fittingData.gainAdjustment },
         userFeedback: fittingData.userFeedback,
-        fitter: state.currentUserName,
+        fitter: state.currentUserName
       });
 
       await refreshFlow();
@@ -78,7 +91,12 @@ export function FittingStep({ customerId, profile }: { customerId: string | null
             <span>验配阶段</span>
             <select
               value={fittingData.fittingStage}
-              onChange={(e) => setFittingData((prev) => ({ ...prev, fittingStage: e.target.value as typeof fittingData.fittingStage }))}
+              onChange={(e) =>
+                setFittingData((prev) => ({
+                  ...prev,
+                  fittingStage: e.target.value as typeof fittingData.fittingStage
+                }))
+              }
             >
               <option value="初配">初配</option>
               <option value="复调">复调</option>
@@ -89,7 +107,9 @@ export function FittingStep({ customerId, profile }: { customerId: string | null
             <span>助听器型号</span>
             <input
               value={fittingData.hearingAidModel}
-              onChange={(e) => setFittingData((prev) => ({ ...prev, hearingAidModel: e.target.value }))}
+              onChange={(e) =>
+                setFittingData((prev) => ({ ...prev, hearingAidModel: e.target.value }))
+              }
               placeholder="如：Phonak Audeo Paradise P90"
             />
           </label>
@@ -98,7 +118,9 @@ export function FittingStep({ customerId, profile }: { customerId: string | null
             <textarea
               rows={3}
               value={fittingData.gainAdjustment}
-              onChange={(e) => setFittingData((prev) => ({ ...prev, gainAdjustment: e.target.value }))}
+              onChange={(e) =>
+                setFittingData((prev) => ({ ...prev, gainAdjustment: e.target.value }))
+              }
               placeholder="描述增益调整的频段、幅度、压缩比变化等"
             />
           </label>
@@ -107,20 +129,28 @@ export function FittingStep({ customerId, profile }: { customerId: string | null
             <textarea
               rows={3}
               value={fittingData.userFeedback}
-              onChange={(e) => setFittingData((prev) => ({ ...prev, userFeedback: e.target.value }))}
+              onChange={(e) =>
+                setFittingData((prev) => ({ ...prev, userFeedback: e.target.value }))
+              }
               placeholder="佩戴后的反馈，如清晰度、舒适度、啸叫情况等"
             />
           </label>
         </div>
         <div className="fitting-step-actions">
-          <button className="primary-action" onClick={handleCreateFitting} disabled={saving || !customerId}>
+          <button
+            className="primary-action"
+            onClick={handleCreateFitting}
+            disabled={saving || !customerId}
+          >
             {saving ? "保存中..." : "💾 保存验配记录"}
           </button>
-          {activeLatestWorkflowRecord && activeLatestWorkflowRecord.status === "draft" && canSubmit && (
-            <button className="primary-action" onClick={handleSubmitForReview}>
-              ✅ 提交审核
-            </button>
-          )}
+          {activeLatestWorkflowRecord &&
+            activeLatestWorkflowRecord.status === "draft" &&
+            canSubmit && (
+              <button className="primary-action" onClick={handleSubmitForReview}>
+                ✅ 提交审核
+              </button>
+            )}
         </div>
       </div>
 
@@ -137,12 +167,30 @@ export function FittingStep({ customerId, profile }: { customerId: string | null
                   </span>
                 </div>
                 <div className="fitting-record-body">
-                  <p><span className="muted">助听器：</span>{rec.hearingAidModel || "—"}</p>
-                  <p><span className="muted">增益调整：</span>{rec.gainAdjustment || "—"}</p>
-                  <p><span className="muted">用户反馈：</span>{rec.userFeedback || "—"}</p>
-                  <p><span className="muted">左耳PTA：</span>{rec.leftPta || 0} dB</p>
-                  <p><span className="muted">右耳PTA：</span>{rec.rightPta || 0} dB</p>
-                  <p><span className="muted">言语识别率：</span>{rec.speechRecognitionRate || 0}%</p>
+                  <p>
+                    <span className="muted">助听器：</span>
+                    {rec.hearingAidModel || "—"}
+                  </p>
+                  <p>
+                    <span className="muted">增益调整：</span>
+                    {rec.gainAdjustment || "—"}
+                  </p>
+                  <p>
+                    <span className="muted">用户反馈：</span>
+                    {rec.userFeedback || "—"}
+                  </p>
+                  <p>
+                    <span className="muted">左耳PTA：</span>
+                    {rec.leftPta || 0} dB
+                  </p>
+                  <p>
+                    <span className="muted">右耳PTA：</span>
+                    {rec.rightPta || 0} dB
+                  </p>
+                  <p>
+                    <span className="muted">言语识别率：</span>
+                    {rec.speechRecognitionRate || 0}%
+                  </p>
                 </div>
                 <div className="fitting-record-actions">
                   {rec.status === "draft" && canSubmit && (
@@ -152,8 +200,15 @@ export function FittingStep({ customerId, profile }: { customerId: string | null
                   )}
                   {rec.status === "pending_review" && canReview && (
                     <>
-                      <button className="ghost-btn" onClick={() => rejectReview(rec.id, "需要修改")}>退回</button>
-                      <button className="primary-action" onClick={() => approveReview(rec.id)}>通过</button>
+                      <button
+                        className="ghost-btn"
+                        onClick={() => rejectReview(rec.id, "需要修改")}
+                      >
+                        退回
+                      </button>
+                      <button className="primary-action" onClick={() => approveReview(rec.id)}>
+                        通过
+                      </button>
                     </>
                   )}
                 </div>
@@ -174,11 +229,30 @@ export function FittingStep({ customerId, profile }: { customerId: string | null
                   <span className="fitting-status status-archived">已归档</span>
                 </div>
                 <div className="fitting-record-body">
-                  <p><span className="muted">日期：</span>{f.fittingDate}</p>
-                  <p><span className="muted">助听器：</span>{f.hearingAid?.left?.model || f.hearingAid?.right?.model || "—"}</p>
-                  <p><span className="muted">增益调整：</span>{f.gainAdjustment?.binaural || f.gainAdjustment?.left || "—"}</p>
-                  {f.userFeedback && <p><span className="muted">用户反馈：</span>{f.userFeedback}</p>}
-                  {f.fitter && <p><span className="muted">验配师：</span>{f.fitter}</p>}
+                  <p>
+                    <span className="muted">日期：</span>
+                    {f.fittingDate}
+                  </p>
+                  <p>
+                    <span className="muted">助听器：</span>
+                    {f.hearingAid?.left?.model || f.hearingAid?.right?.model || "—"}
+                  </p>
+                  <p>
+                    <span className="muted">增益调整：</span>
+                    {f.gainAdjustment?.binaural || f.gainAdjustment?.left || "—"}
+                  </p>
+                  {f.userFeedback && (
+                    <p>
+                      <span className="muted">用户反馈：</span>
+                      {f.userFeedback}
+                    </p>
+                  )}
+                  {f.fitter && (
+                    <p>
+                      <span className="muted">验配师：</span>
+                      {f.fitter}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

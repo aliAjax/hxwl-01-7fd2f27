@@ -1,5 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
-import { QcRecord, ReviewStatus, QcFilter, reviewStatusLabelMap, qcFilterOptions } from "./qc.types";
+import {
+  QcRecord,
+  ReviewStatus,
+  QcFilter,
+  reviewStatusLabelMap,
+  qcFilterOptions
+} from "./qc.types";
 import { useWorkflow } from "../workflow/WorkflowContext";
 import { getReviewableRecords, getAuditReasons } from "./qc.utils";
 
@@ -11,10 +17,7 @@ function CompletenessBar({ value }: { value: number }) {
   return (
     <div className="qc-completeness-wrap">
       <div className="qc-completeness-bar">
-        <div
-          className={`qc-completeness-fill ${colorClass}`}
-          style={{ width: `${value}%` }}
-        />
+        <div className={`qc-completeness-fill ${colorClass}`} style={{ width: `${value}%` }} />
       </div>
       <span className="qc-completeness-text">{value}%</span>
     </div>
@@ -23,19 +26,20 @@ function CompletenessBar({ value }: { value: number }) {
 
 function StatusBadge({ status }: { status: ReviewStatus }) {
   return (
-    <span className={`qc-status-badge qc-status-${status}`}>
-      {reviewStatusLabelMap[status]}
-    </span>
+    <span className={`qc-status-badge qc-status-${status}`}>{reviewStatusLabelMap[status]}</span>
   );
 }
 
 function AlertChips({ record }: { record: QcRecord }) {
   const chips: { text: string; type: "incomplete" | "abnormal" | "feedback" }[] = [];
   if (record.fieldCompleteness < 85) {
-    chips.push({ text: `${record.requiredFields.filter(f => !f.completed).length}项字段缺失`, type: "incomplete" });
+    chips.push({
+      text: `${record.requiredFields.filter((f) => !f.completed).length}项字段缺失`,
+      type: "incomplete"
+    });
   }
   if (record.hasAbnormalGain) {
-    const abnormalCount = record.gainAdjustments.filter(g => g.isAbnormal).length;
+    const abnormalCount = record.gainAdjustments.filter((g) => g.isAbnormal).length;
     chips.push({ text: `${abnormalCount}处增益异常`, type: "abnormal" });
   }
   if (record.feedbackMissing) {
@@ -82,7 +86,15 @@ function GainTable({ record }: { record: QcRecord }) {
               <td className="qc-gain-freq">{g.frequency}</td>
               <td>{g.baseline} dB</td>
               <td>{g.adjusted} dB</td>
-              <td className={g.isAbnormal ? "qc-dev-abnormal" : g.deviation < 0 ? "qc-dev-negative" : "qc-dev-positive"}>
+              <td
+                className={
+                  g.isAbnormal
+                    ? "qc-dev-abnormal"
+                    : g.deviation < 0
+                      ? "qc-dev-negative"
+                      : "qc-dev-positive"
+                }
+              >
                 {g.deviation > 0 ? `+${g.deviation}` : g.deviation} dB
               </td>
               <td className="qc-gain-reason">{g.reason}</td>
@@ -97,8 +109,11 @@ function GainTable({ record }: { record: QcRecord }) {
 function FieldList({ record }: { record: QcRecord }) {
   return (
     <div className="qc-field-list">
-      {record.requiredFields.map(field => (
-        <div key={field.key} className={`qc-field-row ${field.completed ? "qc-field-done" : "qc-field-miss"}`}>
+      {record.requiredFields.map((field) => (
+        <div
+          key={field.key}
+          className={`qc-field-row ${field.completed ? "qc-field-done" : "qc-field-miss"}`}
+        >
           <div className="qc-field-head">
             <span className={`qc-field-dot ${field.completed ? "qc-dot-ok" : "qc-dot-miss"}`} />
             <span className="qc-field-label">{field.label}</span>
@@ -136,9 +151,7 @@ function ReviewModal({
       <div className="qc-modal-overlay" onClick={onClose} />
       <div className="qc-modal">
         <div className="qc-modal-header">
-          <h3>
-            {isApprove ? "审核通过确认" : "填写退回原因"}
-          </h3>
+          <h3>{isApprove ? "审核通过确认" : "填写退回原因"}</h3>
           <button className="qc-modal-close" onClick={onClose} aria-label="关闭">
             ×
           </button>
@@ -153,18 +166,24 @@ function ReviewModal({
           {isApprove ? (
             <div className="qc-modal-approve-tip">
               <div className="qc-modal-icon">✅</div>
-              <p>确认将 <strong>{record.customerName}</strong> 的验配记录标记为审核通过？</p>
+              <p>
+                确认将 <strong>{record.customerName}</strong> 的验配记录标记为审核通过？
+              </p>
               <p className="qc-modal-sub">通过后该记录将归档为已审核状态。</p>
             </div>
           ) : (
             <div className="qc-modal-reject-tip">
               <div className="qc-modal-icon">↩️</div>
-              <p>将 <strong>{record.customerName}</strong> 的记录退回给听力师修改</p>
+              <p>
+                将 <strong>{record.customerName}</strong> 的记录退回给听力师修改
+              </p>
               <p className="qc-modal-sub">退回后记录恢复为草稿状态，需填写退回原因。</p>
             </div>
           )}
 
-          <div className={`qc-modal-comment-form ${isApprove ? "qc-comment-optional" : "qc-comment-required"}`}>
+          <div
+            className={`qc-modal-comment-form ${isApprove ? "qc-comment-optional" : "qc-comment-required"}`}
+          >
             <label className="qc-comment-label">
               <span>
                 {isApprove ? "审核意见（可选）" : "退回原因"}
@@ -172,12 +191,13 @@ function ReviewModal({
               </span>
               <textarea
                 className="qc-comment-textarea"
-                placeholder={isApprove
-                  ? "可填写本次审核的备注说明，例如：字段完整、增益调整合理、用户反馈充分等"
-                  : "请详细描述退回原因，便于听力师修正（例如：增益调整异常、关键字段缺失、反馈内容不完整等）"
+                placeholder={
+                  isApprove
+                    ? "可填写本次审核的备注说明，例如：字段完整、增益调整合理、用户反馈充分等"
+                    : "请详细描述退回原因，便于听力师修正（例如：增益调整异常、关键字段缺失、反馈内容不完整等）"
                 }
                 value={comment}
-                onChange={e => setComment(e.target.value)}
+                onChange={(e) => setComment(e.target.value)}
                 rows={4}
               />
             </label>
@@ -185,7 +205,7 @@ function ReviewModal({
               <div className="qc-comment-suggest">
                 <span className="qc-suggest-label">常用原因：</span>
                 <div className="qc-suggest-chips">
-                  {getAuditReasons().map(s => (
+                  {getAuditReasons().map((s) => (
                     <button
                       key={s}
                       className="qc-suggest-chip"
@@ -288,7 +308,9 @@ function DetailDrawer({
           {!canReview && record.reviewStatus === "pending" && (
             <div className="qc-permission-tip">
               <span>🔒</span>
-              <p>当前角色无审核权限，请切换为 <strong>门店主管</strong> 后进行审核操作</p>
+              <p>
+                当前角色无审核权限，请切换为 <strong>门店主管</strong> 后进行审核操作
+              </p>
             </div>
           )}
 
@@ -350,9 +372,7 @@ function DetailDrawer({
             <div className="qc-section-title-row">
               <h3>
                 用户反馈
-                {record.feedbackMissing && (
-                  <span className="qc-section-alert">💬 反馈缺失</span>
-                )}
+                {record.feedbackMissing && <span className="qc-section-alert">💬 反馈缺失</span>}
               </h3>
             </div>
             {record.feedbackMissing ? (
@@ -361,7 +381,9 @@ function DetailDrawer({
                   <span className="qc-feedback-icon">⚠️</span>
                   <div>
                     <p className="qc-feedback-missing-title">用户反馈未填写</p>
-                    <p className="qc-feedback-missing-desc">{record.feedbackMissingReason || "请联系听力师补充回访记录"}</p>
+                    <p className="qc-feedback-missing-desc">
+                      {record.feedbackMissingReason || "请联系听力师补充回访记录"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -392,9 +414,7 @@ function DetailDrawer({
               ✅ 审核通过
             </button>
             {!canReview && (
-              <span className="qc-footer-hint">
-                🔒 请切换为「门店主管」角色后执行审核
-              </span>
+              <span className="qc-footer-hint">🔒 请切换为「门店主管」角色后执行审核</span>
             )}
           </div>
         )}
@@ -409,19 +429,14 @@ interface QcModuleProps {
 }
 
 export default function QcModule({ customerId, customerNo }: QcModuleProps) {
-  const {
-    state,
-    approveReview,
-    rejectReview,
-    canPerformAction
-  } = useWorkflow();
+  const { state, approveReview, rejectReview, canPerformAction } = useWorkflow();
 
   const records = useMemo<QcRecord[]>(() => {
     let reviewable = getReviewableRecords(state.records);
     if (customerId || customerNo) {
-      reviewable = reviewable.filter(r =>
-        (customerId && r.customerId === customerId) ||
-        (customerNo && r.customerId === customerNo)
+      reviewable = reviewable.filter(
+        (r) =>
+          (customerId && r.customerId === customerId) || (customerNo && r.customerId === customerNo)
       );
     }
     return reviewable;
@@ -432,7 +447,10 @@ export default function QcModule({ customerId, customerNo }: QcModuleProps) {
   const [activeFilter, setActiveFilter] = useState<QcFilter>("all");
   const [selectedRecord, setSelectedRecord] = useState<QcRecord | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [reviewModal, setReviewModal] = useState<{ record: QcRecord; mode: "approve" | "reject" } | null>(null);
+  const [reviewModal, setReviewModal] = useState<{
+    record: QcRecord;
+    mode: "approve" | "reject";
+  } | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -444,43 +462,46 @@ export default function QcModule({ customerId, customerNo }: QcModuleProps) {
 
   useEffect(() => {
     if (selectedRecord) {
-      const updated = records.find(r => r.id === selectedRecord.id);
+      const updated = records.find((r) => r.id === selectedRecord.id);
       if (updated) {
         setSelectedRecord(updated);
       }
     }
   }, [records, selectedRecord?.id]);
 
-  const counts = useMemo(() => ({
-    all: records.length,
-    pending: records.filter(r => r.reviewStatus === "pending").length,
-    approved: records.filter(r => r.reviewStatus === "approved").length,
-    rejected: records.filter(r => r.reviewStatus === "rejected").length,
-    incomplete: records.filter(r => r.fieldCompleteness < 85).length,
-    abnormal: records.filter(r => r.hasAbnormalGain).length,
-    feedbackMissing: records.filter(r => r.feedbackMissing).length
-  }), [records]);
+  const counts = useMemo(
+    () => ({
+      all: records.length,
+      pending: records.filter((r) => r.reviewStatus === "pending").length,
+      approved: records.filter((r) => r.reviewStatus === "approved").length,
+      rejected: records.filter((r) => r.reviewStatus === "rejected").length,
+      incomplete: records.filter((r) => r.fieldCompleteness < 85).length,
+      abnormal: records.filter((r) => r.hasAbnormalGain).length,
+      feedbackMissing: records.filter((r) => r.feedbackMissing).length
+    }),
+    [records]
+  );
 
   const filteredRecords = useMemo(() => {
     let list = records;
     switch (activeFilter) {
       case "pending":
-        list = list.filter(r => r.reviewStatus === "pending");
+        list = list.filter((r) => r.reviewStatus === "pending");
         break;
       case "approved":
-        list = list.filter(r => r.reviewStatus === "approved");
+        list = list.filter((r) => r.reviewStatus === "approved");
         break;
       case "rejected":
-        list = list.filter(r => r.reviewStatus === "rejected");
+        list = list.filter((r) => r.reviewStatus === "rejected");
         break;
       case "incomplete":
-        list = list.filter(r => r.fieldCompleteness < 85);
+        list = list.filter((r) => r.fieldCompleteness < 85);
         break;
       case "abnormal":
-        list = list.filter(r => r.hasAbnormalGain);
+        list = list.filter((r) => r.hasAbnormalGain);
         break;
       case "feedbackMissing":
-        list = list.filter(r => r.feedbackMissing);
+        list = list.filter((r) => r.feedbackMissing);
         break;
       default:
         break;
@@ -537,7 +558,9 @@ export default function QcModule({ customerId, customerNo }: QcModuleProps) {
     } else {
       const finalReason = reason || "退回修改";
       rejectReview(record.recordId, finalReason);
-      setToastMsg(`↩️ ${record.customerName} 已退回：${finalReason.slice(0, 20)}${finalReason.length > 20 ? "..." : ""}`);
+      setToastMsg(
+        `↩️ ${record.customerName} 已退回：${finalReason.slice(0, 20)}${finalReason.length > 20 ? "..." : ""}`
+      );
     }
 
     setReviewModal(null);
@@ -597,7 +620,7 @@ export default function QcModule({ customerId, customerNo }: QcModuleProps) {
       </div>
 
       <div className="qc-filters">
-        {qcFilterOptions.map(opt => (
+        {qcFilterOptions.map((opt) => (
           <button
             key={opt.key}
             className={`qc-filter-chip ${activeFilter === opt.key ? "qc-filter-active" : ""}`}
@@ -613,19 +636,17 @@ export default function QcModule({ customerId, customerNo }: QcModuleProps) {
         {filteredRecords.length === 0 ? (
           <div className="qc-empty">
             <div className="empty-icon">📋</div>
-            <h3>暂无{qcFilterOptions.find(f => f.key === activeFilter)?.label}的审核记录</h3>
+            <h3>暂无{qcFilterOptions.find((f) => f.key === activeFilter)?.label}的审核记录</h3>
           </div>
         ) : (
-          filteredRecords.map(record => (
+          filteredRecords.map((record) => (
             <article
               key={record.id}
               className={`qc-record-card qc-status-card-${record.reviewStatus}`}
               onClick={() => handleRecordClick(record)}
             >
               <div className="qc-card-left">
-                <div className="qc-card-index">
-                  {record.fittingStage.slice(0, 2)}
-                </div>
+                <div className="qc-card-index">{record.fittingStage.slice(0, 2)}</div>
               </div>
               <div className="qc-card-main">
                 <div className="qc-card-header">
@@ -654,7 +675,7 @@ export default function QcModule({ customerId, customerNo }: QcModuleProps) {
               {record.reviewStatus === "pending" && (
                 <div
                   className={`qc-card-actions ${!canReview ? "qc-actions-disabled" : ""}`}
-                  onClick={e => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <button
                     className="qc-card-btn qc-card-btn-reject"
@@ -674,9 +695,7 @@ export default function QcModule({ customerId, customerNo }: QcModuleProps) {
                   </button>
                 </div>
               )}
-              {record.reviewStatus !== "pending" && (
-                <div className="qc-card-arrow">→</div>
-              )}
+              {record.reviewStatus !== "pending" && <div className="qc-card-arrow">→</div>}
             </article>
           ))
         )}

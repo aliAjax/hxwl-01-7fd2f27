@@ -7,7 +7,7 @@ export function WorkbenchRoleChips() {
   const roleMap: { label: string; role: RoleType }[] = [
     { label: "听力师", role: "audiologist" },
     { label: "门店主管", role: "supervisor" },
-    { label: "复诊助理", role: "assistant" },
+    { label: "复诊助理", role: "assistant" }
   ];
   return (
     <div className="chips">
@@ -24,7 +24,7 @@ export function WorkbenchRoleChips() {
             background: state.currentRole === role ? "#ecfeff" : "#fff",
             color: state.currentRole === role ? "#155e75" : "#374151",
             fontWeight: state.currentRole === role ? 600 : 400,
-            fontSize: "14px",
+            fontSize: "14px"
           }}
         >
           {label}

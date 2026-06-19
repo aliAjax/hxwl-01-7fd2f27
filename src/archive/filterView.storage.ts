@@ -41,7 +41,7 @@ export function saveFilterView(name: string, filter: FilterState): FilterView {
     name,
     filter: { ...filter },
     createdAt: now,
-    updatedAt: now,
+    updatedAt: now
   };
   views.push(view);
   saveAll(views);

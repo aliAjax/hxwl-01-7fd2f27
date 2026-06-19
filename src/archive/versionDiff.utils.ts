@@ -59,55 +59,105 @@ const audiogramFields: FieldConfig[] = [
   { key: "testDate", label: "测试日期", group: "基本信息" },
   { key: "tester", label: "测试人员", group: "基本信息" },
   { key: "testEnvironment", label: "测试环境", group: "基本信息" },
-  { key: "left", label: "左耳", group: "听力数据", nested: true, nestedFields: [
-    { key: "air", label: "气导", nested: true, nestedFields: [
-      { key: "250", label: "250Hz" },
-      { key: "500", label: "500Hz" },
-      { key: "1000", label: "1000Hz" },
-      { key: "2000", label: "2000Hz" },
-      { key: "4000", label: "4000Hz" },
-      { key: "8000", label: "8000Hz" }
-    ]},
-    { key: "bone", label: "骨导", nested: true, nestedFields: [
-      { key: "250", label: "250Hz" },
-      { key: "500", label: "500Hz" },
-      { key: "1000", label: "1000Hz" },
-      { key: "2000", label: "2000Hz" },
-      { key: "4000", label: "4000Hz" },
-      { key: "8000", label: "8000Hz" }
-    ]}
-  ]},
-  { key: "right", label: "右耳", group: "听力数据", nested: true, nestedFields: [
-    { key: "air", label: "气导", nested: true, nestedFields: [
-      { key: "250", label: "250Hz" },
-      { key: "500", label: "500Hz" },
-      { key: "1000", label: "1000Hz" },
-      { key: "2000", label: "2000Hz" },
-      { key: "4000", label: "4000Hz" },
-      { key: "8000", label: "8000Hz" }
-    ]},
-    { key: "bone", label: "骨导", nested: true, nestedFields: [
-      { key: "250", label: "250Hz" },
-      { key: "500", label: "500Hz" },
-      { key: "1000", label: "1000Hz" },
-      { key: "2000", label: "2000Hz" },
-      { key: "4000", label: "4000Hz" },
-      { key: "8000", label: "8000Hz" }
-    ]}
-  ]},
-  { key: "speechRecognitionScore", label: "言语识别率", group: "言语测听", nested: true, nestedFields: [
-    { key: "left", label: "左耳" },
-    { key: "right", label: "右耳" },
-    { key: "binaural", label: "双耳" }
-  ]},
-  { key: "impedance", label: "阻抗测试", group: "其他检查", nested: true, nestedFields: [
-    { key: "left", label: "左耳" },
-    { key: "right", label: "右耳" }
-  ]},
-  { key: "pta", label: "纯音听阈均值", group: "统计数据", nested: true, nestedFields: [
-    { key: "left", label: "左耳PTA" },
-    { key: "right", label: "右耳PTA" }
-  ]},
+  {
+    key: "left",
+    label: "左耳",
+    group: "听力数据",
+    nested: true,
+    nestedFields: [
+      {
+        key: "air",
+        label: "气导",
+        nested: true,
+        nestedFields: [
+          { key: "250", label: "250Hz" },
+          { key: "500", label: "500Hz" },
+          { key: "1000", label: "1000Hz" },
+          { key: "2000", label: "2000Hz" },
+          { key: "4000", label: "4000Hz" },
+          { key: "8000", label: "8000Hz" }
+        ]
+      },
+      {
+        key: "bone",
+        label: "骨导",
+        nested: true,
+        nestedFields: [
+          { key: "250", label: "250Hz" },
+          { key: "500", label: "500Hz" },
+          { key: "1000", label: "1000Hz" },
+          { key: "2000", label: "2000Hz" },
+          { key: "4000", label: "4000Hz" },
+          { key: "8000", label: "8000Hz" }
+        ]
+      }
+    ]
+  },
+  {
+    key: "right",
+    label: "右耳",
+    group: "听力数据",
+    nested: true,
+    nestedFields: [
+      {
+        key: "air",
+        label: "气导",
+        nested: true,
+        nestedFields: [
+          { key: "250", label: "250Hz" },
+          { key: "500", label: "500Hz" },
+          { key: "1000", label: "1000Hz" },
+          { key: "2000", label: "2000Hz" },
+          { key: "4000", label: "4000Hz" },
+          { key: "8000", label: "8000Hz" }
+        ]
+      },
+      {
+        key: "bone",
+        label: "骨导",
+        nested: true,
+        nestedFields: [
+          { key: "250", label: "250Hz" },
+          { key: "500", label: "500Hz" },
+          { key: "1000", label: "1000Hz" },
+          { key: "2000", label: "2000Hz" },
+          { key: "4000", label: "4000Hz" },
+          { key: "8000", label: "8000Hz" }
+        ]
+      }
+    ]
+  },
+  {
+    key: "speechRecognitionScore",
+    label: "言语识别率",
+    group: "言语测听",
+    nested: true,
+    nestedFields: [
+      { key: "left", label: "左耳" },
+      { key: "right", label: "右耳" },
+      { key: "binaural", label: "双耳" }
+    ]
+  },
+  {
+    key: "impedance",
+    label: "阻抗测试",
+    group: "其他检查",
+    nested: true,
+    nestedFields: [
+      { key: "left", label: "左耳" },
+      { key: "right", label: "右耳" }
+    ]
+  },
+  {
+    key: "pta",
+    label: "纯音听阈均值",
+    group: "统计数据",
+    nested: true,
+    nestedFields: [
+      { key: "left", label: "左耳PTA" },
+      { key: "right", label: "右耳PTA" }
+    ]
+  },
   { key: "remark", label: "备注", group: "其他" }
 ];
 
@@ -116,40 +166,74 @@ const fittingFields: FieldConfig[] = [
   { key: "fitter", label: "验配师", group: "基本信息" },
   { key: "stage", label: "验配阶段", group: "基本信息" },
   { key: "audiogramId", label: "关联听力图", group: "基本信息" },
-  { key: "hearingAid", label: "助听器", group: "助听器信息", nested: true, nestedFields: [
-    { key: "left", label: "左耳", nested: true, nestedFields: [
-      { key: "brand", label: "品牌" },
-      { key: "model", label: "型号" },
-      { key: "type", label: "类型" },
-      { key: "serialNo", label: "序列号" }
-    ]},
-    { key: "right", label: "右耳", nested: true, nestedFields: [
-      { key: "brand", label: "品牌" },
-      { key: "model", label: "型号" },
-      { key: "type", label: "类型" },
-      { key: "serialNo", label: "序列号" }
-    ]}
-  ]},
-  { key: "earMold", label: "耳模", group: "助听器信息", nested: true, nestedFields: [
-    { key: "left", label: "左耳" },
-    { key: "right", label: "右耳" }
-  ]},
-  { key: "gainAdjustment", label: "增益调整", group: "调试参数", nested: true, nestedFields: [
-    { key: "left", label: "左耳" },
-    { key: "right", label: "右耳" },
-    { key: "binaural", label: "双耳" }
-  ]},
+  {
+    key: "hearingAid",
+    label: "助听器",
+    group: "助听器信息",
+    nested: true,
+    nestedFields: [
+      {
+        key: "left",
+        label: "左耳",
+        nested: true,
+        nestedFields: [
+          { key: "brand", label: "品牌" },
+          { key: "model", label: "型号" },
+          { key: "type", label: "类型" },
+          { key: "serialNo", label: "序列号" }
+        ]
+      },
+      {
+        key: "right",
+        label: "右耳",
+        nested: true,
+        nestedFields: [
+          { key: "brand", label: "品牌" },
+          { key: "model", label: "型号" },
+          { key: "type", label: "类型" },
+          { key: "serialNo", label: "序列号" }
+        ]
+      }
+    ]
+  },
+  {
+    key: "earMold",
+    label: "耳模",
+    group: "助听器信息",
+    nested: true,
+    nestedFields: [
+      { key: "left", label: "左耳" },
+      { key: "right", label: "右耳" }
+    ]
+  },
+  {
+    key: "gainAdjustment",
+    label: "增益调整",
+    group: "调试参数",
+    nested: true,
+    nestedFields: [
+      { key: "left", label: "左耳" },
+      { key: "right", label: "右耳" },
+      { key: "binaural", label: "双耳" }
+    ]
+  },
   { key: "programSettings", label: "程序设置", group: "调试参数" },
   { key: "noiseManagement", label: "噪音管理", group: "调试参数" },
   { key: "feedbackSuppression", label: "反馈抑制", group: "调试参数" },
   { key: "wirelessConnectivity", label: "无线连接", group: "功能设置" },
   { key: "userFeedback", label: "用户反馈", group: "效果评估" },
-  { key: "selfAssessment", label: "自我评估", group: "效果评估", nested: true, nestedFields: [
-    { key: "satisfaction", label: "满意度" },
-    { key: "soundQuality", label: "音质" },
-    { key: "comfort", label: "舒适度" },
-    { key: "appearance", label: "外观" }
-  ]},
+  {
+    key: "selfAssessment",
+    label: "自我评估",
+    group: "效果评估",
+    nested: true,
+    nestedFields: [
+      { key: "satisfaction", label: "满意度" },
+      { key: "soundQuality", label: "音质" },
+      { key: "comfort", label: "舒适度" },
+      { key: "appearance", label: "外观" }
+    ]
+  },
   { key: "nextFollowUpDate", label: "下次复诊日期", group: "随访计划" },
   { key: "remark", label: "备注", group: "其他" }
 ];
@@ -205,7 +289,12 @@ function isEmptyValue(value: unknown): boolean {
   if (value === null || value === undefined) return true;
   if (typeof value === "string" && value.trim() === "") return true;
   if (Array.isArray(value) && value.length === 0) return true;
-  if (typeof value === "object" && !Array.isArray(value) && Object.keys(value as object).length === 0) return true;
+  if (
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value as object).length === 0
+  )
+    return true;
   return false;
 }
 
@@ -284,12 +373,14 @@ export function formatDiffValue(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
   if (Array.isArray(value)) {
     if (value.length === 0) return "—";
-    return value.map((v) => {
-      if (typeof v === "object" && v !== null && "frequency" in v && "value" in v) {
-        return `${v.frequency}Hz: ${v.value ?? "—"}`;
-      }
-      return String(v);
-    }).join("; ");
+    return value
+      .map((v) => {
+        if (typeof v === "object" && v !== null && "frequency" in v && "value" in v) {
+          return `${v.frequency}Hz: ${v.value ?? "—"}`;
+        }
+        return String(v);
+      })
+      .join("; ");
   }
   if (typeof value === "boolean") return value ? "是" : "否";
   if (typeof value === "object") return JSON.stringify(value);

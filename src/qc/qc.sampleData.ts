@@ -1,6 +1,13 @@
 import { QcRecord, RequiredField, GainAdjustmentDetail } from "./qc.types";
 
-const REQUIRED_FIELD_KEYS = ["airConduction", "boneConduction", "speechRecognition", "hearingAidModel", "gainAdjustment", "userFeedback"];
+const REQUIRED_FIELD_KEYS = [
+  "airConduction",
+  "boneConduction",
+  "speechRecognition",
+  "hearingAidModel",
+  "gainAdjustment",
+  "userFeedback"
+];
 const REQUIRED_FIELD_LABELS: Record<string, string> = {
   airConduction: "气导阈值",
   boneConduction: "骨导阈值",
@@ -11,7 +18,7 @@ const REQUIRED_FIELD_LABELS: Record<string, string> = {
 };
 
 function buildRequiredFields(values: Partial<Record<string, string>>): RequiredField[] {
-  return REQUIRED_FIELD_KEYS.map(key => {
+  return REQUIRED_FIELD_KEYS.map((key) => {
     const value = values[key] ?? "";
     return {
       key,
@@ -23,12 +30,21 @@ function buildRequiredFields(values: Partial<Record<string, string>>): RequiredF
 }
 
 function calcFieldCompleteness(fields: RequiredField[]): number {
-  const completed = fields.filter(f => f.completed).length;
+  const completed = fields.filter((f) => f.completed).length;
   return Math.round((completed / fields.length) * 100);
 }
 
-function buildGainAdjustments(data: Array<{ freq: string; base: number; adj: number; dev: number; abnormal: boolean; reason: string }>): GainAdjustmentDetail[] {
-  return data.map(d => ({
+function buildGainAdjustments(
+  data: Array<{
+    freq: string;
+    base: number;
+    adj: number;
+    dev: number;
+    abnormal: boolean;
+    reason: string;
+  }>
+): GainAdjustmentDetail[] {
+  return data.map((d) => ({
     frequency: d.freq,
     baseline: d.base,
     adjusted: d.adj,
@@ -64,7 +80,14 @@ export const SAMPLE_QC_RECORDS: QcRecord[] = [
       { freq: "500Hz", base: 2, adj: 4, dev: 2, abnormal: false, reason: "按处方公式调整" },
       { freq: "1kHz", base: 5, adj: 7, dev: 2, abnormal: false, reason: "言语频段增益" },
       { freq: "2kHz", base: 10, adj: 14, dev: 4, abnormal: false, reason: "高频下降补偿" },
-      { freq: "4kHz", base: 15, adj: 22, dev: 7, abnormal: true, reason: "超出推荐范围±5dB，增益过高" }
+      {
+        freq: "4kHz",
+        base: 15,
+        adj: 22,
+        dev: 7,
+        abnormal: true,
+        reason: "超出推荐范围±5dB，增益过高"
+      }
     ]),
     hasAbnormalGain: true,
     userFeedback: "佩戴一周后听人声更清晰，但在嘈杂环境下仍有些吃力，需要继续调试。",
@@ -184,11 +207,39 @@ export const SAMPLE_QC_RECORDS: QcRecord[] = [
     }),
     fieldCompleteness: 0,
     gainAdjustments: buildGainAdjustments([
-      { freq: "250Hz", base: 5, adj: 15, dev: 10, abnormal: true, reason: "低频增益超出推荐范围，可能导致堵耳感" },
-      { freq: "500Hz", base: 8, adj: 18, dev: 10, abnormal: true, reason: "增益提升过大，建议分阶段调整" },
-      { freq: "1kHz", base: 12, adj: 20, dev: 8, abnormal: true, reason: "中频增益接近上限，需关注响度适应" },
+      {
+        freq: "250Hz",
+        base: 5,
+        adj: 15,
+        dev: 10,
+        abnormal: true,
+        reason: "低频增益超出推荐范围，可能导致堵耳感"
+      },
+      {
+        freq: "500Hz",
+        base: 8,
+        adj: 18,
+        dev: 10,
+        abnormal: true,
+        reason: "增益提升过大，建议分阶段调整"
+      },
+      {
+        freq: "1kHz",
+        base: 12,
+        adj: 20,
+        dev: 8,
+        abnormal: true,
+        reason: "中频增益接近上限，需关注响度适应"
+      },
       { freq: "2kHz", base: 15, adj: 22, dev: 7, abnormal: true, reason: "超出推荐范围±5dB" },
-      { freq: "4kHz", base: 12, adj: 24, dev: 12, abnormal: true, reason: "高频增益过高，可能产生反馈啸叫风险" }
+      {
+        freq: "4kHz",
+        base: 12,
+        adj: 24,
+        dev: 12,
+        abnormal: true,
+        reason: "高频增益过高，可能产生反馈啸叫风险"
+      }
     ]),
     hasAbnormalGain: true,
     userFeedback: "声音大了但有些刺耳，听孙子说话清楚多了。",
@@ -222,7 +273,14 @@ export const SAMPLE_QC_RECORDS: QcRecord[] = [
     gainAdjustments: buildGainAdjustments([
       { freq: "1kHz", base: 0, adj: 0, dev: 0, abnormal: false, reason: "正常听力，无需增益" },
       { freq: "2kHz", base: 3, adj: 7, dev: 4, abnormal: false, reason: "轻度高频下降补偿" },
-      { freq: "4kHz", base: 8, adj: 14, dev: 6, abnormal: true, reason: "略超推荐范围±5dB，建议观察反馈情况" },
+      {
+        freq: "4kHz",
+        base: 8,
+        adj: 14,
+        dev: 6,
+        abnormal: true,
+        reason: "略超推荐范围±5dB，建议观察反馈情况"
+      },
       { freq: "8kHz", base: 10, adj: 14, dev: 4, abnormal: false, reason: "高频清晰度补偿" }
     ]),
     hasAbnormalGain: true,
@@ -270,10 +328,10 @@ export const SAMPLE_QC_RECORDS: QcRecord[] = [
   }
 ];
 
-SAMPLE_QC_RECORDS.forEach(r => {
+SAMPLE_QC_RECORDS.forEach((r) => {
   r.fieldCompleteness = calcFieldCompleteness(r.requiredFields);
 });
 
 export function getQcRecordById(id: string): QcRecord | undefined {
-  return SAMPLE_QC_RECORDS.find(r => r.id === id);
+  return SAMPLE_QC_RECORDS.find((r) => r.id === id);
 }

@@ -1,9 +1,5 @@
 import type { ArchiveEntity, ConflictDiff } from "../archive.types";
-import type {
-  FieldMergeStrategy,
-  IConflictResolver,
-  MergeResult
-} from "./sync.types";
+import type { FieldMergeStrategy, IConflictResolver, MergeResult } from "./sync.types";
 
 const SKIP_FIELDS = new Set([
   "version",
@@ -27,10 +23,7 @@ const FIELD_PRIORITY: Record<string, "local" | "remote" | "newer"> = {
 };
 
 export class ConflictResolver implements IConflictResolver {
-  detectConflicts(
-    localEntity: ArchiveEntity,
-    remoteEntity: ArchiveEntity
-  ): ConflictDiff[] {
+  detectConflicts(localEntity: ArchiveEntity, remoteEntity: ArchiveEntity): ConflictDiff[] {
     const diffs: ConflictDiff[] = [];
     this.compareValues(localEntity, remoteEntity, "", diffs);
     return diffs;
@@ -45,9 +38,7 @@ export class ConflictResolver implements IConflictResolver {
     const diffs = this.detectConflicts(localEntity, remoteEntity);
     const autoMergedFields: string[] = [];
     const manualRequiredFields: ConflictDiff[] = [];
-    const strategyMap = new Map(
-      (strategies || []).map((s) => [s.field, s.strategy])
-    );
+    const strategyMap = new Map((strategies || []).map((s) => [s.field, s.strategy]));
 
     const merged = this.cloneEntity(localEntity);
 
@@ -62,19 +53,9 @@ export class ConflictResolver implements IConflictResolver {
         continue;
       }
 
-      const chosenValue = this.resolveValue(
-        strategy,
-        diff,
-        localEntity,
-        remoteEntity,
-        baseEntity
-      );
+      const chosenValue = this.resolveValue(strategy, diff, localEntity, remoteEntity, baseEntity);
 
-      this.applyNestedValue(
-        merged as unknown as Record<string, unknown>,
-        diff.field,
-        chosenValue
-      );
+      this.applyNestedValue(merged as unknown as Record<string, unknown>, diff.field, chosenValue);
       autoMergedFields.push(diff.field);
     }
 
@@ -98,15 +79,8 @@ export class ConflictResolver implements IConflictResolver {
 
     for (const [field, choice] of Object.entries(selections)) {
       const source = choice === "local" ? localEntity : remoteEntity;
-      const value = this.getNestedValue(
-        source as unknown as Record<string, unknown>,
-        field
-      );
-      this.applyNestedValue(
-        merged as unknown as Record<string, unknown>,
-        field,
-        value
-      );
+      const value = this.getNestedValue(source as unknown as Record<string, unknown>, field);
+      this.applyNestedValue(merged as unknown as Record<string, unknown>, field, value);
     }
 
     merged.updatedAt = Date.now();
@@ -218,19 +192,9 @@ export class ConflictResolver implements IConflictResolver {
     return "remote";
   }
 
-  private fieldChanged(
-    base: ArchiveEntity,
-    current: ArchiveEntity,
-    field: string
-  ): boolean {
-    const baseVal = this.getNestedValue(
-      base as unknown as Record<string, unknown>,
-      field
-    );
-    const currVal = this.getNestedValue(
-      current as unknown as Record<string, unknown>,
-      field
-    );
+  private fieldChanged(base: ArchiveEntity, current: ArchiveEntity, field: string): boolean {
+    const baseVal = this.getNestedValue(base as unknown as Record<string, unknown>, field);
+    const currVal = this.getNestedValue(current as unknown as Record<string, unknown>, field);
     return JSON.stringify(baseVal) !== JSON.stringify(currVal);
   }
 
@@ -265,20 +229,12 @@ export class ConflictResolver implements IConflictResolver {
     return current;
   }
 
-  private applyNestedValue(
-    obj: Record<string, unknown>,
-    path: string,
-    value: unknown
-  ): void {
+  private applyNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
     const keys = path.split(".");
     let current: Record<string, unknown> = obj;
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i];
-      if (
-        !current[key] ||
-        typeof current[key] !== "object" ||
-        Array.isArray(current[key])
-      ) {
+      if (!current[key] || typeof current[key] !== "object" || Array.isArray(current[key])) {
         current[key] = {};
       }
       current = current[key] as Record<string, unknown>;

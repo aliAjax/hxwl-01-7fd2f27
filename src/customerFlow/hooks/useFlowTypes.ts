@@ -1,4 +1,11 @@
-export type FlowStep = "profile" | "hearing" | "fitting" | "review" | "comparison" | "followup" | "summary";
+export type FlowStep =
+  | "profile"
+  | "hearing"
+  | "fitting"
+  | "review"
+  | "comparison"
+  | "followup"
+  | "summary";
 
 export const FLOW_STEPS: { key: FlowStep; label: string; icon: string }[] = [
   { key: "profile", label: "客户档案", icon: "📋" },
@@ -7,5 +14,5 @@ export const FLOW_STEPS: { key: FlowStep; label: string; icon: string }[] = [
   { key: "review", label: "质控审核", icon: "✅" },
   { key: "comparison", label: "验配对比", icon: "📊" },
   { key: "followup", label: "安排复诊", icon: "📅" },
-  { key: "summary", label: "摘要报告", icon: "🖨️" },
+  { key: "summary", label: "摘要报告", icon: "🖨️" }
 ];

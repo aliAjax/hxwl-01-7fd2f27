@@ -95,7 +95,12 @@ export interface SyncPushRequest {
 
 export interface SyncPushResult {
   accepted: Array<{ entityId: string; entityType: EntityType; newVersionId?: string }>;
-  rejected: Array<{ entityId: string; entityType: EntityType; reason: string; conflict?: RemoteConflictInfo }>;
+  rejected: Array<{
+    entityId: string;
+    entityType: EntityType;
+    reason: string;
+    conflict?: RemoteConflictInfo;
+  }>;
   serverTime: number;
 }
 
@@ -146,7 +151,11 @@ export interface IncrementalSyncCursor {
 export interface SyncEventMap {
   "sync:start": { direction: SyncDirection };
   "sync:progress": { completed: number; total: number; phase: SyncPhase };
-  "sync:complete": { direction: SyncDirection; changesProcessed: number; versionsProcessed: number };
+  "sync:complete": {
+    direction: SyncDirection;
+    changesProcessed: number;
+    versionsProcessed: number;
+  };
   "sync:error": { error: string; phase: SyncPhase };
   "conflict:detected": {
     entityType: EntityType;
@@ -172,13 +181,22 @@ export interface IRemoteAdapter {
   pull(since: number, cursor?: string): Promise<SyncPullResponse>;
   push(request: SyncPushRequest): Promise<SyncPushResult>;
   getEntity(entityType: EntityType, entityId: string): Promise<ArchiveEntity | null>;
-  simulateRemoteEdit(entityType: EntityType, entityId: string, edits: Partial<ArchiveEntity>): Promise<void>;
+  simulateRemoteEdit(
+    entityType: EntityType,
+    entityId: string,
+    edits: Partial<ArchiveEntity>
+  ): Promise<void>;
   pushVersions(request: VersionSnapshotSyncRequest): Promise<VersionSnapshotSyncResult>;
   pullVersions(since: number, cursor?: string): Promise<VersionSnapshotPullResponse>;
 }
 
 export interface IChangeLogStore {
-  enqueue(entityType: EntityType, entityId: string, operation: SyncOperation, entity: ArchiveEntity | null): Promise<ChangeLogEntry>;
+  enqueue(
+    entityType: EntityType,
+    entityId: string,
+    operation: SyncOperation,
+    entity: ArchiveEntity | null
+  ): Promise<ChangeLogEntry>;
   getPending(limit?: number): Promise<ChangeLogEntry[]>;
   markSynced(id: string): Promise<void>;
   markFailed(id: string, error: string): Promise<void>;
@@ -223,10 +241,7 @@ export interface ISyncManager {
 }
 
 export interface IConflictResolver {
-  detectConflicts(
-    localEntity: ArchiveEntity,
-    remoteEntity: ArchiveEntity
-  ): ConflictDiff[];
+  detectConflicts(localEntity: ArchiveEntity, remoteEntity: ArchiveEntity): ConflictDiff[];
   merge(
     localEntity: ArchiveEntity,
     remoteEntity: ArchiveEntity,

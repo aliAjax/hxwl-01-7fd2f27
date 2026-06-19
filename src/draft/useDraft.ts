@@ -7,13 +7,7 @@ import {
   StorageType
 } from "./draftStorage";
 
-export type DraftStatus =
-  | "idle"
-  | "saving"
-  | "saved"
-  | "loading"
-  | "error"
-  | "unsupported";
+export type DraftStatus = "idle" | "saving" | "saved" | "loading" | "error" | "unsupported";
 
 export interface UseDraftOptions<T> {
   key: string;
@@ -37,13 +31,7 @@ export interface UseDraftResult<T> {
 }
 
 export function useDraft<T>(options: UseDraftOptions<T>): UseDraftResult<T> {
-  const {
-    key,
-    initialData,
-    debounceMs = 1000,
-    onLoaded,
-    onError
-  } = options;
+  const { key, initialData, debounceMs = 1000, onLoaded, onError } = options;
 
   const [data, setData] = useState<T>(initialData);
   const [status, setStatus] = useState<DraftStatus>("idle");
@@ -62,29 +50,32 @@ export function useDraft<T>(options: UseDraftOptions<T>): UseDraftResult<T> {
   dataRef.current = data;
   keyRef.current = key;
 
-  const saveDraft = useCallback(async (targetKey?: string) => {
-    if (!storage || !storage.isSupported) return;
+  const saveDraft = useCallback(
+    async (targetKey?: string) => {
+      if (!storage || !storage.isSupported) return;
 
-    const k = targetKey ?? keyRef.current;
-    setStatus("saving");
-    try {
-      const draftData = createDraftData({
-        formValues: dataRef.current as unknown as Record<string, string>
-      });
-      await storage.save(k, draftData);
-      if (k === keyRef.current) {
-        setLastSavedAt(Date.now());
-        setHasDraft(true);
-        setStatus("saved");
-        setTimeout(() => setStatus("idle"), 2000);
+      const k = targetKey ?? keyRef.current;
+      setStatus("saving");
+      try {
+        const draftData = createDraftData({
+          formValues: dataRef.current as unknown as Record<string, string>
+        });
+        await storage.save(k, draftData);
+        if (k === keyRef.current) {
+          setLastSavedAt(Date.now());
+          setHasDraft(true);
+          setStatus("saved");
+          setTimeout(() => setStatus("idle"), 2000);
+        }
+      } catch (e) {
+        if (k === keyRef.current) {
+          setStatus("error");
+          if (onError) onError(e as Error);
+        }
       }
-    } catch (e) {
-      if (k === keyRef.current) {
-        setStatus("error");
-        if (onError) onError(e as Error);
-      }
-    }
-  }, [storage, onError]);
+    },
+    [storage, onError]
+  );
 
   const scheduleSave = useCallback(() => {
     if (!storage || !storage.isSupported) return;
@@ -104,10 +95,7 @@ export function useDraft<T>(options: UseDraftOptions<T>): UseDraftResult<T> {
   const updateData = useCallback(
     (updater: T | ((prev: T) => T)) => {
       setData((prev) => {
-        const next =
-          typeof updater === "function"
-            ? (updater as (prev: T) => T)(prev)
-            : updater;
+        const next = typeof updater === "function" ? (updater as (prev: T) => T)(prev) : updater;
         return next;
       });
       scheduleSave();
@@ -124,51 +112,57 @@ export function useDraft<T>(options: UseDraftOptions<T>): UseDraftResult<T> {
     await saveDraft();
   }, [saveDraft]);
 
-  const loadDraft = useCallback(async (targetKey?: string) => {
-    if (!storage || !storage.isSupported) return;
+  const loadDraft = useCallback(
+    async (targetKey?: string) => {
+      if (!storage || !storage.isSupported) return;
 
-    const k = targetKey ?? keyRef.current;
-    if (k === keyRef.current) {
-      setStatus("loading");
-    }
-    try {
-      const saved = await storage.load(k);
-      if (saved && saved.formValues) {
-        const loadedData = saved.formValues as unknown as T;
-        if (k === keyRef.current) {
-          setData(loadedData);
-          dataRef.current = loadedData;
-          setLastSavedAt(saved.savedAt);
-          setHasDraft(true);
-          if (onLoaded) onLoaded(loadedData);
+      const k = targetKey ?? keyRef.current;
+      if (k === keyRef.current) {
+        setStatus("loading");
+      }
+      try {
+        const saved = await storage.load(k);
+        if (saved && saved.formValues) {
+          const loadedData = saved.formValues as unknown as T;
+          if (k === keyRef.current) {
+            setData(loadedData);
+            dataRef.current = loadedData;
+            setLastSavedAt(saved.savedAt);
+            setHasDraft(true);
+            if (onLoaded) onLoaded(loadedData);
+            setStatus("idle");
+          }
+        } else if (k === keyRef.current) {
           setStatus("idle");
         }
-      } else if (k === keyRef.current) {
-        setStatus("idle");
+      } catch (e) {
+        if (k === keyRef.current) {
+          setStatus("error");
+          if (onError) onError(e as Error);
+        }
       }
-    } catch (e) {
-      if (k === keyRef.current) {
+    },
+    [storage, onLoaded, onError]
+  );
+
+  const clearDraft = useCallback(
+    async (resetData?: T) => {
+      if (!storage || !storage.isSupported) return;
+
+      try {
+        await storage.remove(keyRef.current);
+        setHasDraft(false);
+        setLastSavedAt(null);
+        const newData = resetData !== undefined ? resetData : initialData;
+        setData(newData);
+        dataRef.current = newData;
+      } catch (e) {
         setStatus("error");
         if (onError) onError(e as Error);
       }
-    }
-  }, [storage, onLoaded, onError]);
-
-  const clearDraft = useCallback(async (resetData?: T) => {
-    if (!storage || !storage.isSupported) return;
-
-    try {
-      await storage.remove(keyRef.current);
-      setHasDraft(false);
-      setLastSavedAt(null);
-      const newData = resetData !== undefined ? resetData : initialData;
-      setData(newData);
-      dataRef.current = newData;
-    } catch (e) {
-      setStatus("error");
-      if (onError) onError(e as Error);
-    }
-  }, [storage, initialData, onError]);
+    },
+    [storage, initialData, onError]
+  );
 
   useEffect(() => {
     const s = getDraftStorage();
@@ -268,9 +262,7 @@ export interface UseHearingDraftResult<T> {
   loadDraft: () => Promise<void>;
 }
 
-export function useHearingDraft<T>(
-  options: UseHearingDraftOptions
-): UseHearingDraftResult<T> {
+export function useHearingDraft<T>(options: UseHearingDraftOptions): UseHearingDraftResult<T> {
   const { key, initialRecord, debounceMs = 1000 } = options;
 
   const [record, setRecord] = useState<T>(initialRecord as T);
@@ -300,28 +292,31 @@ export function useHearingDraft<T>(
     }
   }, []);
 
-  const saveDraft = useCallback(async (targetKey?: string) => {
-    if (!storage || !storage.isSupported) return;
+  const saveDraft = useCallback(
+    async (targetKey?: string) => {
+      if (!storage || !storage.isSupported) return;
 
-    const k = targetKey ?? keyRef.current;
-    setStatus("saving");
-    try {
-      const draftData = createDraftData({
-        hearingRecord: recordRef.current
-      });
-      await storage.save(k, draftData);
-      if (k === keyRef.current) {
-        setLastSavedAt(Date.now());
-        setHasDraft(true);
-        setStatus("saved");
-        setTimeout(() => setStatus("idle"), 2000);
+      const k = targetKey ?? keyRef.current;
+      setStatus("saving");
+      try {
+        const draftData = createDraftData({
+          hearingRecord: recordRef.current
+        });
+        await storage.save(k, draftData);
+        if (k === keyRef.current) {
+          setLastSavedAt(Date.now());
+          setHasDraft(true);
+          setStatus("saved");
+          setTimeout(() => setStatus("idle"), 2000);
+        }
+      } catch (e) {
+        if (k === keyRef.current) {
+          setStatus("error");
+        }
       }
-    } catch (e) {
-      if (k === keyRef.current) {
-        setStatus("error");
-      }
-    }
-  }, [storage]);
+    },
+    [storage]
+  );
 
   const scheduleSave = useCallback(() => {
     if (!storage || !storage.isSupported) return;
@@ -341,10 +336,7 @@ export function useHearingDraft<T>(
   const updateRecord = useCallback(
     (updater: T | ((prev: T) => T)) => {
       setRecord((prev) => {
-        const next =
-          typeof updater === "function"
-            ? (updater as (prev: T) => T)(prev)
-            : updater;
+        const next = typeof updater === "function" ? (updater as (prev: T) => T)(prev) : updater;
         return next;
       });
       scheduleSave();
@@ -361,48 +353,54 @@ export function useHearingDraft<T>(
     await saveDraft();
   }, [saveDraft]);
 
-  const loadDraft = useCallback(async (targetKey?: string) => {
-    if (!storage || !storage.isSupported) return;
+  const loadDraft = useCallback(
+    async (targetKey?: string) => {
+      if (!storage || !storage.isSupported) return;
 
-    const k = targetKey ?? keyRef.current;
-    if (k === keyRef.current) {
-      setStatus("loading");
-    }
-    try {
-      const saved = await storage.load(k);
-      if (saved && saved.hearingRecord) {
-        const loadedRecord = saved.hearingRecord as T;
-        if (k === keyRef.current) {
-          setRecord(loadedRecord);
-          recordRef.current = loadedRecord;
-          setLastSavedAt(saved.savedAt);
-          setHasDraft(true);
+      const k = targetKey ?? keyRef.current;
+      if (k === keyRef.current) {
+        setStatus("loading");
+      }
+      try {
+        const saved = await storage.load(k);
+        if (saved && saved.hearingRecord) {
+          const loadedRecord = saved.hearingRecord as T;
+          if (k === keyRef.current) {
+            setRecord(loadedRecord);
+            recordRef.current = loadedRecord;
+            setLastSavedAt(saved.savedAt);
+            setHasDraft(true);
+            setStatus("idle");
+          }
+        } else if (k === keyRef.current) {
           setStatus("idle");
         }
-      } else if (k === keyRef.current) {
-        setStatus("idle");
+      } catch (e) {
+        if (k === keyRef.current) {
+          setStatus("error");
+        }
       }
-    } catch (e) {
-      if (k === keyRef.current) {
+    },
+    [storage]
+  );
+
+  const clearDraft = useCallback(
+    async (resetData?: T) => {
+      if (!storage || !storage.isSupported) return;
+
+      try {
+        await storage.remove(keyRef.current);
+        setHasDraft(false);
+        setLastSavedAt(null);
+        const newData = resetData !== undefined ? resetData : (initialRecord as T);
+        setRecord(newData);
+        recordRef.current = newData;
+      } catch (e) {
         setStatus("error");
       }
-    }
-  }, [storage]);
-
-  const clearDraft = useCallback(async (resetData?: T) => {
-    if (!storage || !storage.isSupported) return;
-
-    try {
-      await storage.remove(keyRef.current);
-      setHasDraft(false);
-      setLastSavedAt(null);
-      const newData = resetData !== undefined ? resetData : (initialRecord as T);
-      setRecord(newData);
-      recordRef.current = newData;
-    } catch (e) {
-      setStatus("error");
-    }
-  }, [storage, initialRecord]);
+    },
+    [storage, initialRecord]
+  );
 
   useEffect(() => {
     if (storage && storage.isSupported) {

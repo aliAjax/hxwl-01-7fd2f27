@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useCallback,
+  ReactNode
+} from "react";
 import type {
   WorkflowState,
   WorkflowFittingRecord,
@@ -22,41 +29,80 @@ type WorkflowAction =
   | { type: "SET_ROLE"; payload: { role: RoleType } }
   | { type: "SELECT_RECORD"; payload: { recordId: string | null } }
   | { type: "CREATE_RECORD"; payload: Partial<WorkflowFittingRecord> }
-  | { type: "UPDATE_RECORD"; payload: { recordId: string; updates: Partial<WorkflowFittingRecord>; fieldChanges?: FieldChange[] } }
+  | {
+      type: "UPDATE_RECORD";
+      payload: {
+        recordId: string;
+        updates: Partial<WorkflowFittingRecord>;
+        fieldChanges?: FieldChange[];
+      };
+    }
   | { type: "DELETE_RECORD"; payload: { recordId: string } }
   | { type: "SUBMIT_FOR_REVIEW"; payload: { recordId: string } }
   | { type: "APPROVE_REVIEW"; payload: { recordId: string; comment?: string } }
   | { type: "REJECT_REVIEW"; payload: { recordId: string; comment: string } }
-  | { type: "REJECT_REVIEW_WITH_FIELDS"; payload: { recordId: string; comment: string; rejectedFields: RejectedField[] } }
-  | { type: "RESUBMIT_FOR_REVIEW"; payload: { recordId: string; fieldChanges: FieldChange[]; rejectionId: string; updates: Partial<WorkflowFittingRecord> } }
+  | {
+      type: "REJECT_REVIEW_WITH_FIELDS";
+      payload: { recordId: string; comment: string; rejectedFields: RejectedField[] };
+    }
+  | {
+      type: "RESUBMIT_FOR_REVIEW";
+      payload: {
+        recordId: string;
+        fieldChanges: FieldChange[];
+        rejectionId: string;
+        updates: Partial<WorkflowFittingRecord>;
+      };
+    }
   | { type: "ASSIGN_FOLLOWUP"; payload: { recordId: string; days?: number } }
   | { type: "START_FOLLOWUP"; payload: { recordId: string } }
   | { type: "COMPLETE_FOLLOWUP"; payload: { recordId: string; note: string } }
   | { type: "UPDATE_STATUS"; payload: { recordId: string; newStatus: RecordStatus } }
   | { type: "ADD_LOG"; payload: Omit<OperationLog, "id" | "timestamp"> }
-  | { type: "UPDATE_REVIEW_FIELD"; payload: { recordId: string; fieldName: string; hasAbnormality: boolean; note?: string } }
+  | {
+      type: "UPDATE_REVIEW_FIELD";
+      payload: { recordId: string; fieldName: string; hasAbnormality: boolean; note?: string };
+    }
   | { type: "LOAD_STATE"; payload: WorkflowState };
 
 const WorkflowContext = createContext<{
   state: WorkflowState;
   dispatch: React.Dispatch<WorkflowAction>;
   createRecord: (data: Partial<WorkflowFittingRecord>) => WorkflowFittingRecord;
-  updateRecord: (recordId: string, updates: Partial<WorkflowFittingRecord>, fieldChanges?: FieldChange[]) => void;
+  updateRecord: (
+    recordId: string,
+    updates: Partial<WorkflowFittingRecord>,
+    fieldChanges?: FieldChange[]
+  ) => void;
   deleteRecord: (recordId: string) => void;
   submitForReview: (recordId: string) => void;
   approveReview: (recordId: string, comment?: string) => void;
   rejectReview: (recordId: string, comment: string) => void;
-  rejectReviewWithFields: (recordId: string, comment: string, rejectedFields: RejectedField[]) => void;
-  resubmitForReview: (recordId: string, fieldChanges: FieldChange[], rejectionId: string, updates: Partial<WorkflowFittingRecord>) => void;
+  rejectReviewWithFields: (
+    recordId: string,
+    comment: string,
+    rejectedFields: RejectedField[]
+  ) => void;
+  resubmitForReview: (
+    recordId: string,
+    fieldChanges: FieldChange[],
+    rejectionId: string,
+    updates: Partial<WorkflowFittingRecord>
+  ) => void;
   assignFollowUp: (recordId: string, days?: number) => void;
   startFollowUp: (recordId: string) => void;
   completeFollowUp: (recordId: string, note: string) => void;
   switchRole: (role: RoleType) => void;
   selectRecord: (recordId: string | null) => void;
-  updateReviewField: (recordId: string, fieldName: string, hasAbnormality: boolean, note?: string) => void;
+  updateReviewField: (
+    recordId: string,
+    fieldName: string,
+    hasAbnormality: boolean,
+    note?: string
+  ) => void;
   getFilteredRecords: () => WorkflowFittingRecord[];
   getRecordLogs: (recordId: string) => OperationLog[];
-  canPerformAction: (action: keyof typeof ROLE_PERMISSIONS[RoleType]) => boolean;
+  canPerformAction: (action: keyof (typeof ROLE_PERMISSIONS)[RoleType]) => boolean;
 } | null>(null);
 
 function workflowReducer(state: WorkflowState, action: WorkflowAction): WorkflowState {
@@ -105,22 +151,23 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "UPDATE_RECORD": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
+      const record = state.records.find((r) => r.id === action.payload.recordId);
       if (!record) return state;
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
           ? { ...r, ...action.payload.updates, updatedAt: now, version: r.version + 1 }
           : r
       );
 
       const fieldChanges = action.payload.fieldChanges;
-      const changes = fieldChanges && fieldChanges.length > 0
-        ? fieldChanges.map(fc => `${fc.fieldLabel}: ${fc.oldValue} → ${fc.newValue}`).join("; ")
-        : Object.entries(action.payload.updates)
-            .filter(([key]) => key !== "updatedAt" && key !== "version")
-            .map(([key, value]) => `${key}: ${value}`)
-            .join(", ");
+      const changes =
+        fieldChanges && fieldChanges.length > 0
+          ? fieldChanges.map((fc) => `${fc.fieldLabel}: ${fc.oldValue} → ${fc.newValue}`).join("; ")
+          : Object.entries(action.payload.updates)
+              .filter(([key]) => key !== "updatedAt" && key !== "version")
+              .map(([key, value]) => `${key}: ${value}`)
+              .join(", ");
 
       const newLog: OperationLog = {
         id: generateId("log"),
@@ -129,7 +176,8 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
         operatorName: state.currentUserName,
         action: fieldChanges && fieldChanges.length > 0 ? "整改修改" : "更新记录",
         actionType: fieldChanges && fieldChanges.length > 0 ? "correct" : "update",
-        detail: fieldChanges && fieldChanges.length > 0 ? `整改修改: ${changes}` : `更新字段: ${changes}`,
+        detail:
+          fieldChanges && fieldChanges.length > 0 ? `整改修改: ${changes}` : `更新字段: ${changes}`,
         timestamp: now,
         fieldChanges: fieldChanges
       };
@@ -143,7 +191,7 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "DELETE_RECORD": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
+      const record = state.records.find((r) => r.id === action.payload.recordId);
       if (!record) return state;
 
       const newLog: OperationLog = {
@@ -159,23 +207,33 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
       return {
         ...state,
-        records: state.records.filter(r => r.id !== action.payload.recordId),
+        records: state.records.filter((r) => r.id !== action.payload.recordId),
         operationLogs: [newLog, ...state.operationLogs],
-        selectedRecordId: state.selectedRecordId === action.payload.recordId ? null : state.selectedRecordId
+        selectedRecordId:
+          state.selectedRecordId === action.payload.recordId ? null : state.selectedRecordId
       };
     }
 
     case "SUBMIT_FOR_REVIEW": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
-      if (!record || !canTransition(record.status, "pending_review", state.currentRole)) return state;
+      const record = state.records.find((r) => r.id === action.payload.recordId);
+      if (!record || !canTransition(record.status, "pending_review", state.currentRole))
+        return state;
 
-      const hasUnresolvedRejection = (record.rejectionHistory || []).some(rh => !rh.resubmittedAt);
+      const hasUnresolvedRejection = (record.rejectionHistory || []).some(
+        (rh) => !rh.resubmittedAt
+      );
       if (hasUnresolvedRejection) return state;
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
-          ? { ...r, status: "pending_review" as RecordStatus, submittedAt: now, updatedAt: now, version: r.version + 1 }
+          ? {
+              ...r,
+              status: "pending_review" as RecordStatus,
+              submittedAt: now,
+              updatedAt: now,
+              version: r.version + 1
+            }
           : r
       );
 
@@ -201,10 +259,11 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "APPROVE_REVIEW": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
-      if (!record || !canTransition(record.status, "review_approved", state.currentRole)) return state;
+      const record = state.records.find((r) => r.id === action.payload.recordId);
+      if (!record || !canTransition(record.status, "review_approved", state.currentRole))
+        return state;
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
           ? {
               ...r,
@@ -240,10 +299,11 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "REJECT_REVIEW": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
-      if (!record || !canTransition(record.status, "review_rejected", state.currentRole)) return state;
+      const record = state.records.find((r) => r.id === action.payload.recordId);
+      if (!record || !canTransition(record.status, "review_rejected", state.currentRole))
+        return state;
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
           ? {
               ...r,
@@ -279,8 +339,9 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "REJECT_REVIEW_WITH_FIELDS": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
-      if (!record || !canTransition(record.status, "review_rejected", state.currentRole)) return state;
+      const record = state.records.find((r) => r.id === action.payload.recordId);
+      if (!record || !canTransition(record.status, "review_rejected", state.currentRole))
+        return state;
 
       const rejectionId = generateId("rej");
       const rejectionRecord = {
@@ -292,8 +353,10 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
         rejectedFields: action.payload.rejectedFields
       };
 
-      const updatedReviewFields = record.reviewFields.map(field => {
-        const rejected = action.payload.rejectedFields.find(rf => rf.fieldName === field.fieldName);
+      const updatedReviewFields = record.reviewFields.map((field) => {
+        const rejected = action.payload.rejectedFields.find(
+          (rf) => rf.fieldName === field.fieldName
+        );
         if (rejected) {
           return {
             ...field,
@@ -304,7 +367,7 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
         return field;
       });
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
           ? {
               ...r,
@@ -321,7 +384,7 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
       );
 
       const fieldSummary = action.payload.rejectedFields
-        .map(f => `${f.fieldLabel}: ${f.rejectReason}`)
+        .map((f) => `${f.fieldLabel}: ${f.rejectReason}`)
         .join("; ");
 
       const newLog: OperationLog = {
@@ -347,20 +410,20 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "RESUBMIT_FOR_REVIEW": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
+      const record = state.records.find((r) => r.id === action.payload.recordId);
       if (!record) return state;
       if (record.status !== "review_rejected" && record.status !== "draft") return state;
 
       const { fieldChanges, rejectionId, updates } = action.payload;
 
-      const updatedRejectionHistory = (record.rejectionHistory || []).map(rh => {
+      const updatedRejectionHistory = (record.rejectionHistory || []).map((rh) => {
         if (rh.rejectionId === rejectionId) {
           return {
             ...rh,
             correctionStartedAt: rh.correctionStartedAt || now,
             correctedBy: state.currentUserName,
             correctedAt: now,
-            correctionFields: fieldChanges.map(fc => ({
+            correctionFields: fieldChanges.map((fc) => ({
               fieldName: fc.fieldName,
               fieldLabel: fc.fieldLabel,
               oldValue: fc.oldValue,
@@ -372,13 +435,13 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
         return rh;
       });
 
-      const clearedReviewFields = record.reviewFields.map(field => ({
+      const clearedReviewFields = record.reviewFields.map((field) => ({
         ...field,
         hasAbnormality: false,
         abnormalityNote: undefined
       }));
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
           ? {
               ...r,
@@ -394,10 +457,12 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
       );
 
       const changesSummary = fieldChanges
-        .map(fc => `${fc.fieldLabel}: ${fc.oldValue} → ${fc.newValue}`)
+        .map((fc) => `${fc.fieldLabel}: ${fc.oldValue} → ${fc.newValue}`)
         .join("; ");
 
-      const rejection = (record.rejectionHistory || []).find(rh => rh.rejectionId === rejectionId);
+      const rejection = (record.rejectionHistory || []).find(
+        (rh) => rh.rejectionId === rejectionId
+      );
       const linkDetail = rejection
         ? `原驳回原因: ${rejection.overallComment} | 修改内容: ${changesSummary}`
         : `整改后重新提交 | 修改内容: ${changesSummary}`;
@@ -426,15 +491,16 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "ASSIGN_FOLLOWUP": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
-      if (!record || !canTransition(record.status, "pending_followup", state.currentRole)) return state;
+      const record = state.records.find((r) => r.id === action.payload.recordId);
+      if (!record || !canTransition(record.status, "pending_followup", state.currentRole))
+        return state;
 
       const days = action.payload.days ?? record.followUpDays ?? 7;
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + days);
       const nextFollowUpDate = nextDate.toISOString().slice(0, 10);
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
           ? {
               ...r,
@@ -470,12 +536,19 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "START_FOLLOWUP": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
-      if (!record || !canTransition(record.status, "followup_in_progress", state.currentRole)) return state;
+      const record = state.records.find((r) => r.id === action.payload.recordId);
+      if (!record || !canTransition(record.status, "followup_in_progress", state.currentRole))
+        return state;
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
-          ? { ...r, status: "followup_in_progress" as RecordStatus, followUpStartedAt: now, updatedAt: now, version: r.version + 1 }
+          ? {
+              ...r,
+              status: "followup_in_progress" as RecordStatus,
+              followUpStartedAt: now,
+              updatedAt: now,
+              version: r.version + 1
+            }
           : r
       );
 
@@ -501,10 +574,10 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "COMPLETE_FOLLOWUP": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
+      const record = state.records.find((r) => r.id === action.payload.recordId);
       if (!record || !canTransition(record.status, "completed", state.currentRole)) return state;
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
           ? {
               ...r,
@@ -539,10 +612,10 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "UPDATE_STATUS": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
+      const record = state.records.find((r) => r.id === action.payload.recordId);
       if (!record) return state;
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
           ? { ...r, status: action.payload.newStatus, updatedAt: now, version: r.version + 1 }
           : r
@@ -569,16 +642,20 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
 
     case "UPDATE_REVIEW_FIELD": {
       const now = Date.now();
-      const record = state.records.find(r => r.id === action.payload.recordId);
+      const record = state.records.find((r) => r.id === action.payload.recordId);
       if (!record) return state;
 
-      const updatedReviewFields = record.reviewFields.map(field =>
+      const updatedReviewFields = record.reviewFields.map((field) =>
         field.fieldName === action.payload.fieldName
-          ? { ...field, hasAbnormality: action.payload.hasAbnormality, abnormalityNote: action.payload.note }
+          ? {
+              ...field,
+              hasAbnormality: action.payload.hasAbnormality,
+              abnormalityNote: action.payload.note
+            }
           : field
       );
 
-      const updatedRecords = state.records.map(r =>
+      const updatedRecords = state.records.map((r) =>
         r.id === action.payload.recordId
           ? { ...r, reviewFields: updatedReviewFields, updatedAt: now, version: r.version + 1 }
           : r
@@ -625,64 +702,70 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     saveWorkflowState(state);
   }, [state]);
 
-  const createRecord = useCallback((data: Partial<WorkflowFittingRecord>): WorkflowFittingRecord => {
-    const now = Date.now();
-    const today = new Date().toISOString().slice(0, 10);
-    const addDays = (days: number) => {
-      const d = new Date();
-      d.setDate(d.getDate() + days);
-      return d.toISOString().slice(0, 10);
-    };
-
-    const defaultReviewFields: ReviewField[] = KEY_REVIEW_FIELDS.map(fieldName => {
-      const labels: Record<string, string> = {
-        hearingLossType: "听损类型",
-        hearingAidModel: "助听器型号",
-        gainAdjustment: "增益调整",
-        speechRecognitionRate: "言语识别率",
-        leftPta: "左耳PTA",
-        rightPta: "右耳PTA"
+  const createRecord = useCallback(
+    (data: Partial<WorkflowFittingRecord>): WorkflowFittingRecord => {
+      const now = Date.now();
+      const today = new Date().toISOString().slice(0, 10);
+      const addDays = (days: number) => {
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        return d.toISOString().slice(0, 10);
       };
-      return {
-        fieldName,
-        fieldLabel: labels[fieldName] || fieldName,
-        isKey: true,
-        hasAbnormality: false
+
+      const defaultReviewFields: ReviewField[] = KEY_REVIEW_FIELDS.map((fieldName) => {
+        const labels: Record<string, string> = {
+          hearingLossType: "听损类型",
+          hearingAidModel: "助听器型号",
+          gainAdjustment: "增益调整",
+          speechRecognitionRate: "言语识别率",
+          leftPta: "左耳PTA",
+          rightPta: "右耳PTA"
+        };
+        return {
+          fieldName,
+          fieldLabel: labels[fieldName] || fieldName,
+          isKey: true,
+          hasAbnormality: false
+        };
+      });
+
+      const newRecord: WorkflowFittingRecord = {
+        id: generateId("rec"),
+        customerId: data.customerId || `CUST-${Date.now().toString(36).slice(-4).toUpperCase()}`,
+        customerName: data.customerName || "",
+        phone: data.phone || "",
+        hearingLossType: data.hearingLossType || "",
+        fittingStage: data.fittingStage || "初配",
+        hearingAidModel: data.hearingAidModel || "",
+        gainAdjustment: data.gainAdjustment || "",
+        userFeedback: data.userFeedback || "",
+        speechRecognitionRate: data.speechRecognitionRate || 0,
+        leftPta: data.leftPta || 0,
+        rightPta: data.rightPta || 0,
+        status: "draft",
+        priority: data.priority || "medium",
+        followUpDays: data.followUpDays || 7,
+        nextFollowUpDate: data.nextFollowUpDate || addDays(7),
+        createdBy: state.currentUserName,
+        createdAt: now,
+        updatedAt: now,
+        version: 1,
+        reviewFields: defaultReviewFields,
+        rejectionHistory: []
       };
-    });
 
-    const newRecord: WorkflowFittingRecord = {
-      id: generateId("rec"),
-      customerId: data.customerId || `CUST-${Date.now().toString(36).slice(-4).toUpperCase()}`,
-      customerName: data.customerName || "",
-      phone: data.phone || "",
-      hearingLossType: data.hearingLossType || "",
-      fittingStage: data.fittingStage || "初配",
-      hearingAidModel: data.hearingAidModel || "",
-      gainAdjustment: data.gainAdjustment || "",
-      userFeedback: data.userFeedback || "",
-      speechRecognitionRate: data.speechRecognitionRate || 0,
-      leftPta: data.leftPta || 0,
-      rightPta: data.rightPta || 0,
-      status: "draft",
-      priority: data.priority || "medium",
-      followUpDays: data.followUpDays || 7,
-      nextFollowUpDate: data.nextFollowUpDate || addDays(7),
-      createdBy: state.currentUserName,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-      reviewFields: defaultReviewFields,
-      rejectionHistory: []
-    };
+      dispatch({ type: "CREATE_RECORD", payload: newRecord });
+      return newRecord;
+    },
+    [state.currentUserName]
+  );
 
-    dispatch({ type: "CREATE_RECORD", payload: newRecord });
-    return newRecord;
-  }, [state.currentUserName]);
-
-  const updateRecord = useCallback((recordId: string, updates: Partial<WorkflowFittingRecord>, fieldChanges?: FieldChange[]) => {
-    dispatch({ type: "UPDATE_RECORD", payload: { recordId, updates, fieldChanges } });
-  }, []);
+  const updateRecord = useCallback(
+    (recordId: string, updates: Partial<WorkflowFittingRecord>, fieldChanges?: FieldChange[]) => {
+      dispatch({ type: "UPDATE_RECORD", payload: { recordId, updates, fieldChanges } });
+    },
+    []
+  );
 
   const deleteRecord = useCallback((recordId: string) => {
     dispatch({ type: "DELETE_RECORD", payload: { recordId } });
@@ -700,13 +783,30 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "REJECT_REVIEW", payload: { recordId, comment } });
   }, []);
 
-  const rejectReviewWithFields = useCallback((recordId: string, comment: string, rejectedFields: RejectedField[]) => {
-    dispatch({ type: "REJECT_REVIEW_WITH_FIELDS", payload: { recordId, comment, rejectedFields } });
-  }, []);
+  const rejectReviewWithFields = useCallback(
+    (recordId: string, comment: string, rejectedFields: RejectedField[]) => {
+      dispatch({
+        type: "REJECT_REVIEW_WITH_FIELDS",
+        payload: { recordId, comment, rejectedFields }
+      });
+    },
+    []
+  );
 
-  const resubmitForReview = useCallback((recordId: string, fieldChanges: FieldChange[], rejectionId: string, updates: Partial<WorkflowFittingRecord>) => {
-    dispatch({ type: "RESUBMIT_FOR_REVIEW", payload: { recordId, fieldChanges, rejectionId, updates } });
-  }, []);
+  const resubmitForReview = useCallback(
+    (
+      recordId: string,
+      fieldChanges: FieldChange[],
+      rejectionId: string,
+      updates: Partial<WorkflowFittingRecord>
+    ) => {
+      dispatch({
+        type: "RESUBMIT_FOR_REVIEW",
+        payload: { recordId, fieldChanges, rejectionId, updates }
+      });
+    },
+    []
+  );
 
   const assignFollowUp = useCallback((recordId: string, days?: number) => {
     dispatch({ type: "ASSIGN_FOLLOWUP", payload: { recordId, days } });
@@ -728,31 +828,44 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SELECT_RECORD", payload: { recordId } });
   }, []);
 
-  const updateReviewField = useCallback((recordId: string, fieldName: string, hasAbnormality: boolean, note?: string) => {
-    dispatch({ type: "UPDATE_REVIEW_FIELD", payload: { recordId, fieldName, hasAbnormality, note } });
-  }, []);
+  const updateReviewField = useCallback(
+    (recordId: string, fieldName: string, hasAbnormality: boolean, note?: string) => {
+      dispatch({
+        type: "UPDATE_REVIEW_FIELD",
+        payload: { recordId, fieldName, hasAbnormality, note }
+      });
+    },
+    []
+  );
 
   const getFilteredRecords = useCallback(() => {
     const permissions = ROLE_PERMISSIONS[state.currentRole];
     if (permissions.canViewAllRecords) {
-      return state.records.filter(r => permissions.visibleStatuses.includes(r.status));
+      return state.records.filter((r) => permissions.visibleStatuses.includes(r.status));
     }
     return state.records.filter(
-      r => permissions.visibleStatuses.includes(r.status) &&
-           (r.followUpAssignedTo === state.currentUserName || r.status === "pending_followup")
+      (r) =>
+        permissions.visibleStatuses.includes(r.status) &&
+        (r.followUpAssignedTo === state.currentUserName || r.status === "pending_followup")
     );
   }, [state.records, state.currentRole, state.currentUserName]);
 
-  const getRecordLogs = useCallback((recordId: string) => {
-    return state.operationLogs
-      .filter(log => log.recordId === recordId)
-      .sort((a, b) => b.timestamp - a.timestamp);
-  }, [state.operationLogs]);
+  const getRecordLogs = useCallback(
+    (recordId: string) => {
+      return state.operationLogs
+        .filter((log) => log.recordId === recordId)
+        .sort((a, b) => b.timestamp - a.timestamp);
+    },
+    [state.operationLogs]
+  );
 
-  const canPerformAction = useCallback((action: keyof typeof ROLE_PERMISSIONS[RoleType]) => {
-    const permissions = ROLE_PERMISSIONS[state.currentRole];
-    return permissions[action] as boolean;
-  }, [state.currentRole]);
+  const canPerformAction = useCallback(
+    (action: keyof (typeof ROLE_PERMISSIONS)[RoleType]) => {
+      const permissions = ROLE_PERMISSIONS[state.currentRole];
+      return permissions[action] as boolean;
+    },
+    [state.currentRole]
+  );
 
   return (
     <WorkflowContext.Provider

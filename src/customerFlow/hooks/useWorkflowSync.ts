@@ -15,7 +15,7 @@ export function useWorkflowSync({
   activeCustomerId,
   effectiveAggregate,
   workflowRecords,
-  customersLength,
+  customersLength
 }: UseWorkflowSyncParams) {
   const { createRecord, updateRecord } = useWorkflow();
 
@@ -32,7 +32,14 @@ export function useWorkflowSync({
         updateRecord
       );
     }
-  }, [activeCustomerId, customersLength, effectiveAggregate, workflowRecords, createRecord, updateRecord]);
+  }, [
+    activeCustomerId,
+    customersLength,
+    effectiveAggregate,
+    workflowRecords,
+    createRecord,
+    updateRecord
+  ]);
 
   const syncFlowWorkflow = useCallback(async () => {
     if (activeCustomerId) {

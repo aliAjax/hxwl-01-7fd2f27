@@ -17,7 +17,16 @@ import { ProfileStep } from "./ProfileStep";
 import { FittingStep } from "./FittingStep";
 
 function avatarColor(name: string): string {
-  const palette = ["#155e75", "#0369a1", "#7c3aed", "#be123c", "#c2410c", "#166534", "#3730a3", "#9a3412"];
+  const palette = [
+    "#155e75",
+    "#0369a1",
+    "#7c3aed",
+    "#be123c",
+    "#c2410c",
+    "#166534",
+    "#3730a3",
+    "#9a3412"
+  ];
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
   return palette[h % palette.length];
@@ -29,10 +38,18 @@ function FlowStepBar() {
   return (
     <div className="flow-step-bar">
       {FLOW_STEPS.map((step, idx) => {
-        const status = aggregate ? getStepStatus(step.key) : (step.key === activeStep ? "current" : "unavailable");
+        const status = aggregate
+          ? getStepStatus(step.key)
+          : step.key === activeStep
+            ? "current"
+            : "unavailable";
         return (
           <div key={step.key} className="flow-step-item-wrap">
-            {idx > 0 && <div className={`flow-step-connector ${status === "completed" ? "connector-done" : ""}`} />}
+            {idx > 0 && (
+              <div
+                className={`flow-step-connector ${status === "completed" ? "connector-done" : ""}`}
+              />
+            )}
             <button
               className={`flow-step-item step-${status}`}
               onClick={() => {
@@ -61,7 +78,10 @@ function CustomerList() {
     if (!search) return customers;
     const kw = search.toLowerCase();
     return customers.filter(
-      (c) => c.name.toLowerCase().includes(kw) || c.customerNo.toLowerCase().includes(kw) || c.phone.includes(kw)
+      (c) =>
+        c.name.toLowerCase().includes(kw) ||
+        c.customerNo.toLowerCase().includes(kw) ||
+        c.phone.includes(kw)
     );
   }, [customers, search]);
 
@@ -124,7 +144,7 @@ function ActiveStepPanel() {
     summaryData,
     generateSummaryFromFlow,
     goToNextStep,
-    goToPrevStep,
+    goToPrevStep
   } = useCustomerFlow();
 
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -280,7 +300,11 @@ function ActiveStepPanel() {
           </span>
           <h2>{FLOW_STEPS.find((s) => s.key === activeStep)?.label}</h2>
         </div>
-        <button className="primary-action" onClick={goToNextStep} disabled={activeStep === "summary"}>
+        <button
+          className="primary-action"
+          onClick={goToNextStep}
+          disabled={activeStep === "summary"}
+        >
           下一步 →
         </button>
       </div>

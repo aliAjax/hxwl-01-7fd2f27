@@ -12,10 +12,7 @@ interface DraftIndicatorProps {
   className?: string;
 }
 
-const STATUS_CONFIG: Record<
-  DraftStatus,
-  { icon: string; text: string; className: string }
-> = {
+const STATUS_CONFIG: Record<DraftStatus, { icon: string; text: string; className: string }> = {
   idle: { icon: "✓", text: "已就绪", className: "draft-idle" },
   saving: { icon: "⟳", text: "保存中...", className: "draft-saving" },
   saved: { icon: "✓", text: "已保存", className: "draft-saved" },
@@ -66,28 +63,19 @@ export default function DraftIndicator({
             当前使用本地存储（降级模式）
           </span>
           <span className="draft-hint">
-            您的浏览器不支持 IndexedDB，已自动降级为 LocalStorage。草稿数据可能会在清理浏览器缓存时丢失。
+            您的浏览器不支持 IndexedDB，已自动降级为
+            LocalStorage。草稿数据可能会在清理浏览器缓存时丢失。
           </span>
-          {lastSavedAt && (
-            <span className="draft-time">{lastSavedText}</span>
-          )}
+          {lastSavedAt && <span className="draft-time">{lastSavedText}</span>}
         </div>
         <div className="draft-actions">
           {onSave && status !== "saving" && (
-            <button
-              className="draft-action-btn"
-              onClick={onSave}
-              title="立即保存"
-            >
+            <button className="draft-action-btn" onClick={onSave} title="立即保存">
               保存
             </button>
           )}
           {onClear && hasDraft && (
-            <button
-              className="draft-action-btn draft-clear-btn"
-              onClick={onClear}
-              title="清空草稿"
-            >
+            <button className="draft-action-btn draft-clear-btn" onClick={onClear} title="清空草稿">
               清空草稿
             </button>
           )}
@@ -100,27 +88,17 @@ export default function DraftIndicator({
     <div className={`draft-indicator ${config.className} ${className}`}>
       <span className="draft-icon">{config.icon}</span>
       <div className="draft-info">
-      <span className={`draft-status ${config.className}`}>{config.text}</span>
-      {lastSavedAt && (
-        <span className="draft-time">{lastSavedText}</span>
-      )}
+        <span className={`draft-status ${config.className}`}>{config.text}</span>
+        {lastSavedAt && <span className="draft-time">{lastSavedText}</span>}
       </div>
       <div className="draft-actions">
         {onSave && status !== "saving" && (
-          <button
-            className="draft-action-btn"
-            onClick={onSave}
-            title="立即保存"
-          >
+          <button className="draft-action-btn" onClick={onSave} title="立即保存">
             保存
           </button>
         )}
         {onClear && hasDraft && (
-          <button
-            className="draft-action-btn draft-clear-btn"
-            onClick={onClear}
-            title="清空草稿"
-          >
+          <button className="draft-action-btn draft-clear-btn" onClick={onClear} title="清空草稿">
             清空草稿
           </button>
         )}
